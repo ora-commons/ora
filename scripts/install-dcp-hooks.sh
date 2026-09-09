@@ -142,7 +142,7 @@ $4 — installed by $DCP_ORA_ROOT/scripts/install-dcp-hooks.sh
 # Edit the tracked source and re-run the installer; do not edit this copy.
 export DCP_HOOK_REPOSITORY="$2"
 export DCP_HOOK_COMMON_DIR="$3"
-exec "$5"
+exec "$5" "\$@"
 EOF
     fi
 }

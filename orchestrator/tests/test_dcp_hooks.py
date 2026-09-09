@@ -13,6 +13,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALLER = ROOT / "scripts" / "install-dcp-hooks.sh"
+CONFIG = "Projects/Ora/Reference — Documentation-Code Parity Configuration.md"
+MANIFEST = "Projects/Ora/Reference — Vault Ora Framework Pair Manifest.md"
+SETUP = "Projects/Ora/Working — Ora Setup and Refinement.md"
+OVERVIEW = "Projects/Ora/Registry — Ora Overview and Document Registry.md"
+WORKING = "Projects/Ora/Working — Reference — AI Project-Type Infrastructure Specification.md"
+
+
+def control_document(name: str, data: dict) -> str:
+    return (f"<!-- BEGIN DCP {name} JSON -->\n```json\n{json.dumps(data)}\n```\n"
+            f"<!-- END DCP {name} JSON -->\n")
 
 
 def git(root: Path, *arguments: str) -> str:
@@ -47,6 +57,19 @@ class DcpHookFixture(unittest.TestCase):
             git(root, "config", "user.email", "dcp-hooks@example.invalid")
             git(root, "config", "user.name", "DCP Hooks")
             write(root / "README.md", f"# {name}\n")
+            if name == "vault":
+                write(root / CONFIG, control_document("DOCUMENTATION OWNERSHIP", {
+                    "schema_version": 1,
+                    "registry_id": "ora/documentation-integrity-ownership@1",
+                    "surfaces": [{
+                        "surface_id": "dcp.coordinated-enforcement",
+                        "owners": [{"repository": "vault", "pattern": p}
+                                   for p in (CONFIG, SETUP, OVERVIEW)],
+                        "canonical": {"path": CONFIG},
+                        "propagation": {"type": "none"}, "references": [],
+                    }], "discovery": {},
+                }))
+                write(root / MANIFEST, control_document("FRAMEWORK PAIR MANIFEST", {"entries": []}))
             git(root, "add", ".")
             git(root, "commit", "-qm", "Initial")
             self.bases[name] = git(root, "rev-parse", "HEAD")
@@ -56,6 +79,7 @@ class DcpHookFixture(unittest.TestCase):
         for filename in (
             "dcp-commit-hook.sh",
             "dcp-pre-push-hook.sh",
+            "dcp-prose-check.py",
         ):
             shutil.copy2(ROOT / "scripts" / filename, scripts / filename)
         write(scripts / "verify-implementation.py", "# verifier fixture\n")
@@ -122,6 +146,7 @@ class DcpHookFixture(unittest.TestCase):
         push_input: str | None = None,
         hook_repository: str | None = None,
         hook_common_dir: Path | None = None,
+        remote_arguments: tuple[str, ...] = (),
     ) -> subprocess.CompletedProcess[str]:
         environment = dict(environment)
         effective_repository = hook_repository or repository
@@ -131,7 +156,7 @@ class DcpHookFixture(unittest.TestCase):
         )
         environment.pop("DCP_HOOK_ROOT", None)
         return subprocess.run(
-            ["sh", str(self.roots["ora"] / "scripts/dcp-pre-push-hook.sh")],
+            ["sh", str(self.roots["ora"] / "scripts/dcp-pre-push-hook.sh"), *remote_arguments],
             cwd=self.roots[repository],
             input=push_input if push_input is not None else self.push_input(repository),
             capture_output=True,
@@ -978,6 +1003,139 @@ exec "$DCP_REAL_GIT" "$@"
 
         self.assertEqual(result.returncode, 1)
         self.assertIn("code-bearing or unmapped changes", result.stderr)
+
+    def test_installed_hook_allows_new_prose_branch_against_destination_default_ancestry(self):
+        root = self.roots["app"]
+        self.commit_change("app", "src/existing.ts", "export const existing = 1;\n", "Existing code")
+        remote = Path(self.temp.name) / "destination with spaces.git"
+        git(root, "init", "--bare", "-q", str(remote))
+        git(remote, "symbolic-ref", "HEAD", "refs/heads/trunk")
+        git(root, "remote", "add", "delivery", str(remote))
+        git(root, "push", "-q", "delivery", "HEAD:trunk")
+        git(root, "branch", "prose-task")
+        # The advertised default is ahead of the task: its newer code must not
+        # be mistaken for a task deletion by a direct default-to-task diff.
+        self.commit_change("app", "src/upstream.ts", "export const upstream = 1;\n", "Upstream code")
+        git(root, "push", "-q", "delivery", "HEAD:trunk")
+        git(root, "checkout", "-q", "prose-task")
+        self.commit_change("app", "README.md", "# Explanatory prose\n", "Docs")
+        self.assertEqual(self.install().returncode, 0)
+        result = subprocess.run(
+            ["git", "push", "delivery", "HEAD:prose-task"], cwd=root,
+            capture_output=True, text=True, env=self.clean_task_environment(),
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("documentation-only range allowed", result.stderr)
+        self.assertIn("NOT certified", result.stderr)
+        self.assertEqual(git(remote, "rev-parse", "refs/heads/prose-task"), git(root, "rev-parse", "HEAD"))
+        self.commit_change("app", "src/task.ts", "export const task = 1;\n", "Task code")
+        blocked = subprocess.run(
+            ["git", "push", "delivery", "HEAD:mixed-task"], cwd=root,
+            capture_output=True, text=True, env=self.clean_task_environment(),
+        )
+        self.assertEqual(blocked.returncode, 1, blocked.stderr)
+        self.assertIn("code-bearing or unmapped changes", blocked.stderr)
+
+    def test_new_branch_requires_an_available_trustworthy_destination_base(self):
+        self.commit_change("app", "README.md", "# Docs\n", "Docs")
+        root = self.roots["app"]
+        local = git(root, "rev-parse", "HEAD")
+        remote = Path(self.temp.name) / "empty.git"
+        git(root, "init", "--bare", "-q", str(remote))
+        for arguments in ((), ("delivery", str(remote)), ("delivery", str(remote / "missing"))):
+            with self.subTest(arguments=arguments):
+                result = self.run_pre_push(
+                    "app", environment=self.clean_task_environment(),
+                    push_input=f"refs/heads/task {local} refs/heads/task {'0' * 40}\n",
+                    remote_arguments=arguments,
+                )
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("task coordinator", result.stderr)
+
+    def test_passive_working_prose_addition_edit_and_deletion_can_pass(self):
+        for content in (
+            "---\ntype: working\ntags:\n  - working\n---\n# Future specification\n",
+            "---\ntype: working\ntags:\n  - working\n---\n# Revised future specification\n",
+            None,
+        ):
+            with self.subTest(content=content):
+                root = self.roots["vault"]
+                self.bases["vault"] = git(root, "rev-parse", "HEAD")
+                if content is None:
+                    git(root, "rm", WORKING)
+                    git(root, "commit", "-qm", "Remove superseded draft")
+                else:
+                    self.commit_change("vault", WORKING, content, "Draft prose")
+                result = self.run_pre_push("vault", environment=self.clean_task_environment())
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("NOT certified", result.stderr)
+
+    def test_mixed_planning_documents_allow_siblings_but_preserve_controls(self):
+        documents = {
+            SETUP: "---\ntype: working\ntags:\n  - working\n  - tracker\n  - ora-setup\n---\n"
+                   "### G1.25 — Give DCP a commit trigger\n\nFive-root review is required.\n\n",
+            OVERVIEW: "\n\n".join(f"## {heading}\n\nCurrent protection."
+                                  for heading in (
+                "How This Registry Stays Current", "Framework — Documentation-Code Parity.md",
+                "Reference — Documentation-Code Parity Configuration.md",
+                "Reference — Vault Ora Framework Pair Manifest.md")) + "\n\n",
+        }
+        for path, content in documents.items():
+            with self.subTest(path=path):
+                self.commit_change("vault", path, content, "Existing mixed document")
+                self.bases["vault"] = git(self.roots["vault"], "rev-parse", "HEAD")
+                self.commit_change("vault", path, content + "## Future planning\n\nGate 1 and G3.23 work.\n", "Planning")
+                allowed = self.run_pre_push("vault", environment=self.clean_task_environment())
+                self.assertEqual(allowed.returncode, 0, allowed.stderr)
+                self.commit_change("vault", path, content.replace("required", "optional").replace(
+                    "Current protection", "Changed protection"), "Control change")
+                blocked = self.run_pre_push("vault", environment=self.clean_task_environment())
+                self.assertEqual(blocked.returncode, 1, blocked.stderr)
+                self.bases["vault"] = git(self.roots["vault"], "rev-parse", "HEAD")
+
+    def test_operational_working_metadata_and_executable_prose_require_context(self):
+        for metadata in ("type: PED", "type: working\ntags:\n  - workflow-spec",
+                         "type: working\nworkflow_id: live", "type: framework"):
+            with self.subTest(metadata=metadata):
+                self.bases["vault"] = git(self.roots["vault"], "rev-parse", "HEAD")
+                self.commit_change("vault", WORKING, f"---\n{metadata}\n---\n# Document\n", "Operational")
+                result = self.run_pre_push("vault", environment=self.clean_task_environment())
+                self.assertEqual(result.returncode, 1, result.stderr)
+        root = self.roots["app"]
+        write(root / "README.md", "#!/bin/sh\nexit 0\n", executable=True)
+        git(root, "add", "README.md")
+        git(root, "commit", "-qm", "Executable instructions")
+        result = self.run_pre_push("app", environment=self.clean_task_environment())
+        self.assertEqual(result.returncode, 1, result.stderr)
+
+    def test_registered_working_sources_and_derivatives_require_context(self):
+        root = self.roots["vault"]
+        for registration in ("canonical", "owner", "propagation", "reference", "discovery", "framework"):
+            with self.subTest(registration=registration):
+                surface = {"surface_id": "test.runtime", "canonical": {"path": CONFIG},
+                           "owners": [], "propagation": {"type": "none"}, "references": []}
+                registry = {"schema_version": 1, "registry_id": "ora/documentation-integrity-ownership@1",
+                            "surfaces": [surface], "discovery": {}}
+                manifest = {"entries": []}
+                if registration == "canonical":
+                    surface["canonical"] = {"path": WORKING}
+                elif registration == "owner":
+                    surface["owners"] = [{"repository": "vault", "pattern": "Projects/Ora/Working — *.md"}]
+                elif registration == "propagation":
+                    surface["propagation"] = {"type": "ora_body_only", "repository": "vault", "path": WORKING}
+                elif registration == "reference":
+                    surface["references"] = [{"type": "path", "repository": "vault", "path": WORKING}]
+                elif registration == "discovery":
+                    registry["discovery"] = {"internal": [{"repository": "vault", "glob": "Projects/Ora/Working — *.md"}]}
+                else:
+                    manifest["entries"] = [{"canonical_path": WORKING}]
+                write(root / CONFIG, control_document("DOCUMENTATION OWNERSHIP", registry))
+                write(root / MANIFEST, control_document("FRAMEWORK PAIR MANIFEST", manifest))
+                self.commit_change("vault", WORKING, "# Existing runtime source\n", "Register runtime document")
+                self.bases["vault"] = git(root, "rev-parse", "HEAD")
+                self.commit_change("vault", WORKING, "# Changed runtime source\n", "Runtime change")
+                result = self.run_pre_push("vault", environment=self.clean_task_environment())
+                self.assertEqual(result.returncode, 1, result.stderr)
 
     def test_instruction_controls_require_complete_context(self):
         cases = (("app", "AGENTS.md"), ("org", "CLAUDE.md"))
