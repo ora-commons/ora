@@ -16,6 +16,7 @@ set -u
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 VERIFY="$SCRIPT_DIR/verify-implementation.py"
 PYTHON="${ORA_PYTHON:-python3}"
+push_destination=${2:-}
 
 repository_label=${DCP_HOOK_REPOSITORY:-}
 configured_common_dir=${DCP_HOOK_COMMON_DIR:-}
@@ -215,6 +216,9 @@ if ! : > "$changed_file"; then
 fi
 range_failed=0
 range_read_complete=0
+# Keep each actual comparison for the content-aware prose check below. Git's
+# destination argument was captured before these positional arguments change.
+set -- "$repository_label" "$current_root" "$changed_file"
 while read -r local_ref local_sha remote_ref remote_sha extra
 do
     if [ "${local_ref:-}" = "$range_sentinel" ] \
@@ -235,16 +239,20 @@ do
     fi
     [ "$local_sha" != "$zero" ] || continue
     if [ "${remote_sha:-$zero}" = "$zero" ]; then
-        empty_tree=$(git -C "$current_root" hash-object -t tree /dev/null 2>/dev/null) || {
+        # A new task branch contains existing repository history. Compare its
+        # task ancestry with the actual destination's advertised default HEAD,
+        # never with an empty tree or an assumed local main/master branch.
+        comparison_base=$("$PYTHON" "$SCRIPT_DIR/dcp-prose-check.py" base \
+            "$current_root" "$push_destination" "$local_sha") || {
             range_failed=1
             continue
         }
-        git -C "$current_root" -c core.quotepath=false diff --no-renames --name-only "$empty_tree" "$local_sha" -- \
-            >> "$changed_file" 2>/dev/null || range_failed=1
     else
-        git -C "$current_root" -c core.quotepath=false diff --no-renames --name-only "$remote_sha" "$local_sha" -- \
-            >> "$changed_file" 2>/dev/null || range_failed=1
+        comparison_base=$remote_sha
     fi
+    git -C "$current_root" -c core.quotepath=false diff --no-renames --name-only "$comparison_base" "$local_sha" -- \
+        >> "$changed_file" 2>/dev/null || range_failed=1
+    set -- "$@" "$comparison_base" "$local_sha"
 done < "$range_file"
 
 if [ "$range_read_complete" -ne 1 ] || [ "$range_failed" -ne 0 ]; then
@@ -261,7 +269,6 @@ then
     exit 1
 fi
 
-documentation_only=1
 changed_read_complete=0
 while IFS= read -r path
 do
@@ -269,19 +276,6 @@ do
         changed_read_complete=1
         break
     fi
-    [ -n "$path" ] || continue
-    case "$repository_label:$path" in
-        # These exact top-level files are repository prose by convention. A
-        # nested docs/help path or arbitrary Markdown suffix is not enough:
-        # Ora's installed mirrors, site content collections, and vault
-        # controls are all machine-consumed Markdown surfaces.
-        *:README.md|*:CONTRIBUTING.md|*:SECURITY.md|*:CODE_OF_CONDUCT.md|*:SUPPORT.md|*:GOVERNANCE.md)
-            continue
-            ;;
-        *)
-            documentation_only=0
-            ;;
-    esac
 done < "$changed_file"
 
 if [ "$changed_read_complete" -ne 1 ]; then
@@ -289,7 +283,7 @@ if [ "$changed_read_complete" -ne 1 ]; then
     exit 1
 fi
 
-if [ "$documentation_only" -eq 1 ]; then
+if "$PYTHON" "$SCRIPT_DIR/dcp-prose-check.py" prose "$changed_sentinel" "$@"; then
     echo "DCP pre-push: documentation-only range allowed without coordinated task context; cross-repository documentation integrity was NOT certified." >&2
     exit 0
 fi
