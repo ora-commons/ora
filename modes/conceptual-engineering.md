@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: conceptual-engineering
-canonical_name: Conceptual Engineering
-suffix_rule: analysis
-educational_name: conceptual engineering (Cappelen-Plunkett ameliorative analysis)
+mode_id: "conceptual-engineering"
+canonical_name: "Conceptual Engineering"
+suffix_rule: "analysis"
+educational_name: "conceptual engineering (Cappelen-Plunkett ameliorative analysis)"
 
 # 1. TERRITORY AND POSITION
-territory: T10-conceptual-clarification
+territory: "T10-conceptual-clarification"
 gradation_position:
-  axis: stance
-  value: ameliorative
+  axis: "stance"
+  value: "ameliorative"
 adjacent_modes_in_territory:
-  - mode_id: deep-clarification
-    relationship: stance-counterpart (descriptive ordinary-language clarification)
-  - mode_id: definitional-dispute
-    relationship: specificity-counterpart (essentially-contested concepts; gap-deferred)
+  - mode_id: "deep-clarification"
+    relationship: "stance-counterpart (descriptive ordinary-language clarification)"
+  - mode_id: "definitional-dispute"
+    relationship: "specificity-counterpart (essentially-contested concepts; gap-deferred)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -50,19 +50,31 @@ disambiguation_routing:
     - "user accepts that the concept could or should be different than it currently is"
     - "the question 'what should this concept be' is in scope, not just 'what does this concept mean'"
   routes_away_when:
-    - "user wants ordinary-language clarification of how the concept is currently used" → deep-clarification
-    - "concept is essentially contested (Gallie sense) and the dispute itself is the object" → definitional-dispute (gap-deferred)
-    - "concept is embedded in a specific argument whose soundness is at issue" → T1 modes
-    - "concept is embedded in a paradigm whose framing is at issue" → T9 modes
+    - condition: "user wants ordinary-language clarification of how the concept is currently used"
+      targets: [{"kind": "active", "id": "deep-clarification"}]
+      qualification: "deep-clarification"
+    - condition: "concept is essentially contested (Gallie sense) and the dispute itself is the object"
+      targets: [{"kind": "deferred", "id": "definitional-dispute"}]
+      qualification: "definitional-dispute (gap-deferred)"
+    - condition: "concept is embedded in a specific argument whose soundness is at issue"
+      targets: [{"kind": "territory", "id": "T1"}]
+      qualification: "T1 modes"
+    - condition: "concept is embedded in a paradigm whose framing is at issue"
+      targets: [{"kind": "territory", "id": "T9"}]
+      qualification: "T9 modes"
 when_not_to_invoke:
-  - "User wants to know what a term currently means (descriptive task) — ameliorative move would be presumptuous" → deep-clarification
-  - "Concept is technical with a settled stipulative definition — engineering move is unnecessary" → exposit existing definition
+  - condition: "User wants to know what a term currently means (descriptive task) — ameliorative move would be presumptuous"
+    targets: [{"kind": "active", "id": "deep-clarification"}]
+    qualification: "deep-clarification"
+  - condition: "Concept is technical with a settled stipulative definition — engineering move is unnecessary"
+    targets: [{"kind": "action", "id": "direct-response"}]
+    qualification: "exposit existing definition"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: ameliorative
+  posture: "ameliorative"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -77,67 +89,110 @@ input_contract:
   detection:
     expert_signals: ["ameliorative", "engineering", "redefine", "the function the concept should serve", "normative purpose"]
     accessible_signals: ["should mean", "isn't doing its job", "needs to be redefined", "the word is being used to"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What concept are we working on, and what's it failing to do for you in its current form?'"
     on_underspecified: "Ask: 'What would the concept ideally help us do, distinguish, or accomplish?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the ameliorative purpose been articulated as something the revised concept should *do* (a function it should serve), rather than as a stipulation that smuggles in conclusions?"
-    failure_mode_if_unmet: stipulation-smuggle
-  - cq_id: CQ2
+    failure_mode_if_unmet: "stipulation-smuggle"
+  - cq_id: "CQ2"
     question: "Has the current concept's descriptive baseline been mapped before the ameliorative move, so the revision is responsive to actual usage rather than to a strawman?"
-    failure_mode_if_unmet: baseline-skip
-  - cq_id: CQ3
+    failure_mode_if_unmet: "baseline-skip"
+  - cq_id: "CQ3"
     question: "Has the implementation problem been acknowledged — i.e., the gap between proposing a revision and actually getting communities to adopt it (Cappelen 2018's challenge) — rather than treating the proposal as if proposal-equals-adoption?"
-    failure_mode_if_unmet: implementation-blindness
-  - cq_id: CQ4
+    failure_mode_if_unmet: "implementation-blindness"
+  - cq_id: "CQ4"
     question: "Have revision costs been surfaced — what current uses, distinctions, or commitments would be lost or displaced by the proposed engineering?"
-    failure_mode_if_unmet: cost-blindness
+    failure_mode_if_unmet: "cost-blindness"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: stipulation-smuggle
+  - name: "stipulation-smuggle"
     detection_signal: "Ameliorative purpose is stated as a desired conclusion rather than a function (e.g., 'the concept should classify X as Y' rather than 'the concept should help us distinguish operations of class A from class B')."
-    correction_protocol: re-dispatch
-  - name: baseline-skip
+    correction_protocol: "re-dispatch"
+  - name: "baseline-skip"
     detection_signal: "Current usage descriptive section is absent or thin; the engineering move proceeds without grounding in what the concept currently does."
-    correction_protocol: re-dispatch
-  - name: implementation-blindness
+    correction_protocol: "re-dispatch"
+  - name: "implementation-blindness"
     detection_signal: "Output proposes a revision without acknowledging the gap between proposal and uptake (no mention of who would need to adopt it, what coordination problem the revision faces, or what mechanism would carry the revision into community usage)."
-    correction_protocol: flag
-  - name: cost-blindness
+    correction_protocol: "flag"
+  - name: "cost-blindness"
     detection_signal: "Revision costs section is absent or treats current usage as having no value worth preserving."
-    correction_protocol: flag
-  - name: ameliorative-overreach
+    correction_protocol: "flag"
+  - name: "ameliorative-overreach"
     detection_signal: "Engineering move applied to a concept whose contested status is constitutive (e.g., 'art', 'democracy') without acknowledging essentially-contested character; revision treated as resolvable when it is not."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - cappelen-plunkett-conceptual-engineering
+  - cappelen-plunkett-conceptual-engineering
   optional:
-    - haslanger-ameliorative-analysis (when target concept is socially loaded)
-    - gallie-essentially-contested-concepts (when concept may resist engineering)
+  - lens_id: haslanger-ameliorative-analysis
+    qualification: when target concept is socially loaded
+  - lens_id: gallie-essentially-contested-concepts
+    qualification: when concept may resist engineering
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "T10 currently has no molecular mode; if engineering proposal entails systemic implications, sideways-route to T9 worldview-cartography or T12 synthesis."
   sideways:
-    target_mode_id: deep-clarification
+    target: {"kind": "active", "id": "deep-clarification"}
     when: "On reflection the user wants descriptive clarification of current usage rather than normative redesign."
   downward:
-    target_mode_id: deep-clarification
+    target: {"kind": "active", "id": "deep-clarification"}
     when: "Engineering move is premature — the concept first needs descriptive clarification."
 ```
+
+## Display Description
+
+Evaluates whether a concept ought to be replaced or revised on ameliorative grounds.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work on sharpening this concept"
+  signals:
+    - {"signal": "conceptual engineering", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Cappelen", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Cappelen-Plunkett", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "ameliorative", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "ameliorative analysis", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Haslanger", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "redefine the concept", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "engineer the concept", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "redefine", "territory": "T10-conceptual-clarification", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "should the concept be", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what should X mean", "territory": "T10-conceptual-clarification", "disambiguation_answer": "within-territory: stance? → ameliorative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "the function the concept should serve", "territory": "T10-conceptual-clarification", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "normative purpose", "territory": "T10-conceptual-clarification", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (ameliorative)"}
+    - {"signal": "engineer the concept", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "engineer this concept", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "engineer it again", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "ameliorative analysis", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "engineer the term", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "settle a question about whether", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "is doing what it should", "territory": "T10-conceptual-clarification", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "as the field uses it", "territory": "T10-conceptual-clarification", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "cappelen plunkett conceptual engineering", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "cappelen-plunkett conceptual engineering", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "map territory", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "the map is not the territory", "territory": "T10-conceptual-clarification", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

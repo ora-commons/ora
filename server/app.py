@@ -109,6 +109,7 @@ from boot import (
     route_output, TOOLS_AVAILABLE, compare_intent_with_mode,
     list_pickable_frameworks, vision_capable_for_endpoint,
     compose_dispatch_announcement, stage3_input_completeness_check,
+    load_routing_sources,
     TerminalInputAbort,
 )
 from dispatcher import (
@@ -4288,17 +4289,12 @@ def _pipeline_stream_impl(user_input, history, panel_id="main", images=None, ext
         and manual_mode_selection != step1.get("mode")
         and not (step1.get("pre_routing") or {}).get("bypass_to_direct_response")
     ):
-        mode_file = os.path.join(WORKSPACE, "modes", f"{manual_mode_selection}.md")
-        if os.path.isfile(mode_file):
+        manual_mode = load_routing_sources()["modes"].get(manual_mode_selection)
+        if manual_mode:
             prior_mode = step1.get("mode")
             prior_pre_routing = dict(step1.get("pre_routing") or {})
             prior_stage1_output = prior_pre_routing.get("stage1_output") or {}
-            try:
-                with open(mode_file, "r", encoding="utf-8") as f:
-                    manual_mode_text = f.read()
-            except OSError:
-                manual_mode_text = ""
-            manual_territory = _extract_mode_field(manual_mode_text, "territory")
+            manual_territory = manual_mode["metadata"].get("territory")
             manual_prompt = step1.get("operational_notation") or user_input
             manual_s3 = stage3_input_completeness_check(
                 manual_mode_selection,
@@ -4351,7 +4347,7 @@ def _pipeline_stream_impl(user_input, history, panel_id="main", images=None, ext
             override_applied = True
         else:
             print(f"[manual-mode-override] '{manual_mode_selection}' not a valid mode "
-                  f"(no {mode_file}); falling through to Stage 2 dispatch "
+                  f"(not in compiled modes); falling through to Stage 2 dispatch "
                   f"'{step1.get('mode')}'", flush=True)
 
     # V3 Input Handling Phase 1 / analysis picker — compare the user's
@@ -5219,144 +5215,10 @@ def health():
     })
 
 
-_ANALYSIS_TERRITORIES = {
-    "T0":  ("Default & General", 0),
-    "T1":  ("Argument Examination", 1),
-    "T2":  ("Interest & Power", 2),
-    "T3":  ("Decisions Under Uncertainty", 3),
-    "T4":  ("Causal Investigation", 4),
-    "T5":  ("Hypothesis Evaluation", 5),
-    "T6":  ("Future Exploration", 6),
-    "T7":  ("Risk & Failure", 7),
-    "T8":  ("Stakeholder Conflict", 8),
-    "T9":  ("Paradigm & Assumptions", 9),
-    "T10": ("Conceptual Clarification", 10),
-    "T11": ("Structural Relationships", 11),
-    "T12": ("Cross-Domain Synthesis", 12),
-    "T13": ("Negotiation & Conflict Resolution", 13),
-    "T14": ("Orientation in Unfamiliar Territory", 14),
-    "T15": ("Evaluation by Stance", 15),
-    "T16": ("Mechanism Understanding", 16),
-    "T17": ("Process & Systems", 17),
-    "T18": ("Strategic Interaction", 18),
-    "T19": ("Spatial Composition", 19),
-    "T20": ("Open Exploration", 20),
-    "T21": ("Project & Execution", 21),
-}
 
 _ANALYSIS_PICKER_EXCLUDED = {"INDEX", "modes-index", "simple"}
 
 
-def _extract_mode_field(text: str, field: str) -> str:
-    match = re.search(rf"^\s*{re.escape(field)}:\s*(.+?)\s*$", text, re.M)
-    if not match:
-        return ""
-    value = match.group(1).strip()
-    if value.startswith(("'", '"')) and value.endswith(("'", '"')) and len(value) >= 2:
-        value = value[1:-1]
-    return value.strip()
-
-
-def _extract_mode_list(text: str, field: str, limit: int = 8) -> list[str]:
-    lines = text.splitlines()
-    out: list[str] = []
-    for i, line in enumerate(lines):
-        if not re.match(rf"^\s*{re.escape(field)}:\s*$", line):
-            continue
-        base_indent = len(line) - len(line.lstrip())
-        for item_line in lines[i + 1:]:
-            stripped = item_line.strip()
-            if not stripped:
-                continue
-            indent = len(item_line) - len(item_line.lstrip())
-            if indent <= base_indent and re.match(r"^[A-Za-z0-9_-]+:", stripped):
-                break
-            match = re.match(r"^-\s+(.+)$", stripped)
-            if match:
-                value = match.group(1).strip()
-                if value.startswith(("'", '"')) and value.endswith(("'", '"')) and len(value) >= 2:
-                    value = value[1:-1]
-                out.append(value.strip())
-                if len(out) >= limit:
-                    return out
-        break
-    return out
-
-
-def _mode_picker_description(text: str, educational_name: str) -> str:
-    for field in ("user_situation_signals", "routes_to_this_mode_when",
-                  "prompt_shape_signals"):
-        items = _extract_mode_list(text, field, limit=1)
-        if items:
-            return items[0]
-    return educational_name
-
-
-def _strip_lens_dependency_note(raw_value: str) -> str:
-    """Normalize a ``lens_dependencies`` bullet to its mental-model file id."""
-    value = (raw_value or "").strip()
-    if value.startswith(("'", '"')) and value.endswith(("'", '"')) and len(value) >= 2:
-        value = value[1:-1].strip()
-    # Mode specs sometimes annotate applicability inline:
-    # ``reason-swiss-cheese-model (when failure crosses layers)``.
-    value = re.sub(r"\s+\([^)]*\)\s*$", "", value).strip()
-    return value
-
-
-def _extract_lens_dependencies(text: str) -> list[dict]:
-    """Parse the opening mode spec's ``lens_dependencies`` block.
-
-    The mode files use a small YAML-ish subset, but we avoid pulling in a
-    full YAML dependency in the server hot path. Only three buckets are
-    user-facing here: required, optional, and foundational.
-    """
-    lines = text.splitlines()
-    start = None
-    base_indent = 0
-    for idx, line in enumerate(lines):
-        if re.match(r"^\s*lens_dependencies:\s*$", line):
-            start = idx + 1
-            base_indent = len(line) - len(line.lstrip())
-            break
-    if start is None:
-        return []
-
-    rows: list[dict] = []
-    seen: set[tuple[str, str]] = set()
-    category = ""
-    categories = {"required", "optional", "foundational"}
-    for line in lines[start:]:
-        if not line.strip():
-            continue
-        indent = len(line) - len(line.lstrip())
-        stripped = line.strip()
-        if indent <= base_indent and not stripped.startswith("-"):
-            break
-
-        header = re.match(r"^(required|optional|foundational):(?:\s*\[\])?\s*$", stripped)
-        if header:
-            category = header.group(1)
-            continue
-        if not category or category not in categories:
-            continue
-
-        bullet = re.match(r"^-\s+(.+?)\s*$", stripped)
-        if not bullet:
-            continue
-        raw = bullet.group(1).strip()
-        lens_id = _strip_lens_dependency_note(raw)
-        if not lens_id:
-            continue
-        key = (category, lens_id)
-        if key in seen:
-            continue
-        seen.add(key)
-        rows.append({
-            "id": lens_id,
-            "category": category,
-            "dependency_note": raw if raw != lens_id else "",
-        })
-    return rows
 
 
 def _strip_markdown_frontmatter(text: str) -> str:
@@ -5367,33 +5229,6 @@ def _strip_markdown_frontmatter(text: str) -> str:
     return text
 
 
-def _extract_lens_field(text: str, field: str) -> str:
-    match = re.search(rf"^\s*{re.escape(field)}:\s*(.+?)\s*$", text, re.M)
-    if not match:
-        return ""
-    value = match.group(1).strip()
-    if value.startswith(("'", '"')) and value.endswith(("'", '"')) and len(value) >= 2:
-        value = value[1:-1]
-    return value.strip()
-
-
-def _extract_lens_applicability(text: str) -> list[str]:
-    inline = re.search(r"^applicability:\s*\[(.*?)\]\s*$", text, re.M)
-    if inline:
-        return [
-            item.strip().strip("'\"")
-            for item in inline.group(1).split(",")
-            if item.strip()
-        ]
-
-    block = re.search(r"^applicability:\s*\n((?:\s+-\s+.+\n?)+)", text, re.M)
-    if not block:
-        return []
-    return [
-        re.sub(r"^\s+-\s+", "", line).strip().strip("'\"")
-        for line in block.group(1).splitlines()
-        if line.strip()
-    ]
 
 
 def _lens_picker_description(text: str) -> str:
@@ -5409,14 +5244,10 @@ def _lens_picker_description(text: str) -> str:
 
 
 def _lens_picker_base_row(lens_id: str, text: str) -> dict:
-    display_name = _extract_lens_field(text, "name")
-    if not display_name:
-        body = _strip_markdown_frontmatter(text)
-        h1 = re.search(r"^#\s+(.+?)\s*$", body, re.M)
-        display_name = h1.group(1).strip() if h1 else lens_id.replace("-", " ").title()
+    lens = load_routing_sources()["lenses"][lens_id]
     return {
         "id": lens_id,
-        "display_name": display_name,
+        "display_name": lens["metadata"].get("name") or lens_id.replace("-", " ").title(),
         "display_description": _lens_picker_description(text),
     }
 
@@ -5430,53 +5261,16 @@ def _lens_picker_row_with_category(base_row: dict, category: str, dependency_not
     return row
 
 
-def _read_lens_picker_row(lens_id: str, category: str, dependency_note: str = "") -> dict | None:
-    """Return a picker row only when the lens exists at runtime."""
-    safe_id = os.path.basename(lens_id)
-    if safe_id != lens_id:
-        return None
-    path = os.path.join(MENTAL_MODELS_DIR, f"{lens_id}.md")
-    if not os.path.isfile(path):
-        return None
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            text = f.read()
-    except OSError:
-        return None
-    return _lens_picker_row_with_category(
-        _lens_picker_base_row(lens_id, text),
-        category,
-        dependency_note,
-    )
 
 
 def _build_lens_picker_index() -> dict:
-    rows_by_id: dict[str, dict] = {}
-    applicable_by_mode: dict[str, list[str]] = {}
-    if not os.path.isdir(MENTAL_MODELS_DIR):
-        return {
-            "rows_by_id": rows_by_id,
-            "applicable_by_mode": applicable_by_mode,
-        }
-    for entry in sorted(os.listdir(MENTAL_MODELS_DIR)):
-        if not entry.endswith(".md"):
-            continue
-        lens_id = entry[:-3]
-        if os.path.basename(lens_id) != lens_id:
-            continue
-        path = os.path.join(MENTAL_MODELS_DIR, entry)
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                text = f.read()
-        except OSError:
-            continue
-        rows_by_id[lens_id] = _lens_picker_base_row(lens_id, text)
-        for mode_id in _extract_lens_applicability(text):
+    rows_by_id = {}
+    applicable_by_mode = {}
+    for lens_id, lens in load_routing_sources()["lenses"].items():
+        rows_by_id[lens_id] = _lens_picker_base_row(lens_id, lens["text"])
+        for mode_id in lens["metadata"].get("applicability", []):
             applicable_by_mode.setdefault(mode_id, []).append(lens_id)
-    return {
-        "rows_by_id": rows_by_id,
-        "applicable_by_mode": applicable_by_mode,
-    }
+    return {"rows_by_id": rows_by_id, "applicable_by_mode": applicable_by_mode}
 
 
 def _applicable_lens_picker_rows(
@@ -5500,116 +5294,65 @@ def _applicable_lens_picker_rows(
 
 def _mode_lens_picker_rows(
     mode_id: str,
-    mode_text: str,
     lens_index: dict | None = None,
 ) -> tuple[list[dict], list[str]]:
-    rows: list[dict] = []
-    unavailable: list[str] = []
-    existing_ids: set[str] = set()
     index = lens_index or _build_lens_picker_index()
-    rows_by_id = index.get("rows_by_id", {})
-    for dep in _extract_lens_dependencies(mode_text):
-        base_row = rows_by_id.get(dep["id"])
-        if base_row:
-            row = _lens_picker_row_with_category(
-                base_row,
-                dep["category"],
-                dep.get("dependency_note", ""),
-            )
-            rows.append(row)
-            existing_ids.add(dep["id"])
-        else:
-            unavailable.append(dep["id"])
-    rows.extend(_applicable_lens_picker_rows(mode_id, existing_ids, index))
+    rows, unavailable, existing = [], [], set()
+    mode = load_routing_sources()["modes"].get(mode_id, {})
+    dependencies = mode.get("lens_dependencies", {})
+    qualifications = mode.get("lens_qualifications", {})
+    for category in ("required", "optional", "foundational"):
+        for lens_id in dependencies.get(category, []) or []:
+            base = index["rows_by_id"].get(lens_id)
+            if base:
+                rows.append(_lens_picker_row_with_category(
+                    base, category, qualifications.get(lens_id, "")))
+                existing.add(lens_id)
+            else:
+                unavailable.append(lens_id)
+    rows.extend(_applicable_lens_picker_rows(mode_id, existing, index))
     return rows, unavailable
 
 
 def _lens_available_for_mode(mode_id: str, lens_id: str) -> bool:
-    safe_mode_id = os.path.basename(mode_id or "")
-    safe_lens_id = os.path.basename(lens_id or "")
-    if not safe_mode_id or safe_mode_id != mode_id:
+    sources = load_routing_sources()
+    mode = sources["modes"].get(mode_id)
+    if not mode or lens_id not in sources["lenses"]:
         return False
-    if not safe_lens_id or safe_lens_id != lens_id:
-        return False
-    mode_path = os.path.join(WORKSPACE, "modes", f"{mode_id}.md")
-    if not os.path.isfile(mode_path):
-        return False
-    try:
-        with open(mode_path, "r", encoding="utf-8") as f:
-            mode_text = f.read()
-    except OSError:
-        return False
-    index = _build_lens_picker_index()
-    rows_by_id = index.get("rows_by_id", {})
-    for dep in _extract_lens_dependencies(mode_text):
-        if dep["id"] == lens_id:
-            return lens_id in rows_by_id
-    if lens_id not in rows_by_id:
-        return False
-    return lens_id in set(index.get("applicable_by_mode", {}).get(mode_id, []))
+    return (lens_id in mode["lenses"]
+            or mode_id in sources["lenses"][lens_id]["metadata"].get("applicability", []))
 
 
 def _analysis_territory_meta(raw_territory: str) -> tuple[str, str, int]:
     match = re.search(r"\b(T\d+)\b", raw_territory or "")
     code = match.group(1) if match else "T0"
-    name, order = _ANALYSIS_TERRITORIES.get(code, (raw_territory or "Other", 99))
-    return code, name, order
+    territory = load_routing_sources()["territory_metadata"].get(code, {})
+    return code, territory.get("name", raw_territory or "Other"), territory.get("order", 99)
 
 
 def list_pickable_analysis_modes() -> list[dict]:
-    """Return mode rows for the V3 Analyses picker.
-
-    The source of truth is the runtime mode directory. Each mode file declares
-    its own canonical name, educational name, territory, and trigger signals in
-    the opening YAML-ish spec block; the picker reads those fields directly so
-    the UI tracks actual executable modes instead of older public-site rosters.
-    """
-    modes_dir = os.path.join(WORKSPACE, "modes")
-    if not os.path.isdir(modes_dir):
-        return []
-
-    rows: list[dict] = []
+    """Return picker rows from the same full compiled closure as routing."""
+    rows = []
     lens_index = _build_lens_picker_index()
-    for entry in os.listdir(modes_dir):
-        if not entry.endswith(".md"):
-            continue
-        mode_id = entry[:-3]
+    for mode_id, mode in load_routing_sources()["modes"].items():
         if mode_id in _ANALYSIS_PICKER_EXCLUDED:
             continue
-        path = os.path.join(modes_dir, entry)
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                text = f.read()
-        except OSError:
-            continue
-
-        display_name = _extract_mode_field(text, "canonical_name")
-        if not display_name:
-            h1 = re.search(r"^#\s+MODE:\s*(.+?)\s*$", text, re.M)
-            display_name = h1.group(1).strip() if h1 else mode_id
-        educational_name = _extract_mode_field(text, "educational_name")
-        raw_territory = _extract_mode_field(text, "territory")
-        territory_code, territory_name, territory_order = _analysis_territory_meta(raw_territory)
-        aliases = []
-        aliases.extend(_extract_mode_list(text, "prompt_shape_signals", limit=6))
-        aliases.extend(_extract_mode_list(text, "user_situation_signals", limit=4))
-        lenses, unavailable_lenses = _mode_lens_picker_rows(mode_id, text, lens_index)
-
+        metadata = mode["metadata"]
+        code, territory_name, order = _analysis_territory_meta(metadata.get("territory", ""))
+        lenses, unavailable = _mode_lens_picker_rows(mode_id, lens_index=lens_index)
         rows.append({
             "id": mode_id,
-            "display_name": display_name,
-            "display_description": _mode_picker_description(text, educational_name),
-            "educational_name": educational_name,
-            "territory": territory_code,
+            "display_name": metadata["canonical_name"],
+            "display_description": mode["description"],
+            "educational_name": mode["educational_name"],
+            "territory": code,
             "territory_name": territory_name,
-            "territory_order": territory_order,
-            "aliases": aliases,
+            "territory_order": order,
+            "aliases": mode["aliases"],
             "lenses": lenses,
-            "unavailable_lenses": unavailable_lenses,
+            "unavailable_lenses": unavailable,
         })
-
-    rows.sort(key=lambda r: (r["territory_order"], r["display_name"].lower()))
-    return rows
+    return sorted(rows, key=lambda row: (row["territory_order"], row["display_name"].lower()))
 
 
 @app.route("/api/frameworks/picker", methods=["GET"])

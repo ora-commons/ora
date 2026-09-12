@@ -13,25 +13,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: wicked-future
-canonical_name: Wicked Future
-suffix_rule: analysis
-educational_name: wicked future analysis (scenario + pre-mortem + probabilistic forecast composition)
+mode_id: "wicked-future"
+canonical_name: "Wicked Future"
+suffix_rule: "analysis"
+educational_name: "wicked future analysis (scenario + pre-mortem + probabilistic forecast composition)"
 
 # 1. TERRITORY AND POSITION
-territory: T6-future-exploration
+territory: "T6-future-exploration"
 gradation_position:
-  axis: depth
-  value: molecular
+  axis: "depth"
+  value: "molecular"
 adjacent_modes_in_territory:
-  - mode_id: consequences-and-sequel
-    relationship: depth-light sibling (forward projection)
-  - mode_id: probabilistic-forecasting
-    relationship: depth-thorough sibling (probability-output)
-  - mode_id: scenario-planning
-    relationship: depth-thorough sibling (narrative-output)
-  - mode_id: pre-mortem-action
-    relationship: stance-adversarial-future sibling
+  - mode_id: "consequences-and-sequel"
+    relationship: "depth-light sibling (forward projection)"
+  - mode_id: "probabilistic-forecasting"
+    relationship: "depth-thorough sibling (probability-output)"
+  - mode_id: "scenario-planning"
+    relationship: "depth-thorough sibling (narrative-output)"
+  - mode_id: "pre-mortem-action"
+    relationship: "stance-adversarial-future sibling"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -50,48 +50,61 @@ disambiguation_routing:
     - "user wants integrated forward analysis with scenarios + probabilities + adversarial-future stress test"
     - "user willing to spend 10+ minutes for full molecular pass"
   routes_away_when:
-    - "want quick forward projection from current state" → consequences-and-sequel
-    - "want calibrated probability output without narrative" → probabilistic-forecasting
-    - "want narrative scenarios without probability formalism or pre-mortem" → scenario-planning
-    - "want pre-mortem on a specific plan, not exploration of the future broadly" → pre-mortem-action
+    - condition: "want quick forward projection from current state"
+      targets: [{"kind": "active", "id": "consequences-and-sequel"}]
+      qualification: "consequences-and-sequel"
+    - condition: "want calibrated probability output without narrative"
+      targets: [{"kind": "active", "id": "probabilistic-forecasting"}]
+      qualification: "probabilistic-forecasting"
+    - condition: "want narrative scenarios without probability formalism or pre-mortem"
+      targets: [{"kind": "active", "id": "scenario-planning"}]
+      qualification: "scenario-planning"
+    - condition: "want pre-mortem on a specific plan, not exploration of the future broadly"
+      targets: [{"kind": "active", "id": "pre-mortem-action"}]
+      qualification: "pre-mortem-action"
 when_not_to_invoke:
-  - "User has time pressure" → scenario-planning or probabilistic-forecasting
-  - "Question is really about a current decision rather than the future broadly" → decision-architecture or decision-under-uncertainty
+  - condition: "User has time pressure"
+    targets: [{"kind": "active", "id": "scenario-planning"}, {"kind": "active", "id": "probabilistic-forecasting"}]
+    qualification: "scenario-planning or probabilistic-forecasting"
+  - condition: "Question is really about a current decision rather than the future broadly"
+    targets: [{"kind": "active", "id": "decision-architecture"}, {"kind": "active", "id": "decision-under-uncertainty"}]
+    qualification: "decision-architecture or decision-under-uncertainty"
 
 # 3. EXECUTION STRUCTURE
-composition: molecular
+composition: "molecular"
 # NOTE: Backcasting (constructive-future stance) is deferred per CR-6.
 # This mode composes around its absence by anchoring scenario-planning
 # (neutral-future), probabilistic-forecasting (probability-output), and
 # pre-mortem-action (adversarial-future). The constructive-future stance
 # is gap-flagged in partial_composition_handling rather than substituted.
 molecular_spec:
+  companion_source: "frameworks/book/wicked-future-analysis.md"
   components:
-    - mode_id: scenario-planning
-      runs: full
-    - mode_id: pre-mortem-action
-      runs: full
-    - mode_id: probabilistic-forecasting
-      runs: full
+    - mode_id: "scenario-planning"
+      runs: "full"
+    - mode_id: "pre-mortem-action"
+      runs: "full"
+    - mode_id: "probabilistic-forecasting"
+      runs: "full"
   synthesis_stages:
-    - name: scenario-probability-overlay
-      type: parallel-merge
+    - name: "scenario-probability-overlay"
+      type: "parallel-merge"
       input: [scenario-planning, probabilistic-forecasting]
       output: "scenario set with calibrated probability bands and identified divergence points (where scenarios branch)"
-    - name: failure-pathway-stress-test
-      type: contradiction-surfacing
+    - name: "failure-pathway-stress-test"
+      type: "contradiction-surfacing"
       input: [scenario-probability-overlay, pre-mortem-action]
       output: "scenarios stress-tested against pre-mortem failure pathways; identification of which scenarios contain pre-mortem-flagged failure modes"
-    - name: integrated-future-architecture
-      type: dialectical-resolution
+    - name: "integrated-future-architecture"
+      type: "dialectical-resolution"
       input: [scenario-probability-overlay, failure-pathway-stress-test]
       output: "integrated forward analysis: probability-weighted scenarios with named failure pathways, divergence-points-to-monitor, and explicit gap-flag for missing constructive-future (Backcasting deferred)"
   partial_composition_handling:
-    on_component_failure: proceed-with-gap
-    on_low_confidence: flag affected synthesis stage; do not aggregate over low-confidence forecasting findings
+    on_component_failure: "proceed-with-gap"
+    on_low_confidence: "flag affected synthesis stage; do not aggregate over low-confidence forecasting findings"
     deferred_components:
-      - mode_id: backcasting
-        status: deferred (gap-deferred per CR-6)
+      - mode_id: "backcasting"
+        status: "deferred (gap-deferred per CR-6)"
         compensating_treatment: "Constructive-future stance is not substituted. Output explicitly gap-flags the absence of backward-from-desired-future analysis in the integrated-future-architecture stage. Consumers requiring constructive-future framing should compose Wicked Future with downstream goal-articulation work."
 
 # 4. INPUT AND OUTPUT CONTRACTS
@@ -107,65 +120,94 @@ input_contract:
   detection:
     expert_signals: ["scenarios", "probability bands", "key uncertainties", "time horizon"]
     accessible_signals: ["what could the future look like", "what could go wrong", "long-horizon"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the forward-looking question, and over what time horizon?'"
     on_underspecified: "Ask the user whether they want the full Wicked Future molecular pass or a lighter scenario-planning / probabilistic-forecasting read."
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have the scenarios been constructed broadly enough, or has the analysis privileged extrapolation of the dominant trend?"
-    failure_mode_if_unmet: trend-extrapolation-bias
-  - cq_id: CQ2
+    failure_mode_if_unmet: "trend-extrapolation-bias"
+  - cq_id: "CQ2"
     question: "Do the probability bands integrate with the scenario narratives, or do they sit in a separate silo from the scenario divergence points?"
-    failure_mode_if_unmet: silo-aggregation
-  - cq_id: CQ3
+    failure_mode_if_unmet: "silo-aggregation"
+  - cq_id: "CQ3"
     question: "Has pre-mortem-action stress-tested the scenarios for failure pathways, or has the synthesis presented scenarios without naming failure modes?"
-    failure_mode_if_unmet: pre-mortem-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "pre-mortem-omission"
+  - cq_id: "CQ4"
     question: "Has the absence of constructive-future analysis (Backcasting deferred) been gap-flagged, or has the output silently presented descriptive-future as if complete?"
-    failure_mode_if_unmet: silent-gap
+    failure_mode_if_unmet: "silent-gap"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: trend-extrapolation-bias
+  - name: "trend-extrapolation-bias"
     detection_signal: "All scenarios are variations of the dominant trend; no orthogonal or discontinuity scenario."
-    correction_protocol: re-dispatch (with explicit divergence-scenario prompt)
-  - name: silo-aggregation
+    correction_protocol: "re-dispatch (with explicit divergence-scenario prompt)"
+  - name: "silo-aggregation"
     detection_signal: "Synthesis stage outputs concatenate scenario, probability, and pre-mortem sections without integration."
-    correction_protocol: re-dispatch
-  - name: pre-mortem-omission
+    correction_protocol: "re-dispatch"
+  - name: "pre-mortem-omission"
     detection_signal: "pre-mortem-action did not run against the leading scenario."
-    correction_protocol: flag and re-dispatch
-  - name: silent-gap
+    correction_protocol: "flag and re-dispatch"
+  - name: "silent-gap"
     detection_signal: "Output presents integrated-future-architecture without flagging Backcasting absence."
-    correction_protocol: flag and add gap-flag section
+    correction_protocol: "flag and add gap-flag section"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - klein-pre-mortem
+  - klein-pre-mortem
   optional:
-    - tetlock-superforecasting (when scenarios extend beyond ~5 years)
-    - taleb-extremistan-mediocristan (when discontinuity scenarios in play)
+  - lens_id: tetlock-superforecasting
+    qualification: when scenarios extend beyond ~5 years
+  - lens_id: taleb-extremistan-mediocristan
+    qualification: when discontinuity scenarios in play
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
-
+  - kahneman-tversky-bias-catalog
+  - knightian-risk-uncertainty-ambiguity
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 3
-expected_runtime: ~10+min
+expected_runtime: "~10+min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Wicked Future is the heaviest mode in T6."
   sideways:
-    target_mode_id: pre-mortem-action
+    target: {"kind": "active", "id": "pre-mortem-action"}
     when: "Question is really about a specific plan's failure pathways rather than open future exploration."
   downward:
-    target_mode_id: scenario-planning
+    target: {"kind": "active", "id": "scenario-planning"}
     when: "User has time pressure; scenario narratives without probability formalism or pre-mortem suffice."
 ```
+
+## Display Description
+
+Composes future-exploration passes for futures whose constituting questions remain unsettled.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work through the entangled futures around this {artifact}"
+  signals:
+    - {"signal": "wicked future", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "scenario plus pre-mortem plus forecast", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "integrated future analysis", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "comprehensive future analysis", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "scenario planning with pre-mortem and probabilistic forecast", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "full forward analysis", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "many possible futures with failure modes and probabilities", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "wicked futures", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name variant"}
+    - {"signal": "deep future analysis", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "molecular future exploration", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name + composition"}
+    - {"signal": "three-component future analysis", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

@@ -12,29 +12,29 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: scenario-planning
-canonical_name: Scenario Planning
-suffix_rule: analysis
-educational_name: alternative-future scenario planning (Wack/Schwartz lineage)
+mode_id: "scenario-planning"
+canonical_name: "Scenario Planning"
+suffix_rule: "analysis"
+educational_name: "alternative-future scenario planning (Wack/Schwartz lineage)"
 
 # 1. TERRITORY AND POSITION
-territory: T6-future-exploration
+territory: "T6-future-exploration"
 gradation_position:
-  axis: depth
-  value: thorough
-  secondary_axis: stance
-  secondary_value: narrative-output
+  axis: "depth"
+  value: "thorough"
+  secondary_axis: "stance"
+  secondary_value: "narrative-output"
 adjacent_modes_in_territory:
-  - mode_id: consequences-and-sequel
-    relationship: depth-lighter sibling (light forward projection)
-  - mode_id: probabilistic-forecasting
-    relationship: depth-thorough sibling (probability-output instead of narrative-output)
-  - mode_id: pre-mortem-action
-    relationship: stance-counterpart (adversarial-future-on-plan; shares klein-pre-mortem lens with T7's pre-mortem-fragility)
-  - mode_id: wicked-future
-    relationship: depth-molecular sibling (integrates multiple T6 modes)
-  - mode_id: backcasting
-    relationship: stance-counterpart (constructive-future — gap-deferred)
+  - mode_id: "consequences-and-sequel"
+    relationship: "depth-lighter sibling (light forward projection)"
+  - mode_id: "probabilistic-forecasting"
+    relationship: "depth-thorough sibling (probability-output instead of narrative-output)"
+  - mode_id: "pre-mortem-action"
+    relationship: "stance-counterpart (adversarial-future-on-plan; shares klein-pre-mortem lens with T7's pre-mortem-fragility)"
+  - mode_id: "wicked-future"
+    relationship: "depth-molecular sibling (integrates multiple T6 modes)"
+  - mode_id: "backcasting"
+    relationship: "stance-counterpart (constructive-future — gap-deferred)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -57,22 +57,40 @@ disambiguation_routing:
     - "2x2 matrix with axes from critical uncertainties"
     - "5–20 year strategic horizon under genuine uncertainty"
   routes_away_when:
-    - "one decision under uncertainty now (probability + payoff)" → decision-under-uncertainty (T3)
-    - "want probability distributions instead of narrative scenarios" → probabilistic-forecasting
-    - "questioning the foundational frame" → paradigm-suspension (T9)
-    - "trace a failure backward" → root-cause-analysis (T4)
-    - "stress-test a specific plan adversarially" → pre-mortem-action
-    - "want lighter forward consequence cascade" → consequences-and-sequel
+    - condition: "one decision under uncertainty now (probability + payoff)"
+      targets: [{"kind": "active", "id": "decision-under-uncertainty"}]
+      qualification: "decision-under-uncertainty (T3)"
+    - condition: "want probability distributions instead of narrative scenarios"
+      targets: [{"kind": "active", "id": "probabilistic-forecasting"}]
+      qualification: "probabilistic-forecasting"
+    - condition: "questioning the foundational frame"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension (T9)"
+    - condition: "trace a failure backward"
+      targets: [{"kind": "active", "id": "root-cause-analysis"}]
+      qualification: "root-cause-analysis (T4)"
+    - condition: "stress-test a specific plan adversarially"
+      targets: [{"kind": "active", "id": "pre-mortem-action"}]
+      qualification: "pre-mortem-action"
+    - condition: "want lighter forward consequence cascade"
+      targets: [{"kind": "active", "id": "consequences-and-sequel"}]
+      qualification: "consequences-and-sequel"
 when_not_to_invoke:
-  - "Horizon is short (under one year) and uncertainty is bounded" → consequences-and-sequel or constraint-mapping
-  - "User wants to choose among present-state options, not prepare for futures" → T3
-  - "Forces in play are feedback-structured and require systems-dynamics treatment" → systems-dynamics-causal (T4)
+  - condition: "Horizon is short (under one year) and uncertainty is bounded"
+    targets: [{"kind": "active", "id": "consequences-and-sequel"}, {"kind": "active", "id": "constraint-mapping"}]
+    qualification: "consequences-and-sequel or constraint-mapping"
+  - condition: "User wants to choose among present-state options, not prepare for futures"
+    targets: [{"kind": "territory", "id": "T3"}]
+    qualification: "T3"
+  - condition: "Forces in play are feedback-structured and require systems-dynamics treatment"
+    targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+    qualification: "systems-dynamics-causal (T4)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: generative
+  posture: "generative"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -87,73 +105,104 @@ input_contract:
   detection:
     expert_signals: ["driving forces", "predetermined elements", "critical uncertainties", "STEEP", "Shell scenarios", "wild card"]
     accessible_signals: ["scenarios", "possible futures", "what could happen", "how should we prepare"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the strategic decision or focal question, and roughly what time horizon are you planning over?'"
     on_underspecified: "Ask: 'What's the focal question for these scenarios, and over what horizon?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are the four scenarios structurally distinct (different causal logic), or merely magnitude variants (good/bad/medium)?"
-    failure_mode_if_unmet: good-bad-medium-trap
-  - cq_id: CQ2
+    failure_mode_if_unmet: "good-bad-medium-trap"
+  - cq_id: "CQ2"
     question: "Are the two axes genuinely independent, or do they correlate so the scenarios cluster on a diagonal?"
-    failure_mode_if_unmet: correlated-axes-trap
-  - cq_id: CQ3
+    failure_mode_if_unmet: "correlated-axes-trap"
+  - cq_id: "CQ3"
     question: "Has any scenario been designated 'most likely' or 'official', undermining the mode's anti-prediction stance?"
-    failure_mode_if_unmet: official-future-trap
-  - cq_id: CQ4
+    failure_mode_if_unmet: "official-future-trap"
+  - cq_id: "CQ4"
     question: "Have driving forces been honestly classified as predetermined vs critical uncertainty, or has a genuine uncertainty been treated as predetermined?"
-    failure_mode_if_unmet: certainty-masquerade-trap
-  - cq_id: CQ5
+    failure_mode_if_unmet: "certainty-masquerade-trap"
+  - cq_id: "CQ5"
     question: "Does each scenario translate into actionable strategic guidance (leading indicators, robust vs scenario-dependent strategies, contingent actions), or does it remain a story without strategy?"
-    failure_mode_if_unmet: story-without-strategy-trap
+    failure_mode_if_unmet: "story-without-strategy-trap"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: good-bad-medium-trap
+  - name: "good-bad-medium-trap"
     detection_signal: "Scenarios labelled by magnitude (optimistic/pessimistic/baseline) rather than distinct causal logic."
-    correction_protocol: re-dispatch
-  - name: official-future-trap
+    correction_protocol: "re-dispatch"
+  - name: "official-future-trap"
     detection_signal: "One scenario labelled 'most likely' or designated as the planning baseline."
-    correction_protocol: re-dispatch
-  - name: story-without-strategy-trap
+    correction_protocol: "re-dispatch"
+  - name: "story-without-strategy-trap"
     detection_signal: "Scenario narratives lack leading indicators or actionable strategy translations."
-    correction_protocol: flag
-  - name: certainty-masquerade-trap
+    correction_protocol: "flag"
+  - name: "certainty-masquerade-trap"
     detection_signal: "Driving force classified as predetermined that could plausibly go either way; classification not defended."
-    correction_protocol: flag
-  - name: correlated-axes-trap
+    correction_protocol: "flag"
+  - name: "correlated-axes-trap"
     detection_signal: "Items cluster on a diagonal (axes covary); axes-independence rationale missing or trivial (< 40 chars)."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - shell-scenario-method
+    - "shell-scenario-method"
   optional:
-    - tetlock-superforecasting
-    - schwartz-art-of-the-long-view
-    - steep-framework
-    - klein-pre-mortem
+    - "tetlock-superforecasting"
+    - "schwartz-art-of-the-long-view"
+    - "steep-framework"
+    - "klein-pre-mortem"
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
+    - "kahneman-tversky-bias-catalog"
+    - "knightian-risk-uncertainty-ambiguity"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: wicked-future
+    target: {"kind": "active", "id": "wicked-future"}
     when: "Scenarios reveal multiple stakeholder values irreducibly conflict; futures need integrated analysis."
   sideways:
-    target_mode_id: probabilistic-forecasting
+    target: {"kind": "active", "id": "probabilistic-forecasting"}
     when: "User wants probability distributions over outcomes rather than narrative futures."
   downward:
-    target_mode_id: consequences-and-sequel
+    target: {"kind": "active", "id": "consequences-and-sequel"}
     when: "Horizon is short or uncertainty is mild; light forward projection suffices."
 ```
+
+## Display Description
+
+Identifies critical uncertainties and produces 2–4 scenario narratives with leading indicators.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll sketch alternative futures around this {artifact}"
+  data_shapes: [{"predicate": "enum_scenarios", "territory": "T6-future-exploration", "priority": 0, "confidence_weight": "strong"}]
+  phrase_aliases: {"scenario planning": "scenario planning", "what if scenarios": "scenario planning", "alternative futures": "scenario planning"}
+  signals:
+    - {"signal": "scenario planning", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: futures? → yes", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "scenarios", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "2x2 scenario matrix", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: futures? → yes", "confidence_weight": "strong", "evidence": "trigger phrase (scenario_planning subtype)"}
+    - {"signal": "possible futures", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what-if matrix", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "how should we prepare", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what could happen", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "official future", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "driving forces", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "STEEP", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "strategic foresight", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (multi-future)"}
+    - {"signal": "pestel", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

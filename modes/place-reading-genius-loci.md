@@ -12,25 +12,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: place-reading-genius-loci
-canonical_name: Place Reading and Genius Loci
-suffix_rule: analysis
-educational_name: place-reading and genius loci analysis (Alexander, Norberg-Schulz, Lynch, Bachelard)
+mode_id: "place-reading-genius-loci"
+canonical_name: "Place Reading and Genius Loci"
+suffix_rule: "analysis"
+educational_name: "place-reading and genius loci analysis (Alexander, Norberg-Schulz, Lynch, Bachelard)"
 
 # 1. TERRITORY AND POSITION
-territory: T19-spatial-composition
+territory: "T19-spatial-composition"
 gradation_position:
-  axis: specificity
-  value: descriptive-evaluative
-  stance_axis_value: descriptive-evaluative-deep
-  depth_axis_value: deep
+  axis: "specificity"
+  value: "descriptive-evaluative"
+  stance_axis_value: "descriptive-evaluative-deep"
+  depth_axis_value: "deep"
 adjacent_modes_in_territory:
-  - mode_id: ma-reading
-    relationship: stance-counterpart (contemplative-descriptive-deep, aesthetic-experiential, Japanese aesthetics; built Wave 2)
-  - mode_id: compositional-dynamics
-    relationship: depth-lighter sibling (universal-perceptual descriptive medium-depth; gestalt + Arnheim + Itten + Albers; built Wave 2)
-  - mode_id: information-density
-    relationship: specificity-counterpart (applied-evaluative-medium-depth; Tufte + Bertin + Cleveland-McGill + Bringhurst; Wave 3)
+  - mode_id: "ma-reading"
+    relationship: "stance-counterpart (contemplative-descriptive-deep, aesthetic-experiential, Japanese aesthetics; built Wave 2)"
+  - mode_id: "compositional-dynamics"
+    relationship: "depth-lighter sibling (universal-perceptual descriptive medium-depth; gestalt + Arnheim + Itten + Albers; built Wave 2)"
+  - mode_id: "information-density"
+    relationship: "specificity-counterpart (applied-evaluative-medium-depth; Tufte + Bertin + Cleveland-McGill + Bringhurst; Wave 3)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -67,23 +67,43 @@ disambiguation_routing:
     - "user wants the affordance / genius-loci tradition (Alexander / Norberg-Schulz / Lynch / Bachelard / Appleton / Kaplan) applied"
     - "user is evaluating or designing a space and needs defeasible affordance predictions"
   routes_away_when:
-    - "user wants the void / interval / silence read as primary content (Japanese aesthetics)" → ma-reading
-    - "user wants the universal compositional-forces / gestalt reading without affordance prediction" → compositional-dynamics
-    - "user wants information-graphic / data-encoding analysis" → information-density
-    - "user wants relation-extraction from a diagram" → relationship-mapping or spatial-reasoning (T11)
-    - "user wants causal investigation of why this space is performing badly (root-cause framing)" → root-cause-analysis (T4)
-    - "user wants process-of-inhabitation-over-time modeling" → process-mapping (T17)
-    - "user wants open-ended generative exploration" → passion-exploration (T20)
+    - condition: "user wants the void / interval / silence read as primary content (Japanese aesthetics)"
+      targets: [{"kind": "active", "id": "ma-reading"}]
+      qualification: "ma-reading"
+    - condition: "user wants the universal compositional-forces / gestalt reading without affordance prediction"
+      targets: [{"kind": "active", "id": "compositional-dynamics"}]
+      qualification: "compositional-dynamics"
+    - condition: "user wants information-graphic / data-encoding analysis"
+      targets: [{"kind": "active", "id": "information-density"}]
+      qualification: "information-density"
+    - condition: "user wants relation-extraction from a diagram"
+      targets: [{"kind": "active", "id": "relationship-mapping"}, {"kind": "active", "id": "spatial-reasoning"}]
+      qualification: "relationship-mapping or spatial-reasoning (T11)"
+    - condition: "user wants causal investigation of why this space is performing badly (root-cause framing)"
+      targets: [{"kind": "active", "id": "root-cause-analysis"}]
+      qualification: "root-cause-analysis (T4)"
+    - condition: "user wants process-of-inhabitation-over-time modeling"
+      targets: [{"kind": "active", "id": "process-mapping"}]
+      qualification: "process-mapping (T17)"
+    - condition: "user wants open-ended generative exploration"
+      targets: [{"kind": "active", "id": "passion-exploration"}]
+      qualification: "passion-exploration (T20)"
 when_not_to_invoke:
-  - "Input is not an inhabited or inhabitable space (a chart, an abstract painting, raw data)" → other T19 modes or other territory
-  - "User wants causal or process analysis of behavior in the space rather than affordance reading of the space itself" → T4 or T17
-  - "User wants pure aesthetic reading without affordance / inhabitation prediction" → ma-reading (if void-focused) or compositional-dynamics
+  - condition: "Input is not an inhabited or inhabitable space (a chart, an abstract painting, raw data)"
+    targets: [{"kind": "territory", "id": "T19"}]
+    qualification: "other T19 modes or other territory"
+  - condition: "User wants causal or process analysis of behavior in the space rather than affordance reading of the space itself"
+    targets: [{"kind": "territory", "id": "T4"}, {"kind": "territory", "id": "T17"}]
+    qualification: "T4 or T17"
+  - condition: "User wants pure aesthetic reading without affordance / inhabitation prediction"
+    targets: [{"kind": "active", "id": "ma-reading"}, {"kind": "active", "id": "compositional-dynamics"}]
+    qualification: "ma-reading (if void-focused) or compositional-dynamics"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -98,89 +118,136 @@ input_contract:
   detection:
     expert_signals: ["pattern language", "prospect refuge", "genius loci", "Norberg-Schulz", "Lynch elements", "Alexander patterns", "Bachelard", "Appleton", "ART", "biophilic"]
     accessible_signals: ["how will people use this", "is this room inviting", "does this space work", "what's the feel of this place"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe or share the space (image / description / floor plan / urban scene), say roughly what it's for, and tell me at what scale (room / building / garden / neighborhood)?'"
     on_underspecified: "Ask: 'What do you want to know — whether the space will support a particular activity, who will be drawn to which spots, whether it will feel restorative or depleting, what character of place it has?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are the proposed affordances grounded in features of the space (concrete spatial properties: dimensions, sightlines, light, materials, thresholds, edges, scale), or are they projected by the analyst's own preferences without spatial warrant?"
-    failure_mode_if_unmet: analyst-projection
-  - cq_id: CQ2
+    failure_mode_if_unmet: "analyst-projection"
+  - cq_id: "CQ2"
     question: "Does the reading survive an inhabitant of different stature, ability, or culture from the analyst's default — i.e., would a child / elder / wheelchair user / visitor from a different cultural tradition encounter the same affordances, or are some affordances visible only from one vantage?"
-    failure_mode_if_unmet: default-inhabitant-bias
-  - cq_id: CQ3
+    failure_mode_if_unmet: "default-inhabitant-bias"
+  - cq_id: "CQ3"
     question: "Is the prospect-refuge analysis evidentially supported by spatial features (sightlines, refuge positions, hazard mitigation), or asserted as a label without spatial warrant? (Cf. the qualitative-evidence critique of prospect-refuge architectural applications.)"
-    failure_mode_if_unmet: prospect-refuge-as-label
-  - cq_id: CQ4
+    failure_mode_if_unmet: "prospect-refuge-as-label"
+  - cq_id: "CQ4"
     question: "Does the reading produce predictions of observable behavior (lingering, avoidance, restoration, conversation-clustering, path-choice), or only sentiment statements that cannot be tested against use?"
-    failure_mode_if_unmet: sentiment-only-reading
-  - cq_id: CQ5
+    failure_mode_if_unmet: "sentiment-only-reading"
+  - cq_id: "CQ5"
     question: "Has the genius loci / character-of-place reading been treated as a gestalt (a qualitative-total-phenomenon per Norberg-Schulz) rather than as an aggregate of features, or is the analysis pretending wholeness it has not actually achieved?"
-    failure_mode_if_unmet: aggregate-as-gestalt
-  - cq_id: CQ6
+    failure_mode_if_unmet: "aggregate-as-gestalt"
+  - cq_id: "CQ6"
     question: "Has the reading acknowledged the limits — situations where affordance prediction depends on cultural/historical context the analysis does not have, where contested-place readings exist, or where the space's affordances conflict with its intended use — rather than asserting a unified reading the place does not support?"
-    failure_mode_if_unmet: unified-reading-overreach
+    failure_mode_if_unmet: "unified-reading-overreach"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: analyst-projection
+  - name: "analyst-projection"
     detection_signal: "Affordances asserted without grounding in concrete spatial features (dimensions, sightlines, light, materials, thresholds, scale); analyst preferences appear as place properties."
-    correction_protocol: re-dispatch
-  - name: default-inhabitant-bias
+    correction_protocol: "re-dispatch"
+  - name: "default-inhabitant-bias"
     detection_signal: "Reading assumes a default inhabitant (typically able-bodied, adult, of the analyst's culture); does not test whether affordances change for other stature / ability / cultural vantage."
-    correction_protocol: re-dispatch
-  - name: prospect-refuge-as-label
+    correction_protocol: "re-dispatch"
+  - name: "prospect-refuge-as-label"
     detection_signal: "Prospect-refuge labels applied without spatial warrant (specific sightlines for prospect, specific refuge positions, specific hazard mitigation); the framework is invoked rather than applied."
-    correction_protocol: re-dispatch
-  - name: sentiment-only-reading
+    correction_protocol: "re-dispatch"
+  - name: "sentiment-only-reading"
     detection_signal: "Reading produces sentiment statements (this space feels welcoming / oppressive / serene) without predictions of observable behavior that could be tested."
-    correction_protocol: re-dispatch
-  - name: aggregate-as-gestalt
+    correction_protocol: "re-dispatch"
+  - name: "aggregate-as-gestalt"
     detection_signal: "Genius loci section lists features rather than articulating the qualitative-total character; or asserts character without showing how the features compose into it."
-    correction_protocol: flag
-  - name: unified-reading-overreach
+    correction_protocol: "flag"
+  - name: "unified-reading-overreach"
     detection_signal: "Reading asserts a unified character / set of affordances the place does not support; conflicting affordances, contested readings, and cultural-context limits not acknowledged."
-    correction_protocol: flag
-  - name: pattern-misapplication
+    correction_protocol: "flag"
+  - name: "pattern-misapplication"
     detection_signal: "Pattern-language patterns invoked without showing the (context, problem, solution) triple matches the space; pattern names used as decoration rather than as analytical tools."
-    correction_protocol: re-dispatch
-  - name: lynchian-element-confusion
+    correction_protocol: "re-dispatch"
+  - name: "lynchian-element-confusion"
     detection_signal: "Lynch's five elements (paths, edges, districts, nodes, landmarks) misapplied — e.g., treating any boundary as an edge, any center as a node — rather than identifying the cognitive-mapping role the element plays for an actual user."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - alexander-pattern-language
-    - norberg-schulz-genius-loci
-    - lynch-image-of-the-city
-    - bachelard-topoanalysis
-    - appleton-prospect-refuge
-    - kaplan-attention-restoration
+  - alexander-pattern-language
+  - norberg-schulz-genius-loci
+  - lynch-image-of-the-city
+  - bachelard-topoanalysis
+  - appleton-prospect-refuge
+  - kaplan-attention-restoration
   optional:
-    - kellert-biophilic-design (when sustained-occupancy biophilic patterns are central)
-    - alexander-nature-of-order (when wholeness / structure-preserving-transformations matter)
-    - tuan-space-and-place (when the reading touches phenomenology of place-making)
-    - relph-place-and-placelessness (when authentic-place vs. placeless-place distinction is in play)
+  - lens_id: kellert-biophilic-design
+    qualification: when sustained-occupancy biophilic patterns are central
+  - lens_id: alexander-nature-of-order
+    qualification: when wholeness / structure-preserving-transformations matter
+  - lens_id: tuan-space-and-place
+    qualification: when the reading touches phenomenology of place-making
+  - lens_id: relph-place-and-placelessness
+    qualification: when authentic-place vs. placeless-place distinction is in play
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5-8min
+expected_runtime: "~5-8min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Place Reading is the deepest descriptive-evaluative spatial mode in T19; further depth comes from iterating with new inhabitant-vantage or temporal-condition information."
   sideways:
-    target_mode_id: ma-reading
+    target: {"kind": "active", "id": "ma-reading"}
     when: "On reflection the operative work is being done by held-open void / interval / silence rather than by affordance / inhabitation; switch to contemplative-descriptive-deep stance."
   downward:
-    target_mode_id: compositional-dynamics
+    target: {"kind": "active", "id": "compositional-dynamics"}
     when: "User wants only the universal compositional-forces / gestalt reading without affordance prediction or inhabitation prediction."
 ```
+
+## Display Description
+
+Reads the spirit, affordances, and structure of a place using Alexander + Norberg-Schulz + Lynch + Bachelard + Appleton + Kaplan.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll read the place-character of this {artifact}"
+  data_shapes: [{"predicate": "spatial_description", "territory": "T19-spatial-composition", "priority": 0, "confidence_weight": "strong"}]
+  signals:
+    - {"signal": "place reading", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → descriptive-evaluative-deep", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "genius loci", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → descriptive-evaluative-deep", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "spirit of place", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tradition vocabulary"}
+    - {"signal": "Alexander pattern language", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author + method reference"}
+    - {"signal": "pattern language", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Christopher Alexander", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "prospect-refuge", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "prospect refuge", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Norberg-Schulz", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Lynch image of the city", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author + book reference"}
+    - {"signal": "image of the city", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "book reference"}
+    - {"signal": "paths edges districts nodes landmarks", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "topoanalysis", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Bachelard", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "poetics of space", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "book reference"}
+    - {"signal": "Appleton", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Kaplan attention restoration", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author + method reference"}
+    - {"signal": "biophilic design", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "how will people use this space", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (affordance reading)"}
+    - {"signal": "attention restoration", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "attention-restoration theory", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "appleton prospect refuge", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "appleton prospect-refuge", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "norberg schulz genius loci", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "norberg-schulz genius loci", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "bachelard topoanalysis", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

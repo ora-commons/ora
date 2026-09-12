@@ -13,21 +13,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: domain-induction
-canonical_name: Domain Induction
-suffix_rule: analysis
-educational_name: domain induction (orient + terrain-map + induct what to learn)
+mode_id: "domain-induction"
+canonical_name: "Domain Induction"
+suffix_rule: "analysis"
+educational_name: "domain induction (orient + terrain-map + induct what to learn)"
 
 # 1. TERRITORY AND POSITION
-territory: T14-orientation-in-unfamiliar-territory
+territory: "T14-orientation-in-unfamiliar-territory"
 gradation_position:
-  axis: depth
-  value: molecular
+  axis: "depth"
+  value: "molecular"
 adjacent_modes_in_territory:
-  - mode_id: quick-orientation
-    relationship: depth-light sibling
-  - mode_id: terrain-mapping
-    relationship: depth-thorough sibling
+  - mode_id: "quick-orientation"
+    relationship: "depth-light sibling"
+  - mode_id: "terrain-mapping"
+    relationship: "depth-thorough sibling"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -46,38 +46,49 @@ disambiguation_routing:
     - "user wants integrated induction spanning quick orientation + terrain map + structured learning sequence"
     - "user willing to spend 10+ minutes for full molecular pass"
   routes_away_when:
-    - "want fast lay-of-the-land in a few minutes" → quick-orientation
-    - "want thorough terrain mapping without learning sequence" → terrain-mapping
-    - "the question is really generative exploration of an open space" → passion-exploration (T20)
+    - condition: "want fast lay-of-the-land in a few minutes"
+      targets: [{"kind": "active", "id": "quick-orientation"}]
+      qualification: "quick-orientation"
+    - condition: "want thorough terrain mapping without learning sequence"
+      targets: [{"kind": "active", "id": "terrain-mapping"}]
+      qualification: "terrain-mapping"
+    - condition: "the question is really generative exploration of an open space"
+      targets: [{"kind": "active", "id": "passion-exploration"}]
+      qualification: "passion-exploration (T20)"
 when_not_to_invoke:
-  - "User has time pressure" → quick-orientation
-  - "User already has terrain-map and only needs the learning sequence" → run terrain-mapping output forward into a focused induction synthesis stage rather than full molecular pass
+  - condition: "User has time pressure"
+    targets: [{"kind": "active", "id": "quick-orientation"}]
+    qualification: "quick-orientation"
+  - condition: "User already has terrain-map and only needs the learning sequence"
+    targets: [{"kind": "active", "id": "terrain-mapping"}, {"kind": "active", "id": "synthesis"}]
+    qualification: "run terrain-mapping output forward into a focused induction synthesis stage rather than full molecular pass"
 
 # 3. EXECUTION STRUCTURE
-composition: molecular
+composition: "molecular"
 molecular_spec:
+  companion_source: "frameworks/book/domain-induction-analysis.md"
   components:
-    - mode_id: quick-orientation
-      runs: fragment
+    - mode_id: "quick-orientation"
+      runs: "fragment"
       fragment_spec: "light-orientation-only — produce the rapid lay-of-the-land (key terms, dominant figures, central debates) as breadth seed; do not produce full quick-orientation output"
-    - mode_id: terrain-mapping
-      runs: full
+    - mode_id: "terrain-mapping"
+      runs: "full"
   synthesis_stages:
-    - name: orientation-and-terrain-merge
-      type: parallel-merge
+    - name: "orientation-and-terrain-merge"
+      type: "parallel-merge"
       input: [quick-orientation-fragment, terrain-mapping]
       output: "merged orientation: rapid lay-of-the-land integrated with thorough terrain map; what is here is named and structured"
-    - name: connectivity-mapping
-      type: sequenced-build
+    - name: "connectivity-mapping"
+      type: "sequenced-build"
       input: [orientation-and-terrain-merge]
       output: "what's-connected-to-what: relations among elements (concepts, figures, debates, methods); identification of central nodes and bridge concepts"
-    - name: structured-induction
-      type: dialectical-resolution
+    - name: "structured-induction"
+      type: "dialectical-resolution"
       input: [orientation-and-terrain-merge, connectivity-mapping]
       output: "domain induction document with three integrated parts: (a) what is here; (b) what's connected to what; (c) what to learn next, sequenced by dependency"
   partial_composition_handling:
-    on_component_failure: proceed-with-gap
-    on_low_confidence: flag affected synthesis stage; if connectivity cannot be inferred with confidence, document as conjectural-mapping rather than presenting as established
+    on_component_failure: "proceed-with-gap"
+    on_low_confidence: "flag affected synthesis stage; if connectivity cannot be inferred with confidence, document as conjectural-mapping rather than presenting as established"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -92,63 +103,97 @@ input_contract:
   detection:
     expert_signals: ["prior familiarity", "induction goal", "structured onboarding"]
     accessible_signals: ["new to", "want to learn about", "just getting started in"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the domain you want to induct into, and what's your goal — research-level, working-knowledge, or general-orientation?'"
     on_underspecified: "Ask the user whether they want the full Domain Induction molecular pass or a lighter Quick Orientation / Terrain Mapping read."
+    lighter_targets: [{"kind": "active", "id": "quick-orientation"}, {"kind": "active", "id": "terrain-mapping"}]
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the orientation surveyed the domain broadly enough, or has it privileged the dominant subfield?"
-    failure_mode_if_unmet: dominant-subfield-bias
-  - cq_id: CQ2
+    failure_mode_if_unmet: "dominant-subfield-bias"
+  - cq_id: "CQ2"
     question: "Does the connectivity-mapping actually identify dependencies and bridges, or does it list elements without showing relations?"
-    failure_mode_if_unmet: relation-omission
-  - cq_id: CQ3
+    failure_mode_if_unmet: "relation-omission"
+  - cq_id: "CQ3"
     question: "Is the what-to-learn-next sequence ordered by genuine dependency, or by analyst convenience?"
-    failure_mode_if_unmet: arbitrary-sequencing
-  - cq_id: CQ4
+    failure_mode_if_unmet: "arbitrary-sequencing"
+  - cq_id: "CQ4"
     question: "Does the induction respect the user's stated familiarity level and goal, or does it default to a generic survey?"
-    failure_mode_if_unmet: goal-disconnection
+    failure_mode_if_unmet: "goal-disconnection"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: dominant-subfield-bias
+  - name: "dominant-subfield-bias"
     detection_signal: "What-is-here section over-represents one subfield; minority traditions or competing schools are absent."
-    correction_protocol: re-dispatch (with explicit breadth prompt)
-  - name: relation-omission
+    correction_protocol: "re-dispatch (with explicit breadth prompt)"
+  - name: "relation-omission"
     detection_signal: "What's-connected-to-what is a list of elements without arrows, dependencies, or bridge concepts."
-    correction_protocol: re-dispatch
-  - name: arbitrary-sequencing
+    correction_protocol: "re-dispatch"
+  - name: "arbitrary-sequencing"
     detection_signal: "Learning sequence reads as alphabetical or import order rather than dependency-ordered."
-    correction_protocol: re-dispatch
-  - name: goal-disconnection
+    correction_protocol: "re-dispatch"
+  - name: "goal-disconnection"
     detection_signal: "Induction is generic; ignores the stated familiarity level or induction goal."
-    correction_protocol: flag and re-dispatch
+    correction_protocol: "flag and re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - bloom-taxonomy (when learning sequence requires cognitive-level scaffolding)
-    - novice-expert-cognition (when familiarity level is novice)
+  - lens_id: bloom-taxonomy
+    qualification: when learning sequence requires cognitive-level scaffolding
+  - lens_id: novice-expert-cognition
+    qualification: when familiarity level is novice
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 3
-expected_runtime: ~10+min
+expected_runtime: "~10+min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Domain Induction is the heaviest mode in T14."
   sideways:
-    target_mode_id: null
+    target: null
     when: "No within-T14 stance/complexity sibling beyond depth ladder."
   downward:
-    target_mode_id: terrain-mapping
+    target: {"kind": "active", "id": "terrain-mapping"}
     when: "User has time pressure or scope is narrower than initially estimated."
 ```
+
+## Display Description
+
+Produces a structured induction into a domain over multiple sessions, layering terrain + mechanism + competing-position passes.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll induct you into this domain"
+  signals:
+    - {"signal": "domain induction", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "orient and learn", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "structured introduction to a domain", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "structured introduction to", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "comprehensive domain introduction", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "structured learning pathway", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "induct me into this domain", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "orient me and chart the terrain and give me a learning path", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "quick-orient plus terrain-map plus structured-induction", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "comprehensive orientation in new domain", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "help me become functionally literate in", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "ordered learning pathway with prerequisites", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "deep induction into", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "weak", "evidence": "tonal cue (depth-molecular)"}
+    - {"signal": "ooda loop", "territory": "T14-orientation-in-unfamiliar-territory", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "circle of competence", "territory": "T14-orientation-in-unfamiliar-territory", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

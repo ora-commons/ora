@@ -13,29 +13,29 @@ no_visual: false
 
 ```yaml
 # 0. IDENTITY
-mode_id: steelman-construction
-canonical_name: Steelman Construction
-suffix_rule: analysis
-educational_name: strongest-case construction (steelman)
+mode_id: "steelman-construction"
+canonical_name: "Steelman Construction"
+suffix_rule: "analysis"
+educational_name: "strongest-case construction (steelman)"
 
 # 1. TERRITORY AND POSITION
-territory: T15-artifact-evaluation-by-stance
+territory: "T15-artifact-evaluation-by-stance"
 gradation_position:
-  axis: stance
-  value: constructive-strong
+  axis: "stance"
+  value: "constructive-strong"
 adjacent_modes_in_territory:
-  - mode_id: benefits-analysis
-    relationship: stance-counterpart (constructive-balanced — Plus/Minus/Interesting)
-  - mode_id: balanced-critique
-    relationship: stance-counterpart (neutral)
-  - mode_id: red-team-assessment
-    relationship: stance-counterpart (adversarial-actor-modeling, assessment — direct opposite)
-  - mode_id: red-team-advocate
-    relationship: stance-counterpart (adversarial-actor-modeling, advocate)
-  - mode_id: devils-advocate-lite
-    relationship: stance-counterpart (adversarial-light — gap-deferred)
+  - mode_id: "benefits-analysis"
+    relationship: "stance-counterpart (constructive-balanced — Plus/Minus/Interesting)"
+  - mode_id: "balanced-critique"
+    relationship: "stance-counterpart (neutral)"
+  - mode_id: "red-team-assessment"
+    relationship: "stance-counterpart (adversarial-actor-modeling, assessment — direct opposite)"
+  - mode_id: "red-team-advocate"
+    relationship: "stance-counterpart (adversarial-actor-modeling, advocate)"
+  - mode_id: "devils-advocate-lite"
+    relationship: "stance-counterpart (adversarial-light — gap-deferred)"
 cross_territory_reference:
-  - territory: T1-argumentative-artifact-examination
+  - territory: "T1-argumentative-artifact-examination"
     note: "When the artifact under steelmanning is itself an argument, T1 cross-reference activates. The home territory remains T15; T1 informs lens selection (e.g., argument-coherence considerations) without re-homing the mode."
 
 # 2. TRIGGER CONDITIONS AND ROUTING
@@ -57,24 +57,46 @@ disambiguation_routing:
     - "the input is one position or proposal you want strengthened"
     - "self-directed epistemic hygiene — strengthen-then-critique workflow"
   routes_away_when:
-    - "balanced evaluation across positive, negative, and interesting" → benefits-analysis
-    - "neutral examination weighing both sides equally" → balanced-critique
-    - "tear it down adversarially for own decision" → red-team-assessment
-    - "build the case against for external use" → red-team-advocate
-    - "drive thesis through antithesis to synthesis" → dialectical-analysis (T12)
-    - "trace whose interests the position serves" → cui-bono (T2)
-    - "question the foundational frame the position rests on" → paradigm-suspension (T9)
+    - condition: "balanced evaluation across positive, negative, and interesting"
+      targets: [{"kind": "active", "id": "benefits-analysis"}]
+      qualification: "benefits-analysis"
+    - condition: "neutral examination weighing both sides equally"
+      targets: [{"kind": "active", "id": "balanced-critique"}]
+      qualification: "balanced-critique"
+    - condition: "tear it down adversarially for own decision"
+      targets: [{"kind": "active", "id": "red-team-assessment"}]
+      qualification: "red-team-assessment"
+    - condition: "build the case against for external use"
+      targets: [{"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-advocate"
+    - condition: "drive thesis through antithesis to synthesis"
+      targets: [{"kind": "active", "id": "dialectical-analysis"}]
+      qualification: "dialectical-analysis (T12)"
+    - condition: "trace whose interests the position serves"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono (T2)"
+    - condition: "question the foundational frame the position rests on"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension (T9)"
 when_not_to_invoke:
-  - "User wants a balanced evaluation, not a constructive-strong stance" → benefits-analysis or balanced-critique
-  - "User wants the artifact attacked for own fix-prioritisation" → red-team-assessment
-  - "User wants an argument brief against the artifact for external use" → red-team-advocate
-  - "User is auditing the argument's soundness as an argument, not building its best version" → T1 (argument-audit / coherence-audit / frame-audit)
+  - condition: "User wants a balanced evaluation, not a constructive-strong stance"
+    targets: [{"kind": "active", "id": "benefits-analysis"}, {"kind": "active", "id": "balanced-critique"}]
+    qualification: "benefits-analysis or balanced-critique"
+  - condition: "User wants the artifact attacked for own fix-prioritisation"
+    targets: [{"kind": "active", "id": "red-team-assessment"}]
+    qualification: "red-team-assessment"
+  - condition: "User wants an argument brief against the artifact for external use"
+    targets: [{"kind": "active", "id": "red-team-advocate"}]
+    qualification: "red-team-advocate"
+  - condition: "User is auditing the argument's soundness as an argument, not building its best version"
+    targets: [{"kind": "active", "id": "argument-audit"}, {"kind": "active", "id": "coherence-audit"}, {"kind": "active", "id": "frame-audit"}]
+    qualification: "T1 (argument-audit / coherence-audit / frame-audit)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: constructive
+  posture: "constructive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -89,72 +111,103 @@ input_contract:
   detection:
     expert_signals: ["canonical formulation", "the proponents' best argument", "Rawls argues", "academic literature on"]
     accessible_signals: ["steelman", "best case for", "strongest version", "give it the fairest hearing"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What position or argument do you want me to construct the strongest case for?'"
     on_underspecified: "Ask: 'Could you state the position you want steelmanned, and whether you'd like me to identify points of agreement with your own view?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Would a thoughtful proponent of this position endorse the reconstruction (mirror test), or would they recognize their argument weakened?"
-    failure_mode_if_unmet: tinman-trap
-  - cq_id: CQ2
+    failure_mode_if_unmet: "tinman-trap"
+  - cq_id: "CQ2"
     question: "Is the steelman recognizably the same argument strengthened, or has it drifted into a different argument the analyst prefers?"
-    failure_mode_if_unmet: identity-loss
-  - cq_id: CQ3
+    failure_mode_if_unmet: "identity-loss"
+  - cq_id: "CQ3"
     question: "Does the critique address only the steelmanned version, or does it retreat to the weaker original at any point?"
-    failure_mode_if_unmet: retreat-to-original
-  - cq_id: CQ4
+    failure_mode_if_unmet: "retreat-to-original"
+  - cq_id: "CQ4"
     question: "Was the steelman built fully before critique began, or were construction and critique entangled?"
-    failure_mode_if_unmet: entangled-construction
+    failure_mode_if_unmet: "entangled-construction"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: tinman-trap
+  - name: "tinman-trap"
     detection_signal: "Reconstruction appears strong but is designed to be defeated; mirror test fails (proponent would not endorse)."
-    correction_protocol: re-dispatch
-  - name: identity-loss
+    correction_protocol: "re-dispatch"
+  - name: "identity-loss"
     detection_signal: "Reconstruction has drifted into a different argument; core claim of original position no longer present."
-    correction_protocol: re-dispatch
-  - name: retreat-to-original
+    correction_protocol: "re-dispatch"
+  - name: "retreat-to-original"
     detection_signal: "Critique paragraph addresses the weaker original formulation at one or more passages."
-    correction_protocol: re-dispatch
-  - name: steel-strawman
+    correction_protocol: "re-dispatch"
+  - name: "steel-strawman"
     detection_signal: "Steelman appears generally strong but a specific point is engineered for defeat by the subsequent critique."
-    correction_protocol: re-dispatch
-  - name: projection-trap
+    correction_protocol: "re-dispatch"
+  - name: "projection-trap"
     detection_signal: "Reconstruction filtered through analyst's worldview rather than the proponent's values; charitable inferences favour analyst's frame."
-    correction_protocol: flag
-  - name: entangled-construction
+    correction_protocol: "flag"
+  - name: "entangled-construction"
     detection_signal: "Construction and critique appear interleaved; steelman was not built fully before critique began."
-    correction_protocol: re-dispatch
-  - name: agreement-by-restatement
+    correction_protocol: "re-dispatch"
+  - name: "agreement-by-restatement"
     detection_signal: "The points-of-agreement user-column duplicates the steelman's own premises rather than citing a distinct user-held position."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - rapoport-rules-of-engagement
-    - dennett-charitable-interpretation
+    - "rapoport-rules-of-engagement"
+    - "dennett-charitable-interpretation"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Steelman Construction is the canonical constructive-strong mode in T15; no heavier sibling along the stance axis."
   sideways:
-    target_mode_id: benefits-analysis
+    target: {"kind": "active", "id": "benefits-analysis"}
     when: "User wants balanced evaluation rather than asymmetric strengthening; switch to constructive-balanced."
   downward:
-    target_mode_id: null
+    target: null
     when: "No lighter constructive-strong sibling; if user wants a quick endorsement rather than a strengthened reconstruction, route out of T15 entirely."
 ```
+
+## Display Description
+
+Constructs the strongest possible version of a position before any critique. **Re-homed to T15 per Decision G / research report §10.1; carries cross-reference into T1 when the artifact under steelmanning is itself an argument.**
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll make the strongest case for this {artifact}"
+  home_priority: true
+  data_shapes: [{"predicate": "pasted_argument", "territory": "T15-artifact-evaluation-by-stance", "priority": 1, "confidence_weight": "strong"}]
+  signals:
+    - {"signal": "steelman", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "best case for", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "strongest version of", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "play devil's advocate", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "strongest version of the other side", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "mirror test", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "strong", "evidence": "mode-internal vocabulary"}
+    - {"signal": "charitable reading", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "weak", "evidence": "tonal cue (charity)"}
+    - {"signal": "build up", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-strong", "confidence_weight": "weak", "evidence": "tonal cue (construction)"}
+    - {"signal": "make the case for", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "make the strongest case", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "strongest case for", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "walton schemes and critical questions", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

@@ -12,25 +12,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: cui-bono
-canonical_name: Cui Bono
-suffix_rule: analysis
-educational_name: who-benefits analysis (cui bono)
+mode_id: "cui-bono"
+canonical_name: "Cui Bono"
+suffix_rule: "analysis"
+educational_name: "who-benefits analysis (cui bono)"
 
 # 1. TERRITORY AND POSITION
-territory: T2-interest-and-power
+territory: "T2-interest-and-power"
 gradation_position:
-  axis: complexity
-  value: simple
+  axis: "complexity"
+  value: "simple"
 adjacent_modes_in_territory:
-  - mode_id: stakeholder-mapping
-    relationship: complexity-heavier sibling (multi-party-descriptive — lives in T8)
-  - mode_id: boundary-critique
-    relationship: stance-critical counterpart (Ulrich CSH)
-  - mode_id: wicked-problems
-    relationship: complexity-molecular sibling
-  - mode_id: decision-clarity
-    relationship: depth-molecular sibling (decision-maker-output)
+  - mode_id: "stakeholder-mapping"
+    relationship: "complexity-heavier sibling (multi-party-descriptive — lives in T8)"
+  - mode_id: "boundary-critique"
+    relationship: "stance-critical counterpart (Ulrich CSH)"
+  - mode_id: "wicked-problems"
+    relationship: "complexity-molecular sibling"
+  - mode_id: "decision-clarity"
+    relationship: "depth-molecular sibling (decision-maker-output)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -52,21 +52,37 @@ disambiguation_routing:
     - "quick read on who gains from this state of affairs"
     - "policy or institutional position with distributional consequences"
   routes_away_when:
-    - "landscape of multiple parties with different stakes" → stakeholder-mapping
-    - "tangled / wicked / many systems interacting" → wicked-problems
-    - "voices being left out of the picture entirely" → boundary-critique
-    - "produce a decision document for a decision-maker" → decision-clarity
-    - "questioning the empirical foundations of a position" → paradigm-suspension
+    - condition: "landscape of multiple parties with different stakes"
+      targets: [{"kind": "active", "id": "stakeholder-mapping"}]
+      qualification: "stakeholder-mapping"
+    - condition: "tangled / wicked / many systems interacting"
+      targets: [{"kind": "active", "id": "wicked-problems"}]
+      qualification: "wicked-problems"
+    - condition: "voices being left out of the picture entirely"
+      targets: [{"kind": "active", "id": "boundary-critique"}]
+      qualification: "boundary-critique"
+    - condition: "produce a decision document for a decision-maker"
+      targets: [{"kind": "active", "id": "decision-clarity"}]
+      qualification: "decision-clarity"
+    - condition: "questioning the empirical foundations of a position"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension"
 when_not_to_invoke:
-  - "User is evaluating an argument's soundness, not its sponsoring interests" → T1
-  - "User is asking about active negotiation strategy" → T13
-  - "Multiple competing explanations for the same evidence — adjudicate via diagnosticity" → T5 competing-hypotheses
+  - condition: "User is evaluating an argument's soundness, not its sponsoring interests"
+    targets: [{"kind": "territory", "id": "T1"}]
+    qualification: "T1"
+  - condition: "User is asking about active negotiation strategy"
+    targets: [{"kind": "territory", "id": "T13"}]
+    qualification: "T13"
+  - condition: "Multiple competing explanations for the same evidence — adjudicate via diagnosticity"
+    targets: [{"kind": "active", "id": "competing-hypotheses"}]
+    qualification: "T5 competing-hypotheses"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -81,74 +97,108 @@ input_contract:
   detection:
     expert_signals: ["actor inventory", "stakeholders are X, Y, Z", "interest groups include", "policy text", "regulatory framework"]
     accessible_signals: ["who benefits", "whose interests", "who's behind this", "trace the interests"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe the situation, decision, or paste the article/document you want me to look at?'"
     on_underspecified: "Ask: 'What's the situation, decision, or text you want a who-benefits read on?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are the identified beneficiaries actually positioned to benefit, or is the inference symbolic?"
-    failure_mode_if_unmet: symbolic-inference (mistaking narrative resonance for actual benefit)
-  - cq_id: CQ2
+    failure_mode_if_unmet: "symbolic-inference (mistaking narrative resonance for actual benefit)"
+  - cq_id: "CQ2"
     question: "Are there beneficiaries the analysis is missing because they are not visible from the artifact's frame?"
-    failure_mode_if_unmet: frame-bounded-blindness
-  - cq_id: CQ3
+    failure_mode_if_unmet: "frame-bounded-blindness"
+  - cq_id: "CQ3"
     question: "Are the costs identified actually borne by the parties named, or is incidence misattributed?"
-    failure_mode_if_unmet: cost-incidence-error
-  - cq_id: CQ4
+    failure_mode_if_unmet: "cost-incidence-error"
+  - cq_id: "CQ4"
     question: "Has FGL (Fear, Greed, Laziness) been applied symmetrically across constituencies, or only against the disfavoured side?"
-    failure_mode_if_unmet: asymmetric-fgl
+    failure_mode_if_unmet: "asymmetric-fgl"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: symbolic-inference
+  - name: "symbolic-inference"
     detection_signal: "Beneficiary identified by ideological alignment rather than concrete benefit pathway."
-    correction_protocol: flag
-  - name: frame-bounded-blindness
+    correction_protocol: "flag"
+  - name: "frame-bounded-blindness"
     detection_signal: "All identified parties share the artifact's frame; no parties from outside the frame appear."
-    correction_protocol: escalate
-  - name: cost-incidence-error
+    correction_protocol: "escalate"
+  - name: "cost-incidence-error"
     detection_signal: "Costs are attributed to a party without a concrete payment, time, or freedom-loss pathway."
-    correction_protocol: flag
-  - name: conspiracy-trap
+    correction_protocol: "flag"
+  - name: "conspiracy-trap"
     detection_signal: "Distributional outcomes attributed to deliberate coordination without explicit evidence; intent assumed where structural incentives suffice."
-    correction_protocol: flag
-  - name: cynicism-trap
+    correction_protocol: "flag"
+  - name: "cynicism-trap"
     detection_signal: "Position concluded to have no legitimate basis; legitimate value collapsed into distributional overlay."
-    correction_protocol: flag
-  - name: mirror-trap
+    correction_protocol: "flag"
+  - name: "mirror-trap"
     detection_signal: "Alternative design reflects analyst's preference rather than the disadvantaged constituency's interests."
-    correction_protocol: re-dispatch
-  - name: asymmetric-fgl
+    correction_protocol: "re-dispatch"
+  - name: "asymmetric-fgl"
     detection_signal: "FGL applied to only one constituency; opposing party's motives uninspected."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - rumelt-strategy-kernel
-    - ulrich-csh-boundary-categories
-    - public-choice-theory
-    - fgl-fear-greed-laziness
+    - "rumelt-strategy-kernel"
+    - "ulrich-csh-boundary-categories"
+    - "public-choice-theory"
+    - "fgl-fear-greed-laziness"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: stakeholder-mapping
+    target: {"kind": "active", "id": "stakeholder-mapping"}
     when: "Beneficiary inventory exceeds 5 parties or interest structure is multi-layered."
   sideways:
-    target_mode_id: boundary-critique
+    target: {"kind": "active", "id": "boundary-critique"}
     when: "Most identified parties are inside one frame; boundary-critique surfaces parties outside it."
   downward:
-    target_mode_id: null
+    target: null
     when: "Cui Bono is already the lightest mode in T2."
 ```
+
+## Display Description
+
+Traces who benefits from a position, claim, or status quo.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll trace who benefits from this {artifact}"
+  data_shapes: [{"predicate": "enum_parties", "territory": "T2-interest-and-power", "priority": 1, "confidence_weight": "strong"}, {"predicate": "attached_document", "territory": "T2-interest-and-power", "priority": 1, "confidence_weight": "weak"}]
+  phrase_aliases: {"kwee bono": "cui bono", "key bono": "cui bono"}
+  signals:
+    - {"signal": "cui bono", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "who benefits", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "whose interests", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "who gains from X", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "trace the interests", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what does the institution want", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "distributional", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "who pays", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrasing"}
+    - {"signal": "FGL", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tool reference"}
+    - {"signal": "fear greed laziness", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tool name reference"}
+    - {"signal": "follow the money", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (distributional)"}
+    - {"signal": "structural incentive", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (institutional)"}
+    - {"signal": "cui bono this", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "principal agent problem", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "principal-agent problem", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

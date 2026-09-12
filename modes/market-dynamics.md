@@ -14,21 +14,21 @@ date modified: 2026-06-01
 
 ```yaml
 # 0. IDENTITY
-mode_id: market-dynamics
-canonical_name: Market Dynamics
-suffix_rule: analysis
-educational_name: market and economic-system behavior analysis (supply-demand / selection / network-effects lineage)
+mode_id: "market-dynamics"
+canonical_name: "Market Dynamics"
+suffix_rule: "analysis"
+educational_name: "market and economic-system behavior analysis (supply-demand / selection / network-effects lineage)"
 
 # 1. TERRITORY AND POSITION
-territory: T17-process-and-system-analysis
+territory: "T17-process-and-system-analysis"
 gradation_position:
-  axis: specificity
-  value: market-system
+  axis: "specificity"
+  value: "market-system"
 adjacent_modes_in_territory:
-  - mode_id: systems-dynamics-structural
-    relationship: specificity sibling (general feedback system vs. specifically a market/economic system)
-  - mode_id: process-mapping
-    relationship: specificity sibling (sequenced workflow vs. market behavior)
+  - mode_id: "systems-dynamics-structural"
+    relationship: "specificity sibling (general feedback system vs. specifically a market/economic system)"
+  - mode_id: "process-mapping"
+    relationship: "specificity sibling (sequenced workflow vs. market behavior)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -50,19 +50,31 @@ disambiguation_routing:
     - "user wants the descriptive economic dynamics, not the design of a mechanism or contract"
     - "supply-and-demand, selection, or network-effect dynamics are the operative structure"
   routes_away_when:
-    - "the task is to DESIGN a mechanism, auction, contract, or incentive scheme (information asymmetry, hidden action)" → mechanism-design (T18)
-    - "the system is a non-market feedback structure (an organization, a workflow)" → systems-dynamics-structural (T17 sibling)
-    - "the question is why one specific past market event happened (backward causal trace)" → root-cause-analysis or systems-dynamics-causal (T4)
-    - "the task is to choose among options given the market read" → decision-architecture (T3)
+    - condition: "the task is to DESIGN a mechanism, auction, contract, or incentive scheme (information asymmetry, hidden action)"
+      targets: [{"kind": "active", "id": "mechanism-design"}]
+      qualification: "mechanism-design (T18)"
+    - condition: "the system is a non-market feedback structure (an organization, a workflow)"
+      targets: [{"kind": "active", "id": "systems-dynamics-structural"}]
+      qualification: "systems-dynamics-structural (T17 sibling)"
+    - condition: "the question is why one specific past market event happened (backward causal trace)"
+      targets: [{"kind": "active", "id": "root-cause-analysis"}, {"kind": "active", "id": "systems-dynamics-causal"}]
+      qualification: "root-cause-analysis or systems-dynamics-causal (T4)"
+    - condition: "the task is to choose among options given the market read"
+      targets: [{"kind": "active", "id": "decision-architecture"}]
+      qualification: "decision-architecture (T3)"
 when_not_to_invoke:
-  - "User wants a mechanism/market DESIGNED rather than market behavior ANALYZED" → mechanism-design (T18)
-  - "User wants the principle-level account of how parts produce behavior, not the market dynamics" → mechanism-understanding (T16)
+  - condition: "User wants a mechanism/market DESIGNED rather than market behavior ANALYZED"
+    targets: [{"kind": "active", "id": "mechanism-design"}]
+    qualification: "mechanism-design (T18)"
+  - condition: "User wants the principle-level account of how parts produce behavior, not the market dynamics"
+    targets: [{"kind": "active", "id": "mechanism-understanding"}]
+    qualification: "mechanism-understanding (T16)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -77,79 +89,124 @@ input_contract:
   detection:
     expert_signals: ["elasticity coefficient", "partial equilibrium", "general equilibrium", "comparative statics", "price elasticity of"]
     accessible_signals: ["how will this market behave", "what happens to prices if", "supply and demand", "network effects", "critical mass", "diminishing returns", "creative destruction", "Red Queen", "Gresham's law", "why is this industry consolidating"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Which market do you want analyzed, and what change or dynamic are you asking about (a price move, entry of a competitor, a network tipping)?'"
     on_underspecified: "Ask: 'Are you asking how this market BEHAVES (Market Dynamics), or do you want a mechanism / auction / contract DESIGNED (Mechanism & Incentive Analysis)? The first describes; the second designs.'"
 
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are both sides of the market modeled (supply AND demand), or has the analysis silently fixed one side?"
-    failure_mode_if_unmet: one-sided-market
-  - cq_id: CQ2
+    failure_mode_if_unmet: "one-sided-market"
+  - cq_id: "CQ2"
     question: "Is the equilibrium (or disequilibrium) identified, with the adjustment process that moves the market toward or away from it?"
-    failure_mode_if_unmet: equilibrium-unstated
-  - cq_id: CQ3
+    failure_mode_if_unmet: "equilibrium-unstated"
+  - cq_id: "CQ3"
     question: "Is the short-run response distinguished from the long-run response (entry, exit, capacity, substitution)?"
-    failure_mode_if_unmet: timescale-collapse
-  - cq_id: CQ4
+    failure_mode_if_unmet: "timescale-collapse"
+  - cq_id: "CQ4"
     question: "When a named economic dynamic is invoked (Gresham's law, creative destruction, Red Queen, critical mass), is its actual mechanism shown to operate here, or is it a name-drop?"
-    failure_mode_if_unmet: dynamic-name-drop
-  - cq_id: CQ5
+    failure_mode_if_unmet: "dynamic-name-drop"
+  - cq_id: "CQ5"
     question: "Does the analysis describe how the market behaves, or has it drifted into prescribing what a participant SHOULD do (which belongs in a decision or mechanism-design mode)?"
-    failure_mode_if_unmet: prescriptive-drift
+    failure_mode_if_unmet: "prescriptive-drift"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: one-sided-market
+  - name: "one-sided-market"
     detection_signal: "Analysis moves price/quantity by changing supply or demand alone without checking the other side's response."
-    correction_protocol: re-dispatch (model both sides and their interaction)
-  - name: equilibrium-unstated
+    correction_protocol: "re-dispatch (model both sides and their interaction)"
+  - name: "equilibrium-unstated"
     detection_signal: "Conclusions asserted without naming the equilibrium or the adjustment process reaching it."
-    correction_protocol: flag
-  - name: timescale-collapse
+    correction_protocol: "flag"
+  - name: "timescale-collapse"
     detection_signal: "Short-run and long-run responses conflated; entry/exit/substitution effects ignored."
-    correction_protocol: re-dispatch
-  - name: dynamic-name-drop
+    correction_protocol: "re-dispatch"
+  - name: "dynamic-name-drop"
     detection_signal: "A named economic dynamic invoked in prose without its mechanism shown operating on the specific market."
-    correction_protocol: re-dispatch
-  - name: prescriptive-drift
+    correction_protocol: "re-dispatch"
+  - name: "prescriptive-drift"
     detection_signal: "Analysis drifts from describing market behavior to advising a participant what to do — pricing/strategy recommendations appear."
-    correction_protocol: re-dispatch (strip prescriptions; route to decision-architecture or mechanism-design if advice is wanted)
-  - name: ceteris-paribus-blindness
+    correction_protocol: "re-dispatch (strip prescriptions; route to decision-architecture or mechanism-design if advice is wanted)"
+  - name: "ceteris-paribus-blindness"
     detection_signal: "Holds 'all else equal' on variables that the same shock visibly moves, producing a false partial-equilibrium story."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - supply-demand
-    - equilibrium
+    - "supply-demand"
+    - "equilibrium"
   optional:
-    - greshams-law
-    - diminishing-returns
-    - critical-mass
-    - creative-destruction
-    - red-queen-effect
-    - feedback-loops
+    - "greshams-law"
+    - "diminishing-returns"
+    - "critical-mass"
+    - "creative-destruction"
+    - "red-queen-effect"
+    - "feedback-loops"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~10min
+expected_runtime: "~10min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Market Dynamics is the market-specific structural mode in T17."
   sideways:
-    target_mode_id: mechanism-design
+    target: {"kind": "active", "id": "mechanism-design"}
     when: "User actually wants a mechanism/contract/auction designed rather than market behavior described — switch to T18 design posture."
   downward:
-    target_mode_id: process-mapping
+    target: {"kind": "active", "id": "process-mapping"}
     when: "On inspection there is no market dynamic — a plain process or value-chain map suffices."
 ```
+
+## Display Description
+
+Applies supply-demand, competitive-selection, network-effects, and creative-destruction lenses to explain how a market or economy behaves over time (added 2026-06-01).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals:
+    - {"signal": "market dynamics", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "supply and demand", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "supply-demand", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "market equilibrium", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "price equilibrium", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "network effects", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "critical mass", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "creative destruction", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Gresham's law", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Red Queen effect", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "diminishing returns", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "how will this market behave", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what happens to prices if", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → market-system", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "why is this industry consolidating", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "trigger phrase"}
+    - {"signal": "market behavior", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "mode vocabulary"}
+    - {"signal": "market dynamics", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "supply and demand", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "supply-demand", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "market equilibrium", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "price equilibrium", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "network effects", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "critical mass", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "creative destruction", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "gresham's law", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "red queen effect", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "diminishing returns", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "how will this market behave", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "what happens to prices if", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "why is this industry consolidating", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

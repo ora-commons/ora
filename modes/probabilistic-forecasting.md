@@ -12,27 +12,27 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: probabilistic-forecasting
-canonical_name: Probabilistic Forecasting
-suffix_rule: analysis
-educational_name: probabilistic forecasting (Tetlock superforecasting)
+mode_id: "probabilistic-forecasting"
+canonical_name: "Probabilistic Forecasting"
+suffix_rule: "analysis"
+educational_name: "probabilistic forecasting (Tetlock superforecasting)"
 
 # 1. TERRITORY AND POSITION
-territory: T6-future-exploration
+territory: "T6-future-exploration"
 gradation_position:
-  axis: depth
-  value: thorough
-  secondary_axis: stance
-  secondary_value: probability-output
+  axis: "depth"
+  value: "thorough"
+  secondary_axis: "stance"
+  secondary_value: "probability-output"
 adjacent_modes_in_territory:
-  - mode_id: consequences-and-sequel
-    relationship: depth-lighter sibling (forward causal cascade, no probability output)
-  - mode_id: scenario-planning
-    relationship: depth-counterpart (thorough but narrative-output rather than probability-output)
-  - mode_id: pre-mortem-action
-    relationship: stance-counterpart (adversarial-future on the action plan)
-  - mode_id: wicked-future
-    relationship: depth-molecular sibling (built Wave 4)
+  - mode_id: "consequences-and-sequel"
+    relationship: "depth-lighter sibling (forward causal cascade, no probability output)"
+  - mode_id: "scenario-planning"
+    relationship: "depth-counterpart (thorough but narrative-output rather than probability-output)"
+  - mode_id: "pre-mortem-action"
+    relationship: "stance-counterpart (adversarial-future on the action plan)"
+  - mode_id: "wicked-future"
+    relationship: "depth-molecular sibling (built Wave 4)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -56,20 +56,32 @@ disambiguation_routing:
     - "user wants explicit base-rate reasoning, reference-class selection, and inside-vs-outside-view comparison"
     - "the question has a resolvable outcome (something that will be observably true or false by some date)"
   routes_away_when:
-    - "user wants narrative scenarios rather than a probability number" → scenario-planning
-    - "user wants light forward causal cascade with no probability commitment" → consequences-and-sequel
-    - "user wants adversarial failure-mode walk on a plan" → pre-mortem-action
-    - "user wants integrated multi-perspective forward analysis" → wicked-future
+    - condition: "user wants narrative scenarios rather than a probability number"
+      targets: [{"kind": "active", "id": "scenario-planning"}]
+      qualification: "scenario-planning"
+    - condition: "user wants light forward causal cascade with no probability commitment"
+      targets: [{"kind": "active", "id": "consequences-and-sequel"}]
+      qualification: "consequences-and-sequel"
+    - condition: "user wants adversarial failure-mode walk on a plan"
+      targets: [{"kind": "active", "id": "pre-mortem-action"}]
+      qualification: "pre-mortem-action"
+    - condition: "user wants integrated multi-perspective forward analysis"
+      targets: [{"kind": "active", "id": "wicked-future"}]
+      qualification: "wicked-future"
 when_not_to_invoke:
   - "Question has no resolvable outcome (vague, contested definition of success) — clarify first via deep-clarification (T10) or escalate to scenario-planning"
-  - "User is choosing among options now rather than estimating future state" → T3 modes
-  - "User is examining historical causes of an outcome already observed" → T4 modes
+  - condition: "User is choosing among options now rather than estimating future state"
+    targets: [{"kind": "territory", "id": "T3"}]
+    qualification: "T3 modes"
+  - condition: "User is examining historical causes of an outcome already observed"
+    targets: [{"kind": "territory", "id": "T4"}]
+    qualification: "T4 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -84,67 +96,107 @@ input_contract:
   detection:
     expert_signals: ["resolution criteria are", "time horizon is", "reference class", "base rate", "prior probability"]
     accessible_signals: ["what are the odds", "probability of", "give me a forecast", "chances of"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What event are you forecasting, and by when would we know whether it happened?'"
     on_underspecified: "Ask: 'How would we know, in concrete observable terms, whether the forecast resolved yes or no?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Is the forecast question operationally resolvable, or has it been left vague enough to escape evaluation?"
-    failure_mode_if_unmet: unresolvable-question
-  - cq_id: CQ2
+    failure_mode_if_unmet: "unresolvable-question"
+  - cq_id: "CQ2"
     question: "Has an explicit reference class been selected and its base rate stated, or has the analysis jumped to inside-view reasoning without an outside-view anchor?"
-    failure_mode_if_unmet: base-rate-neglect
-  - cq_id: CQ3
+    failure_mode_if_unmet: "base-rate-neglect"
+  - cq_id: "CQ3"
     question: "Has the analysis distinguished inside-view drivers (what's specific to this case) from outside-view adjustment (how this case compares to the reference class), and shown the math of the adjustment?"
-    failure_mode_if_unmet: view-collapse
-  - cq_id: CQ4
+    failure_mode_if_unmet: "view-collapse"
+  - cq_id: "CQ4"
     question: "Has the probability been stated as a range (with explicit confidence interval or fermization) rather than a false-precision point estimate?"
-    failure_mode_if_unmet: false-precision
+    failure_mode_if_unmet: "false-precision"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: unresolvable-question
+  - name: "unresolvable-question"
     detection_signal: "Resolution criteria section is empty or contains hedged language ('roughly', 'meaningfully', 'in the ballpark') without operational definition."
-    correction_protocol: re-dispatch
-  - name: base-rate-neglect
+    correction_protocol: "re-dispatch"
+  - name: "base-rate-neglect"
     detection_signal: "No reference class named, or reference class named without a base-rate number."
-    correction_protocol: re-dispatch
-  - name: view-collapse
+    correction_protocol: "re-dispatch"
+  - name: "view-collapse"
     detection_signal: "Inside-view drivers and outside-view base rate not separately stated; final estimate not derivable from the two views' combination."
-    correction_protocol: re-dispatch
-  - name: false-precision
+    correction_protocol: "re-dispatch"
+  - name: "false-precision"
     detection_signal: "Probability stated as a single point (e.g., '37%') without range, or with range narrower than the evidence supports."
-    correction_protocol: flag
-  - name: anchor-bias
+    correction_protocol: "flag"
+  - name: "anchor-bias"
     detection_signal: "Final estimate suspiciously close to the first-mentioned base rate or to a salient round number."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - tetlock-superforecasting
+  - tetlock-superforecasting
   optional:
-    - kahneman-tversky-bias-catalog (when bias-corrections are central)
-    - knightian-risk-uncertainty-ambiguity (when the question crosses risk/uncertainty boundary)
+  - lens_id: kahneman-tversky-bias-catalog
+    qualification: when bias-corrections are central
+  - lens_id: knightian-risk-uncertainty-ambiguity
+    qualification: when the question crosses risk/uncertainty boundary
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: wicked-future
+    target: {"kind": "active", "id": "wicked-future"}
     when: "Question depends on multiple interacting feedback loops or stakeholder conflicts that single-question forecasting cannot decompose."
   sideways:
-    target_mode_id: scenario-planning
+    target: {"kind": "active", "id": "scenario-planning"}
     when: "User wants narrative scenarios with named pathways rather than a single probability number."
   downward:
-    target_mode_id: consequences-and-sequel
+    target: {"kind": "active", "id": "consequences-and-sequel"}
     when: "User wants light forward causal cascade with no probability commitment."
 ```
+
+## Display Description
+
+Produces calibrated probability estimates with reference-class reasoning and resolution criteria.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll put probability estimates on how this {artifact} could unfold"
+  signals:
+    - {"signal": "probabilistic forecast", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → thorough + output? → probability", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "probabilistic forecasting", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: depth? → thorough + output? → probability", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Tetlock", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author/method reference"}
+    - {"signal": "superforecasting", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Brier score", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "calibration", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "calibrated probability", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "outside view forecast", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "reference class forecast", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "reference class", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "base rate", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "base rate for", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "probability of", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: output? → probability", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what are the odds", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: output? → probability", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what are the chances", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: output? → probability", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "forecast", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (forward)"}
+    - {"signal": "forecast this", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "calibrated probability", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "regression to mean", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "regression to the mean", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "tetlock superforecasting", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "wisdom of crowds", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

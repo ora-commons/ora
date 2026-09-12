@@ -12,27 +12,27 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: constraint-mapping
-canonical_name: Constraint Mapping
-suffix_rule: analysis
-educational_name: constraint and option mapping (light decision analysis)
+mode_id: "constraint-mapping"
+canonical_name: "Constraint Mapping"
+suffix_rule: "analysis"
+educational_name: "constraint and option mapping (light decision analysis)"
 
 # 1. TERRITORY AND POSITION
-territory: T3-decision-making-under-uncertainty
+territory: "T3-decision-making-under-uncertainty"
 gradation_position:
-  axis: depth
-  value: light
+  axis: "depth"
+  value: "light"
 adjacent_modes_in_territory:
-  - mode_id: decision-under-uncertainty
-    relationship: depth-thorough sibling (probability and time-weighted)
-  - mode_id: multi-criteria-decision
-    relationship: complexity sibling (multi-criteria)
-  - mode_id: decision-architecture
-    relationship: depth-molecular sibling
-  - mode_id: real-options-decision
-    relationship: specificity counterpart (staged investment) — gap-deferred
-  - mode_id: ethical-tradeoff
-    relationship: stance counterpart (normative + values-laden) — gap-deferred
+  - mode_id: "decision-under-uncertainty"
+    relationship: "depth-thorough sibling (probability and time-weighted)"
+  - mode_id: "multi-criteria-decision"
+    relationship: "complexity sibling (multi-criteria)"
+  - mode_id: "decision-architecture"
+    relationship: "depth-molecular sibling"
+  - mode_id: "real-options-decision"
+    relationship: "specificity counterpart (staged investment) — gap-deferred"
+  - mode_id: "ethical-tradeoff"
+    relationship: "stance counterpart (normative + values-laden) — gap-deferred"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -50,21 +50,37 @@ disambiguation_routing:
     - "deterministic tradeoffs in a known environment; no probability arithmetic needed"
     - "the user wants the choice terrain mapped, not the choice made"
   routes_away_when:
-    - "probabilities and time-value are central" → decision-under-uncertainty
-    - "decision involves multiple weighted criteria" → multi-criteria-decision
-    - "decision is a molecular orchestration with stakeholders + risk + future" → decision-architecture
-    - "user wants to evaluate ONE proposal's merits and risks" → benefits-analysis (T15)
-    - "user is questioning the framework within which alternatives exist" → paradigm-suspension (T9)
+    - condition: "probabilities and time-value are central"
+      targets: [{"kind": "active", "id": "decision-under-uncertainty"}]
+      qualification: "decision-under-uncertainty"
+    - condition: "decision involves multiple weighted criteria"
+      targets: [{"kind": "active", "id": "multi-criteria-decision"}]
+      qualification: "multi-criteria-decision"
+    - condition: "decision is a molecular orchestration with stakeholders + risk + future"
+      targets: [{"kind": "active", "id": "decision-architecture"}]
+      qualification: "decision-architecture"
+    - condition: "user wants to evaluate ONE proposal's merits and risks"
+      targets: [{"kind": "active", "id": "benefits-analysis"}]
+      qualification: "benefits-analysis (T15)"
+    - condition: "user is questioning the framework within which alternatives exist"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension (T9)"
 when_not_to_invoke:
-  - "User has already chosen and wants execution" → Project Mode
-  - "Decision is fundamentally about who benefits from each alternative" → Cui Bono (T2)
-  - "User is searching for the right answer rather than choosing among alternatives" → other T-investigative mode
+  - condition: "User has already chosen and wants execution"
+    targets: [{"kind": "active", "id": "project-mode"}]
+    qualification: "Project Mode"
+  - condition: "Decision is fundamentally about who benefits from each alternative"
+    targets: [{"kind": "active", "id": "cui-bono"}]
+    qualification: "Cui Bono (T2)"
+  - condition: "User is searching for the right answer rather than choosing among alternatives"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "other T-investigative mode"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -79,64 +95,95 @@ input_contract:
   detection:
     expert_signals: ["alternatives are A, B, C", "hard constraint is", "must satisfy", "the constraints are"]
     accessible_signals: ["which should I choose", "compare these options", "what are the tradeoffs"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the choice you're facing, and what are the alternatives you're considering?'"
     on_underspecified: "Ask: 'Are probabilities and time-value central to this choice (route to Decision Under Uncertainty), or are the tradeoffs deterministic?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are at least three alternatives mapped, including any the user has not named?"
-    failure_mode_if_unmet: false-dichotomy
-  - cq_id: CQ2
+    failure_mode_if_unmet: "false-dichotomy"
+  - cq_id: "CQ2"
     question: "Are success and failure conditions stated as testable propositions for each alternative, with identical analytical depth across alternatives?"
-    failure_mode_if_unmet: advocacy-asymmetry
-  - cq_id: CQ3
+    failure_mode_if_unmet: "advocacy-asymmetry"
+  - cq_id: "CQ3"
     question: "Have no-lose elements (actions valuable regardless of which alternative is chosen) been surfaced explicitly?"
-    failure_mode_if_unmet: missed-no-lose
-  - cq_id: CQ4
+    failure_mode_if_unmet: "missed-no-lose"
+  - cq_id: "CQ4"
     question: "Does the mode map the choice terrain without making the choice for the user, unless explicitly asked?"
-    failure_mode_if_unmet: choice-collapse
+    failure_mode_if_unmet: "choice-collapse"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: false-dichotomy
+  - name: "false-dichotomy"
     detection_signal: "Only two alternatives mapped when ≥3 are viable, OR a binary framing masks the option space."
-    correction_protocol: re-dispatch (generate ≥3 alternatives or switch to pro/con form for genuinely binary choices)
-  - name: advocacy-asymmetry
+    correction_protocol: "re-dispatch (generate ≥3 alternatives or switch to pro/con form for genuinely binary choices)"
+  - name: "advocacy-asymmetry"
     detection_signal: "One alternative receives substantially deeper analysis than others."
-    correction_protocol: re-dispatch (equalise analytical depth across alternatives)
-  - name: abstraction-trap
+    correction_protocol: "re-dispatch (equalise analytical depth across alternatives)"
+  - name: "abstraction-trap"
     detection_signal: "Success or failure conditions stated as vague abstractions, not testable propositions with thresholds or observables."
-    correction_protocol: re-dispatch (rewrite as testable conditions)
-  - name: choice-collapse
+    correction_protocol: "re-dispatch (rewrite as testable conditions)"
+  - name: "choice-collapse"
     detection_signal: "Mode delivers a single recommended alternative when the user asked for the terrain mapped."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - rumelt-strategy-kernel (when alternatives are strategic options)
-    - strategic-2x2-matrix-tradition
+  - lens_id: rumelt-strategy-kernel
+    qualification: when alternatives are strategic options
+  - strategic-2x2-matrix-tradition
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
-
+  - kahneman-tversky-bias-catalog
+  - knightian-risk-uncertainty-ambiguity
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~1min
+expected_runtime: "~1min"
 escalation_signals:
   upward:
-    target_mode_id: decision-under-uncertainty
+    target: {"kind": "active", "id": "decision-under-uncertainty"}
     when: "Probability arithmetic or time-value analysis is required for the choice."
   sideways:
-    target_mode_id: multi-criteria-decision
+    target: {"kind": "active", "id": "multi-criteria-decision"}
     when: "Decision involves multiple weighted criteria across alternatives."
   downward:
-    target_mode_id: null
+    target: null
     when: "Constraint Mapping is already the lightest depth in T3."
 ```
+
+## Display Description
+
+Maps success conditions, failure conditions, gains, and forfeitures across alternatives in a known environment.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll walk through the trade-offs of this {artifact}"
+  data_shapes: [{"predicate": "enum_options", "territory": "T3-decision-under-uncertainty", "priority": 0, "confidence_weight": "strong"}, {"predicate": "decision_with_options", "territory": "T3-decision-under-uncertainty", "priority": 0, "confidence_weight": "strong"}]
+  signals:
+    - {"signal": "constraint mapping", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: deterministic? → yes", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "compare alternatives", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: deterministic? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "map the tradeoffs", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: deterministic? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "pros and cons of each option", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: deterministic? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "which should I choose", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: deterministic? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "2x2 matrix", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: deterministic? → yes", "confidence_weight": "strong", "evidence": "trigger phrase (strategic_2x2)"}
+    - {"signal": "strategic 2x2", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: deterministic? → yes", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "viable options", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (option space)"}
+    - {"signal": "best fit", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (selection)"}
+    - {"signal": "trade offs", "territory": "T3-decision-under-uncertainty", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "trade off of", "territory": "T3-decision-under-uncertainty", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "compare and choose", "territory": "T3-decision-under-uncertainty", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "weigh these options", "territory": "T3-decision-under-uncertainty", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

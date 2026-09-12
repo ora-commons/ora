@@ -35,7 +35,7 @@ Every content lens file in `/Users/oracle/Documents/vault/Lenses/` carries the s
 lens_id: <kebab-case>                              # filename without .md extension
 name: <Display Name>                               # title-case
 lens_type: <active lens_type from Section 1>
-applicability: [<mode_ids that use this lens>]     # by mode_id, matches Lenses-to-Modes index
+applicability: [<mode IDs or named application areas>] # preserve declared scope; only actual mode IDs authorize mode applicability
 foundational: true | false                         # foundational lenses are globally available; non-foundational are mode-specific
 source: "<canonical source citation, including year>"
 date created: <YYYY-MM-DD>
@@ -96,6 +96,8 @@ source plus any major commentaries.]
 ```
 
 The outer structure is locked: all seven `##` sections appear in every content lens file in this exact order, even when a section is brief. Empty sections are not permitted; if a section has no content the lens is not yet ready for the library.
+
+The routing compiler preserves every lens declaration and its full text. The compiled applicable-mode view is the union of actual mode IDs named by the lens and modes declaring that lens dependency; named application areas are retained separately as topics and never treated as invented executable modes. Picker eligibility, mode input projection, and reverse relationships consume this same compiled view. The readable indexes are generated views, not independently authored relationships.
 
 ### Picker Summary Contract
 
@@ -348,7 +350,7 @@ The references are complementary:
 - A mode declares the lenses it directly uses: `lens_dependencies.{required, optional, foundational}: [<lens_ids>]` in its YAML. This is the authoritative source for required/foundational/optional picker groups and runtime dependency checks.
 - A lens may declare modes that can use it: `applicability: [<mode_ids>]` in its YAML. When an applicability value matches a runtime mode id and the mode did not already list the lens directly, the picker exposes that lens as a `related` option.
 
-The verification script enforces direct dependency resolution and reports inverse applicability that does not match a runtime mode id. It does not require every direct mode dependency to be repeated in lens YAML, and it does not require every lens to be directly listed by a mode.
+The compiler enforces direct dependency resolution and distinguishes actual mode applicability from descriptive application areas. The verification script consumes that compiled distinction. It does not require every direct mode dependency to be repeated in lens YAML, and it does not require every lens to be directly listed by a mode.
 
 ---
 

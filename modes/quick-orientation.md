@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: quick-orientation
-canonical_name: Quick Orientation
-suffix_rule: analysis
-educational_name: quick orientation in unfamiliar terrain
+mode_id: "quick-orientation"
+canonical_name: "Quick Orientation"
+suffix_rule: "analysis"
+educational_name: "quick orientation in unfamiliar terrain"
 
 # 1. TERRITORY AND POSITION
-territory: T14-orientation-in-unfamiliar-territory
+territory: "T14-orientation-in-unfamiliar-territory"
 gradation_position:
-  axis: depth
-  value: light
+  axis: "depth"
+  value: "light"
 adjacent_modes_in_territory:
-  - mode_id: terrain-mapping
-    relationship: depth-heavier sibling (thorough)
-  - mode_id: domain-induction
-    relationship: depth-molecular sibling (built Wave 4)
+  - mode_id: "terrain-mapping"
+    relationship: "depth-heavier sibling (thorough)"
+  - mode_id: "domain-induction"
+    relationship: "depth-molecular sibling (built Wave 4)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -50,19 +50,31 @@ disambiguation_routing:
     - "user wants the major sub-areas and entry points without deep dive"
     - "input is a defined domain or space the user is unfamiliar with"
   routes_away_when:
-    - "user wants thorough lay-of-the-land with sub-areas + open questions + entry points" → terrain-mapping
-    - "user wants molecular induction across multiple domains or layered orientation" → domain-induction
-    - "user is exploring an open space generatively, not orienting analytically" → passion-exploration (T20)
+    - condition: "user wants thorough lay-of-the-land with sub-areas + open questions + entry points"
+      targets: [{"kind": "active", "id": "terrain-mapping"}]
+      qualification: "terrain-mapping"
+    - condition: "user wants molecular induction across multiple domains or layered orientation"
+      targets: [{"kind": "active", "id": "domain-induction"}]
+      qualification: "domain-induction"
+    - condition: "user is exploring an open space generatively, not orienting analytically"
+      targets: [{"kind": "active", "id": "passion-exploration"}]
+      qualification: "passion-exploration (T20)"
 when_not_to_invoke:
-  - "User already knows the domain well — orientation is overkill" → mode appropriate to user's actual question
-  - "User wants relationship structure rather than orientation" → relationship-mapping (T11)
-  - "User wants spatial-composition reading on aesthetic input" → T19 modes
+  - condition: "User already knows the domain well — orientation is overkill"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "mode appropriate to user's actual question"
+  - condition: "User wants relationship structure rather than orientation"
+    targets: [{"kind": "active", "id": "relationship-mapping"}]
+    qualification: "relationship-mapping (T11)"
+  - condition: "User wants spatial-composition reading on aesthetic input"
+    targets: [{"kind": "territory", "id": "T19"}]
+    qualification: "T19 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -77,65 +89,94 @@ input_contract:
   detection:
     expert_signals: ["I have N minutes", "domain is X", "purpose of orientation is", "downstream I'll need"]
     accessible_signals: ["quick orientation", "quick overview", "give me the gist", "where do I start"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What domain or topic do you want a quick orientation on?'"
     on_underspecified: "Ask: 'Are you trying to make a decision, write something, or just get the lay of the land?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the orientation actually surveyed the major sub-areas of the domain, or has it focused narrowly on one corner the analyst happens to know best?"
-    failure_mode_if_unmet: corner-bias
-  - cq_id: CQ2
+    failure_mode_if_unmet: "corner-bias"
+  - cq_id: "CQ2"
     question: "Are the foundational distinctions named in the orientation actually load-bearing for the domain, or are they decorative?"
-    failure_mode_if_unmet: decorative-distinction
-  - cq_id: CQ3
+    failure_mode_if_unmet: "decorative-distinction"
+  - cq_id: "CQ3"
     question: "Has the orientation flagged the predictable wrong impressions a newcomer would form from light exposure, so the user is forewarned?"
-    failure_mode_if_unmet: misconception-blindness
-  - cq_id: CQ4
+    failure_mode_if_unmet: "misconception-blindness"
+  - cq_id: "CQ4"
     question: "Has the depth been honestly tier-1 (light), or has the analysis crept into tier-2 territory and exceeded the user's time budget?"
-    failure_mode_if_unmet: scope-creep
+    failure_mode_if_unmet: "scope-creep"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: corner-bias
+  - name: "corner-bias"
     detection_signal: "Sub-areas are concentrated in one quadrant of the domain; major established sub-areas are absent."
-    correction_protocol: re-dispatch
-  - name: decorative-distinction
+    correction_protocol: "re-dispatch"
+  - name: "decorative-distinction"
     detection_signal: "Foundational distinctions are named but the user could navigate the domain ignoring them; they are not actually load-bearing."
-    correction_protocol: re-dispatch
-  - name: misconception-blindness
+    correction_protocol: "re-dispatch"
+  - name: "misconception-blindness"
     detection_signal: "No common misconceptions section, or misconceptions named are too obscure to actually trip a newcomer."
-    correction_protocol: flag
-  - name: scope-creep
+    correction_protocol: "flag"
+  - name: "scope-creep"
     detection_signal: "Output is structurally tier-2 (terrain-mapping shape) rather than tier-1; user's time budget would be exceeded."
-    correction_protocol: re-dispatch (or escalate to terrain-mapping if appropriate)
-  - name: contested-as-settled
+    correction_protocol: "re-dispatch (or escalate to terrain-mapping if appropriate)"
+  - name: "contested-as-settled"
     detection_signal: "Active debates in the domain are presented as settled facts; orientation lacks 'this is contested' flagging."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - kuhn-paradigm-incommensurability (when domain has competing paradigms)
+  - lens_id: kuhn-paradigm-incommensurability
+    qualification: when domain has competing paradigms
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~1min
+expected_runtime: "~1min"
 escalation_signals:
   upward:
-    target_mode_id: terrain-mapping
+    target: {"kind": "active", "id": "terrain-mapping"}
     when: "User wants thorough orientation with sub-areas, open questions, contested points, and entry-point chains."
   sideways:
-    target_mode_id: passion-exploration
+    target: {"kind": "active", "id": "passion-exploration"}
     when: "User is actually exploring an open space generatively, not orienting analytically; route to T20."
   downward:
-    target_mode_id: null
+    target: null
     when: "Quick Orientation is the lightest mode in T14."
 ```
+
+## Display Description
+
+Produces a fast orientation sketch with entry points and predictable wrong impressions; sub-five-minute output.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll give you a quick read on this {artifact}"
+  signals:
+    - {"signal": "quick orientation", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "quick overview", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "quick lay of the land", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "give me the gist", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "high-level intro to", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "dropping into this domain cold", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what do I need to know", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "where do I start with this", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "I have ten minutes", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "weak", "evidence": "tonal cue (time pressure → light variant)"}
+    - {"signal": "main bits to be aware of", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (orientation request)"}
+    - {"signal": "what's this about", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "weak", "evidence": "tonal cue (light-orientation)"}
+    - {"signal": "pareto principle", "territory": "T14-orientation-in-unfamiliar-territory", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

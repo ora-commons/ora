@@ -14,19 +14,19 @@ passthrough: true
 
 ```yaml
 # 0. IDENTITY
-mode_id: structured-output
-canonical_name: Structured Output
-suffix_rule: none
-educational_name: structured output formatting
+mode_id: "structured-output"
+canonical_name: "Structured Output"
+suffix_rule: "none"
+educational_name: "structured output formatting"
 
 # 1. TERRITORY AND POSITION
-territory: T21-execution-project-mode
+territory: "T21-execution-project-mode"
 gradation_position:
-  axis: specificity
-  value: rendering-only
+  axis: "specificity"
+  value: "rendering-only"
 adjacent_modes_in_territory:
-  - mode_id: project-mode
-    relationship: specificity variant (original-execution; PM thinks, SO renders)
+  - mode_id: "project-mode"
+    relationship: "specificity variant (original-execution; PM thinks, SO renders)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -46,18 +46,24 @@ disambiguation_routing:
     - "content already exists and the task is rendering"
     - "deliverable is primarily presentational; format is the core value-add"
   routes_away_when:
-    - "original analysis is needed to produce the deliverable" → project-mode (T21)
-    - "content does not yet exist" → upstream Front-End Process for clarification first
-    - "user wants to explore rather than format" → passion-exploration (T20) or terrain-mapping (T14)
+    - condition: "original analysis is needed to produce the deliverable"
+      targets: [{"kind": "active", "id": "project-mode"}]
+      qualification: "project-mode (T21)"
+    - condition: "content does not yet exist"
+      targets: [{"kind": "action", "id": "ask-for-subject"}]
+      qualification: "upstream Front-End Process for clarification first"
+    - condition: "user wants to explore rather than format"
+      targets: [{"kind": "active", "id": "passion-exploration"}, {"kind": "active", "id": "terrain-mapping"}]
+      qualification: "passion-exploration (T20) or terrain-mapping (T14)"
 when_not_to_invoke:
   - "Original analysis is required — Project Mode thinks; Structured Output renders. SO does NOT generate content to compensate for missing input."
   - "User wants the content itself adversarially reviewed — that requires the source content's analytical mode, not SO"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -72,69 +78,94 @@ input_contract:
   detection:
     expert_signals: ["template", "format spec", "house style", "per the standard"]
     accessible_signals: ["write this as", "format as", "put in the form of", "render this"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the source content I should render, and what format do you want it in?'"
     on_underspecified: "Ask: 'Should I render existing content into this format (Structured Output), or do you need me to also produce the analysis first (Project Mode or an analytical mode)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Does every substantive claim in the output trace to source content, or has the rendering introduced new claims?"
-    failure_mode_if_unmet: analyst-trap
-  - cq_id: CQ2
+    failure_mode_if_unmet: "analyst-trap"
+  - cq_id: "CQ2"
     question: "Has the requested format been followed faithfully, or has format mismatch occurred?"
-    failure_mode_if_unmet: format-mismatch
-  - cq_id: CQ3
+    failure_mode_if_unmet: "format-mismatch"
+  - cq_id: "CQ3"
     question: "Have gaps between source and format been flagged explicitly, or have they been silently filled?"
-    failure_mode_if_unmet: gap-silently-filled
-  - cq_id: CQ4
+    failure_mode_if_unmet: "gap-silently-filled"
+  - cq_id: "CQ4"
     question: "Has the rendering avoided introducing recommendation or conclusion not in source — SO renders, does not advise?"
-    failure_mode_if_unmet: embellishment
-  - cq_id: CQ5
+    failure_mode_if_unmet: "embellishment"
+  - cq_id: "CQ5"
     question: "If source contains visual envelopes, are they preserved byte-equivalent in the output (no schema drift)?"
-    failure_mode_if_unmet: schema-drift-on-passthrough
+    failure_mode_if_unmet: "schema-drift-on-passthrough"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: analyst-trap
+  - name: "analyst-trap"
     detection_signal: "Output contains substantive claims that do not trace to source content."
-    correction_protocol: re-dispatch (every claim must trace to source; remove or attribute SO-added inferences explicitly)
-  - name: template-trap
+    correction_protocol: "re-dispatch (every claim must trace to source; remove or attribute SO-added inferences explicitly)"
+  - name: "template-trap"
     detection_signal: "Source content forced into ill-fitting structure; misalignment between content and format."
-    correction_protocol: flag (adapt the format to serve the content; note the adaptation)
-  - name: compression-trap
+    correction_protocol: "flag (adapt the format to serve the content; note the adaptation)"
+  - name: "compression-trap"
     detection_signal: "Compression dropped critical qualifications or caveats."
-    correction_protocol: flag (preserve nuance; declare compression explicitly)
-  - name: embellishment
+    correction_protocol: "flag (preserve nuance; declare compression explicitly)"
+  - name: "embellishment"
     detection_signal: "Transitional framing introduced substantive claim not in source."
-    correction_protocol: re-dispatch (transitions are structural, not analytical)
-  - name: schema-drift-on-passthrough
+    correction_protocol: "re-dispatch (transitions are structural, not analytical)"
+  - name: "schema-drift-on-passthrough"
     detection_signal: "Visual envelope JSON differs from source after rendering."
-    correction_protocol: re-dispatch (byte-equivalent passthrough; no regeneration)
+    correction_protocol: "re-dispatch (byte-equivalent passthrough; no regeneration)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - format-template-library (per document type)
-    - debono-ago (when format selection requires goal clarification)
+  - lens_id: format-template-library
+    qualification: per document type
+  - lens_id: debono-ago
+    qualification: when format selection requires goal clarification
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~1min
+expected_runtime: "~1min"
 escalation_signals:
   upward:
-    target_mode_id: project-mode
+    target: {"kind": "active", "id": "project-mode"}
     when: "User realizes original analysis is needed to produce the deliverable, not just rendering."
   sideways:
-    target_mode_id: null
+    target: null
     when: "T21 has only PM and SO; no sideways sibling within territory."
   downward:
-    target_mode_id: null
+    target: null
     when: "Structured Output is already T21's lightest execution sibling."
 ```
+
+## Display Description
+
+Renders existing content into a requested document format faithfully; produces deliverable + gap report + format notes.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  catch_all: true
+  signals:
+    - {"signal": "structured output", "territory": "T21-execution-project", "disambiguation_answer": "within-territory: rendering? → yes", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "format as a memo", "territory": "T21-execution-project", "disambiguation_answer": "within-territory: rendering? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "write this as a report", "territory": "T21-execution-project", "disambiguation_answer": "within-territory: rendering? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "comparison table", "territory": "T21-execution-project", "disambiguation_answer": "within-territory: rendering? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "outline form", "territory": "T21-execution-project", "disambiguation_answer": "within-territory: rendering? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "one-pager", "territory": "T21-execution-project", "disambiguation_answer": "within-territory: rendering? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "render this", "territory": "T21-execution-project", "disambiguation_answer": "within-territory: rendering? → yes", "confidence_weight": "weak", "evidence": "tonal cue (formatting only)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

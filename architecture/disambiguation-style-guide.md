@@ -145,15 +145,17 @@ Used when the required input is present but ambiguous, vague, or carries multipl
 
 ### 5.8.3 Graceful-degradation offer
 
-Used when the input required for the heavier mode is missing, but a lighter sibling mode could run usefully on what is present. The pattern offers the lighter run rather than blocking on the missing input.
+Used when the input required for the heavier mode is missing. Preserve a requested lighter sibling as an available choice. Check its own input contract: when the same material is missing, say so explicitly and ask for it before running either choice. A lighter choice must never be described as runnable merely because it is lighter.
 
-**Canonical pattern:** *"I can run a lighter version with what's here, or wait for [what's needed] and do the fuller [plain-language version]. Which would you like?"*
+**Canonical pattern when the lighter contract is complete:** *"I can run a lighter version with what's here, or wait for [what's needed] and do the fuller [plain-language version]. Which would you like?"*
+
+**Canonical pattern when both choices need missing material:** *"I can keep the fuller analysis or use a lighter version. Either way, I still need [what's missing] before I can start. Which would you prefer, and could you share that material?"*
 
 **Positive examples (good — each pairs a heavier mode with its lighter sibling):**
 
 1. "I can give you a quick read on who's likely to gain or lose from this with what's here, or wait for the actual stakeholder list and do the more careful walk-through. Which would you like?"
 2. "I can do a quick logic check on the argument as written, or — if you have the source it's responding to — I can do a fuller comparison of both sides. Which is more useful right now?"
-3. "I can sketch a fast list of what could go wrong, or — if you can give me a few sentences on the plan itself — I can take the longer route and walk through how the failures would unfold. Your call."
+3. "I can take a quick look at what could go wrong, or do the fuller walk-through. Both need a description of the plan first. Which would you prefer, and could you tell me what the plan is?"
 
 **Negative examples (bad — these violate the guide):**
 
@@ -184,5 +186,51 @@ This convention makes the technique name a courtesy label for an engaged reader,
 Changes to this style guide require user review. The author of this system is a non-programmer with deep domain expertise, and the tonal calibration of disambiguation questions is high-stakes for user experience: a single jargon-leak or anti-pattern, repeated across thousands of routings, degrades the entire interaction surface of the system. No change to permitted vocabulary, forbidden vocabulary, question patterns, parenthetical conventions, default-path rules, escalation-hook phrasing, or completeness-check response patterns may be made by an automated process or a downstream agent without the user reviewing and approving the change first.
 
 ---
+
+## Canonical conflicting-cue questions
+
+Ora's deterministic pre-routing consumer asks these questions when the named conflict detector finds incompatible depth or stance cues. Their answers select among the already identified candidates; they do not invent a new subject or make a missing artifact available. These are persisted question records, not model-generated prompts.
+
+```yaml
+routing_questions:
+  - id: conflict_depth
+    text: "I see both a quick-read and a deep-dive cue — want a quick first read, or should I take the longer route?"
+    answers:
+      - phrases: ["quick", "first read", "fast", "brief"]
+        targets: [{kind: action, id: select-depth}]
+        depth: tier-1
+        qualification: "Select the lighter existing candidate; validate its own required inputs."
+      - phrases: ["longer", "deep", "thorough", "full"]
+        targets: [{kind: action, id: select-depth}]
+        depth: tier-3
+        qualification: "Select the deeper existing candidate; validate its own required inputs."
+    default:
+      targets: [{kind: action, id: select-depth}]
+      depth: tier-2
+      qualification: "Use the authored territory's ordinary depth default."
+    territories: []
+  - id: conflict_stance
+    text: "Want me to make the strongest case for it, push back on it, do those two in sequence (strongest case first, then the adversarial read), or weigh both sides in one balanced critique?"
+    answers:
+      - phrases: ["in sequence", "both in sequence", "first then", "steelman then red team", "strongest case first"]
+        targets: [{kind: active, id: steelman-construction}, {kind: active, id: red-team-assessment}]
+        qualification: "Ordered selection: strongest constructive case first, then adversarial assessment. Each selection must satisfy its input contract."
+      - phrases: ["strongest case for", "for it", "steelman"]
+        targets: [{kind: active, id: steelman-construction}]
+      - phrases: ["push back", "against it", "red team", "attack"]
+        targets: [{kind: active, id: red-team-assessment}]
+      - phrases: ["both sides", "weigh both", "balanced", "neutral"]
+        targets: [{kind: active, id: balanced-critique}]
+    default:
+      targets: [{kind: active, id: balanced-critique}]
+    territories: [T15]
+```
+
+
+```yaml
+routing_depth_cues:
+  tier-1: ["quickly", "quick read", "quick scan", "fast read", "quick", "brief"]
+  tier-3: ["deep dive", "deep-dive", "thoroughly", "thorough", "molecular", "comprehensive", "full", "complete analysis", "deeply"]
+```
 
 *End of Reference — Disambiguation Style Guide.*

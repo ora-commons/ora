@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: terrain-mapping
-canonical_name: Terrain Mapping
-suffix_rule: analysis
-educational_name: thorough orientation in unfamiliar terrain
+mode_id: "terrain-mapping"
+canonical_name: "Terrain Mapping"
+suffix_rule: "analysis"
+educational_name: "thorough orientation in unfamiliar terrain"
 
 # 1. TERRITORY AND POSITION
-territory: T14-orientation-in-unfamiliar-territory
+territory: "T14-orientation-in-unfamiliar-territory"
 gradation_position:
-  axis: depth
-  value: thorough
+  axis: "depth"
+  value: "thorough"
 adjacent_modes_in_territory:
-  - mode_id: quick-orientation
-    relationship: lighter sibling (depth-light)
-  - mode_id: domain-induction
-    relationship: heavier sibling (depth-molecular)
+  - mode_id: "quick-orientation"
+    relationship: "lighter sibling (depth-light)"
+  - mode_id: "domain-induction"
+    relationship: "heavier sibling (depth-molecular)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -47,21 +47,37 @@ disambiguation_routing:
     - "user is unfamiliar with the domain and wants thorough orientation (~5 min)"
     - "the prompt names a domain the conversation history shows the user has not engaged with"
   routes_away_when:
-    - "user wants a quick orienting summary (~1 min)" → quick-orientation
-    - "user wants a deep molecular induction into the domain (~10+ min)" → domain-induction
-    - "user is already familiar and wants the next mechanism beneath" → deep-clarification (T10)
-    - "user is exploring open-endedly with no desire for a navigable map" → passion-exploration (T20)
-    - "user has multiple competing explanations for the same evidence" → competing-hypotheses (T5)
+    - condition: "user wants a quick orienting summary (~1 min)"
+      targets: [{"kind": "active", "id": "quick-orientation"}]
+      qualification: "quick-orientation"
+    - condition: "user wants a deep molecular induction into the domain (~10+ min)"
+      targets: [{"kind": "active", "id": "domain-induction"}]
+      qualification: "domain-induction"
+    - condition: "user is already familiar and wants the next mechanism beneath"
+      targets: [{"kind": "active", "id": "deep-clarification"}]
+      qualification: "deep-clarification (T10)"
+    - condition: "user is exploring open-endedly with no desire for a navigable map"
+      targets: [{"kind": "active", "id": "passion-exploration"}]
+      qualification: "passion-exploration (T20)"
+    - condition: "user has multiple competing explanations for the same evidence"
+      targets: [{"kind": "active", "id": "competing-hypotheses"}]
+      qualification: "competing-hypotheses (T5)"
 when_not_to_invoke:
-  - "User has named a specific deliverable" → Project Mode
-  - "User is in execution mode and wants to act, not orient" → Project Mode
-  - "Domain is intimately familiar to the user" → Deep Clarification
+  - condition: "User has named a specific deliverable"
+    targets: [{"kind": "active", "id": "project-mode"}]
+    qualification: "Project Mode"
+  - condition: "User is in execution mode and wants to act, not orient"
+    targets: [{"kind": "active", "id": "project-mode"}]
+    qualification: "Project Mode"
+  - condition: "Domain is intimately familiar to the user"
+    targets: [{"kind": "active", "id": "deep-clarification"}]
+    qualification: "Deep Clarification"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -76,66 +92,96 @@ input_contract:
   detection:
     expert_signals: ["I'm familiar with X but not Y", "the canonical introduction is", "the standard taxonomy"]
     accessible_signals: ["what is X", "where do I start", "give me the lay of the land", "introduce me to"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the domain or topic you want oriented in, and roughly what do you already know about it?'"
     on_underspecified: "Ask: 'Want a quick summary (~1 min — Quick Orientation), thorough survey (~5 min — Terrain Mapping), or deep molecular induction (~10+ min — Domain Induction)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are concepts classified as known / contested / open, with no contested position presented as settled (or vice versa)?"
-    failure_mode_if_unmet: false-consensus
-  - cq_id: CQ2
+    failure_mode_if_unmet: "false-consensus"
+  - cq_id: "CQ2"
     question: "Does the map have at least one cross-link to an adjacent domain — Novak's marker of integrative understanding?"
-    failure_mode_if_unmet: no-cross-link-trap
-  - cq_id: CQ3
+    failure_mode_if_unmet: "no-cross-link-trap"
+  - cq_id: "CQ3"
     question: "Does the prose stay at survey level rather than drilling into one sub-area (≤30% on any single sub-area)?"
-    failure_mode_if_unmet: premature-depth
-  - cq_id: CQ4
+    failure_mode_if_unmet: "premature-depth"
+  - cq_id: "CQ4"
     question: "Does the map name what is out of scope — its boundary?"
-    failure_mode_if_unmet: missing-boundary
+    failure_mode_if_unmet: "missing-boundary"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: premature-depth
+  - name: "premature-depth"
     detection_signal: "Prose spends more than 30% on any single sub-area before the full territory is mapped."
-    correction_protocol: re-dispatch (pull back to survey level)
-  - name: textbook-trap
+    correction_protocol: "re-dispatch (pull back to survey level)"
+  - name: "textbook-trap"
     detection_signal: "Output reproduces a standard overview without known/contested/open separation."
-    correction_protocol: re-dispatch (classify each major concept by epistemic status)
-  - name: false-consensus
+    correction_protocol: "re-dispatch (classify each major concept by epistemic status)"
+  - name: "false-consensus"
     detection_signal: "One school of thought's view is presented as the domain consensus when rival schools exist."
-    correction_protocol: re-dispatch (qualify with 'the standard view holds X; dissenters argue Y')
-  - name: no-cross-link-trap
+    correction_protocol: "re-dispatch (qualify with 'the standard view holds X; dissenters argue Y')"
+  - name: "no-cross-link-trap"
     detection_signal: "Output is a strict tree with no lateral connections."
-    correction_protocol: re-dispatch (add ≥1 cross-link to an adjacent domain)
-  - name: low-concept-count
+    correction_protocol: "re-dispatch (add ≥1 cross-link to an adjacent domain)"
+  - name: "low-concept-count"
     detection_signal: "Map has fewer than 4 concepts."
-    correction_protocol: re-dispatch (expand to ≥4 concepts, or route to Deep Clarification if domain is too narrow)
+    correction_protocol: "re-dispatch (expand to ≥4 concepts, or route to Deep Clarification if domain is too narrow)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - novak-concept-map-tradition
-    - taxonomic-frameworks-for-the-target-domain
+    - "novak-concept-map-tradition"
+    - "taxonomic-frameworks-for-the-target-domain"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: domain-induction
+    target: {"kind": "active", "id": "domain-induction"}
     when: "User wants molecular induction into the domain — full ~10+ min orientation with prerequisite chain and operational competence."
   sideways:
-    target_mode_id: passion-exploration
-    when: "Orientation opens with no terminal point and user wants generative exploration." 
+    target: {"kind": "active", "id": "passion-exploration"}
+    when: "Orientation opens with no terminal point and user wants generative exploration."
   downward:
-    target_mode_id: quick-orientation
+    target: {"kind": "active", "id": "quick-orientation"}
     when: "User has time pressure or wants a ~1 min orienting summary rather than a ~5 min survey."
 ```
+
+## Display Description
+
+Maps known / contested / open territory in an unfamiliar domain with cross-links and prerequisite chains.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll map the terrain of this {artifact}"
+  catch_all: true
+  signals:
+    - {"signal": "terrain mapping", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "map this domain", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase (positive list)"}
+    - {"signal": "concept map of", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "lay of the land", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "walk me through", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "big picture", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "where do I start", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what do I need to know about", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "orient me", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (orientation)"}
+    - {"signal": "unfamiliar with", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (admission of unfamiliarity)"}
+    - {"signal": "landscape of", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (cartographic frame)"}
+    - {"signal": "introduction to", "territory": "T14-orientation-in-unfamiliar-territory", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (orientation)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

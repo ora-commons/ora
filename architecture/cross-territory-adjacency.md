@@ -2,18 +2,27 @@
 
 This file documents the cross-territory disambiguation patterns consulted by Stage 1 of the pre-routing pipeline (filter and territory identification) and by Stage 2 (sufficiency analyzer) when a prompt's signals straddle two territories. For every adjacent territory pair (or triplet), it specifies why the territories sit close, the single plain-language question that distinguishes them, the routing rule for each plausible answer, paired prompt examples, and — where a prompt legitimately fits both — the sequential-dispatch order. Within-territory disambiguation (choosing among modes inside a single territory) is a separate concern and lives in `Reference — Within-Territory Disambiguation Trees.md`.
 
+The fenced YAML questions and answer destinations are the authored routing authority. Their mappings cover every pair declared by the territory adjacency inventory, including each pair in the mechanism/process/structure cluster. An unanswered boundary has an explicit route-by-intent fallback: it remains an unresolved clarification, never an arbitrary territory selection. Ordered destination lists express sequential selection; they do not execute the analysis stages. Qualifications preserve when that sequence is appropriate. Examples and explanatory notes illustrate the records; regenerated readable views must be marked derived. Optional post-analysis follow-ups are judgments for the human or model conducting the analysis, not additional deterministic pre-routing conditions.
+
 ---
 
 ### T1 ↔ T2 (Argumentative Artifact ↔ Interest and Power)
 
 **Why adjacent.** Both can take a published article, op-ed, memo, or stated position as input. The same artifact can be evaluated for whether the argument holds up (T1) or for whose interests are served if people accept it (T2).
 
-**Disambiguating question.** "Are you mostly asking whether the argument itself holds up, or who benefits if people accept it?"
-
-**Routing.**
-- Argument-soundness focus → T1 (Coherence Audit / Frame Audit / Argument Audit / Propaganda Audit).
-- Interest-pattern focus → T2 (Cui Bono / Boundary Critique / Wicked Problems / Decision Clarity).
-- Both → sequential dispatch: T1 first, then T2.
+```yaml
+cross_territory_questions:
+  "T1|T2": "cross-t1-t2"
+routing_questions:
+  - id: cross-t1-t2
+    text: "Are you mostly asking whether the argument itself holds up, or who benefits if people accept it?"
+    territories: ["T1","T2"]
+    answers:
+      - {"phrases":["argument-soundness focus","whether the argument holds up","argument itself"],"targets":[{"kind":"territory","id":"T1"}],"qualification":"Coherence, frame, whole-argument or propaganda examination selected within T1."}
+      - {"phrases":["interest-pattern focus","who benefits","interests served"],"targets":[{"kind":"territory","id":"T2"}],"qualification":"Cui Bono, Boundary Critique, Wicked Problems or Decision Clarity selected within T2."}
+      - {"phrases":["both","holds up and who benefits"],"targets":[{"kind":"territory","id":"T1"},{"kind":"territory","id":"T2"}],"qualification":"Sequential dispatch: argument soundness first, then the interest pattern."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Is this op-ed on housing policy rigorous?"* → T1.
@@ -27,11 +36,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Competing positions in a debate can be treated either as full arguments-as-artifacts to be audited (T1) or as propositions to be weighed against evidence (T5). The surface form — "two positions, which one wins" — looks similar.
 
-**Disambiguating question.** "Are the competing positions each a complete argument you want me to audit, or are they propositions you want weighed against evidence?"
-
-**Routing.**
-- Argument-as-artifact (each side is itself a structured argument to evaluate internally) → T1 (Argument Audit on each).
-- Proposition-against-evidence (each side is a candidate explanation) → T5 (Differential Diagnosis / Competing Hypotheses / Bayesian Hypothesis Network).
+```yaml
+cross_territory_questions:
+  "T1|T5": "cross-t1-t5"
+routing_questions:
+  - id: cross-t1-t5
+    text: "Are the competing positions each a complete argument you want me to audit, or are they propositions you want weighed against evidence?"
+    territories: ["T1","T5"]
+    answers:
+      - {"phrases":["argument-as-artifact","complete argument","structured argument","audit each"],"targets":[{"kind":"active","id":"argument-audit"}],"qualification":"Audit each full argument as an artifact in T1."}
+      - {"phrases":["proposition-against-evidence","propositions","candidate explanation","weighed against evidence"],"targets":[{"kind":"territory","id":"T5"}],"qualification":"Choose the depth of hypothesis evaluation within T5."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Two op-eds disagree about minimum wage — which has the stronger argument?"* → T1 (audit each).
@@ -42,11 +58,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both engage with frames. T1's Frame Audit operates on a single artifact's frame; T9 operates on the comparison or examination of paradigms across artifacts or positions.
 
-**Disambiguating question.** "Are you evaluating this single argument's frame, or comparing different paradigms that frame the issue differently?"
-
-**Routing.**
-- Single-artifact frame surfacing → T1 (Frame Audit).
-- Multi-paradigm comparison or examination → T9 (Paradigm Suspension / Frame Comparison / Worldview Cartography).
+```yaml
+cross_territory_questions:
+  "T1|T9": "cross-t1-t9"
+routing_questions:
+  - id: cross-t1-t9
+    text: "Are you evaluating this single argument's frame, or comparing different paradigms that frame the issue differently?"
+    territories: ["T1","T9"]
+    answers:
+      - {"phrases":["single-artifact frame","single argument","this article","single frame"],"targets":[{"kind":"active","id":"frame-audit"}],"qualification":"Surface the frame of the single argumentative artifact in T1."}
+      - {"phrases":["multi-paradigm","different paradigms","compare paradigms","across artifacts"],"targets":[{"kind":"territory","id":"T9"}],"qualification":"Examine, compare or map paradigms within T9."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"What frame is this article smuggling in?"* → T1 (Frame Audit on the single article).
@@ -57,11 +80,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** When an argument hinges on a contested concept, the same prompt can be heard as either "audit the argument" (T1) or "clarify the concept first" (T10).
 
-**Disambiguating question.** "Is the issue with how the argument deploys a specific concept (clarify the concept first), or with how the argument coheres given any reasonable reading of the concept?"
-
-**Routing.**
-- Concept-precision issue (the argument trades on definitional slippage) → T10 (Deep Clarification / Conceptual Engineering).
-- Argument-coherence issue (the argument has structural problems regardless of how the concept is read) → T1 (Coherence Audit / Argument Audit).
+```yaml
+cross_territory_questions:
+  "T1|T10": "cross-t1-t10"
+routing_questions:
+  - id: cross-t1-t10
+    text: "Is the issue with how the argument deploys a specific concept (clarify the concept first), or with how the argument coheres given any reasonable reading of the concept?"
+    territories: ["T1","T10"]
+    answers:
+      - {"phrases":["concept-precision","definitional slippage","clarify the concept first","concept"],"targets":[{"kind":"territory","id":"T10"}],"qualification":"Clarify or engineer the concept first."}
+      - {"phrases":["argument-coherence","structural problems","coheres","premises"],"targets":[{"kind":"territory","id":"T1"}],"qualification":"Evaluate argument coherence regardless of reasonable concept interpretation."}
+      - {"phrases":["both","clarify first then audit","concept first then argument"],"targets":[{"kind":"territory","id":"T10"},{"kind":"territory","id":"T1"}],"qualification":"When concept clarification is needed before the argument audit can proceed, clarify first and audit the now-clarified version second."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"What does the author even mean by 'freedom' here?"* → T10.
@@ -74,11 +105,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both can evaluate an argument. T1 evaluates the argument *as an argument* for soundness; T15 evaluates it *as a proposal* by adopting a defined stance (steelman / push back / weigh both). The Steelman mode is the canonical cross-territory case.
 
-**Disambiguating question.** "Want me to evaluate the argument's *soundness* (does it hold up?), or *evaluate the proposal* with a particular stance (steelman / push back / weigh both)?"
-
-**Routing.**
-- Soundness evaluation → T1 (Coherence Audit / Frame Audit / Argument Audit).
-- Stance-bearing evaluation → T15 (Steelman Construction / Benefits Analysis / Balanced Critique / Red Team).
+```yaml
+cross_territory_questions:
+  "T1|T15": "cross-t1-t15"
+routing_questions:
+  - id: cross-t1-t15
+    text: "Want me to evaluate the argument's soundness (does it hold up?), or evaluate the proposal with a particular stance (steelman / push back / weigh both)?"
+    territories: ["T1","T15"]
+    answers:
+      - {"phrases":["soundness","does it hold up","argument as an argument"],"targets":[{"kind":"territory","id":"T1"}],"qualification":"Evaluate argument soundness."}
+      - {"phrases":["evaluate the proposal","particular stance","steelman","push back","weigh both"],"targets":[{"kind":"territory","id":"T15"}],"qualification":"T15 owns stance-bearing proposal evaluation; an argument being steelmanned retains its T1 cross-reference without acquiring a second home territory."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Steelman cross-territory disposition (per Decision G).** Steelman's home is T15 (its primary work is stance-bearing artifact evaluation — constructing the strongest version of a proposal). When the artifact under steelmanning is itself an argument, the T1 cross-reference activates so that argument-coherence considerations inform the steelmanned reconstruction. The mode is *not* dual-citizened — home is T15; T1 is consulted as cross-reference.
 
@@ -93,11 +131,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both involve multiple parties whose interests diverge. T2 asks who benefits and who has power; T8 asks how the conflict among parties is structured and what integrative possibilities exist.
 
-**Disambiguating question.** "Mostly asking who benefits or has power, or asking how the parties' competing claims can be worked through?"
-
-**Routing.**
-- Power/interest analysis → T2 (Cui Bono / Boundary Critique / Wicked Problems / Decision Clarity).
-- Conflict structure → T8 (Stakeholder Mapping / Conflict Structure).
+```yaml
+cross_territory_questions:
+  "T2|T8": "cross-t2-t8"
+routing_questions:
+  - id: cross-t2-t8
+    text: "Mostly asking who benefits or has power, or asking how the parties' competing claims can be worked through?"
+    territories: ["T2","T8"]
+    answers:
+      - {"phrases":["power","who benefits","has power","interest analysis"],"targets":[{"kind":"territory","id":"T2"}],"qualification":"Descriptive power and interest analysis."}
+      - {"phrases":["conflict structure","competing claims","positions map","stakeholders"],"targets":[{"kind":"territory","id":"T8"}],"qualification":"Map the parties and their conflict structure."}
+      - {"phrases":["both","interest landscape and positions"],"targets":[{"kind":"territory","id":"T2"},{"kind":"territory","id":"T8"}],"qualification":"When interest analysis grounds conflict mapping, analyze interests first."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Whose interests are being served by this zoning policy?"* → T2.
@@ -110,11 +156,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both engage with multi-party situations. T2 maps the interest landscape descriptively; T13 produces guidance for active negotiation or mediation.
 
-**Disambiguating question.** "Are you mapping the interest landscape, or are you about to negotiate (or advise a negotiation)?"
-
-**Routing.**
-- Mapping → T2 (Cui Bono / Boundary Critique / etc.).
-- Active negotiation guidance → T13 (Interest Mapping / Principled Negotiation / Third-Side).
+```yaml
+cross_territory_questions:
+  "T2|T13": "cross-t2-t13"
+routing_questions:
+  - id: cross-t2-t13
+    text: "Are you mapping the interest landscape, or are you about to negotiate (or advise a negotiation)?"
+    territories: ["T2","T13"]
+    answers:
+      - {"phrases":["mapping","interest landscape","descriptive"],"targets":[{"kind":"territory","id":"T2"}],"qualification":"Map interests descriptively."}
+      - {"phrases":["active negotiation","negotiate","advise a negotiation","mediation","mediator"],"targets":[{"kind":"territory","id":"T13"}],"qualification":"Active guidance; mediator stance selects Third-Side within T13."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Who has power in this negotiation and what do they want?"* → T2.
@@ -125,11 +178,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Decisions are forward-looking and engage uncertainty about future states; future exploration sometimes serves a pending decision. The two can blur when the decision is inseparable from how the future might unfold.
 
-**Disambiguating question.** "Are you choosing among options now, or exploring how the future might unfold (irrespective of what you do)?"
-
-**Routing.**
-- Choice-now (alternatives, criteria, constraints) → T3 (Constraint Mapping / Decision Under Uncertainty / Multi-Criteria Decision / Decision Architecture).
-- Future-shape (scenarios, projections, possibility-spaces) → T6 (Consequences and Sequel / Probabilistic Forecasting / Scenario Planning / Wicked Future).
+```yaml
+cross_territory_questions:
+  "T3|T6": "cross-t3-t6"
+routing_questions:
+  - id: cross-t3-t6
+    text: "Are you choosing among options now, or exploring how the future might unfold (irrespective of what you do)?"
+    territories: ["T3","T6"]
+    answers:
+      - {"phrases":["choice-now","choosing among options now","choose","decision"],"targets":[{"kind":"territory","id":"T3"}],"qualification":"Alternatives, criteria and constraints inform a choice now."}
+      - {"phrases":["future-shape","future might unfold","scenarios","future"],"targets":[{"kind":"territory","id":"T6"}],"qualification":"Explore projections and possibility spaces irrespective of the immediate choice."}
+      - {"phrases":["both","scenarios first then choose","future first then decision"],"targets":[{"kind":"territory","id":"T6"},{"kind":"territory","id":"T3"}],"qualification":"When the future must be explored before framing the decision, map scenarios first and choose second."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Should I take this job offer or stay where I am?"* → T3.
@@ -142,26 +203,41 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Decisions involve risk as one input; risk analysis sometimes serves a pending decision. The disambiguator is whether the user wants a balanced choice procedure or a focused failure investigation.
 
-**Disambiguating question.** "Choosing among options where risk is one input among several, or specifically stress-testing how things could fail?"
-
-**Routing.**
-- Multi-input choice → T3 (Decision Under Uncertainty / Multi-Criteria Decision / etc.).
-- Failure-focused → T7 (Pre-Mortem Fragility / Fragility-Antifragility Audit / Failure Mode Scan / Fault Tree).
+```yaml
+cross_territory_questions:
+  "T3|T7": "cross-t3-t7"
+routing_questions:
+  - id: cross-t3-t7
+    text: "Choosing among options where risk is one input among several, or specifically stress-testing how things could fail?"
+    territories: ["T3","T7"]
+    answers:
+      - {"phrases":["multi-input choice","choosing among options","risk is one input","choice"],"targets":[{"kind":"territory","id":"T3"}],"qualification":"Risk is one input to a balanced choice procedure."}
+      - {"phrases":["failure-focused","stress-testing","how things could fail","failure"],"targets":[{"kind":"territory","id":"T7"}],"qualification":"Within T7 distinguish the examined object: an action plan dispatches pre-mortem-action in T6; a system or design dispatches pre-mortem-fragility; precise asymmetric exposure selects fragility-antifragility-audit."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Should we launch in Q3 or Q4 — risk is a factor."* → T3.
-- *"Stress-test our launch plan — what could break it?"* → T7.
+- *"Stress-test our launch plan — what could break it?"* → the risk question, then `pre-mortem-action` in T6 because the examined object is an action plan.
 - *"What are the worst-case scenarios for this strategy?"* → T7 (Fragility) or T6 (Wicked Future) depending on scope.
 
 ### T3 ↔ T8 (Decision-Making Under Uncertainty ↔ Stakeholder Conflict)
 
 **Why adjacent.** Decisions sometimes involve multiple parties. The disambiguator is whether the user owns the decision (parties as inputs) or whether the parties' conflict itself is the analytical object.
 
-**Disambiguating question.** "Is this fundamentally your decision to make (with the parties as inputs), or is it a situation where the parties' conflict itself is what needs to be worked through first?"
-
-**Routing.**
-- Your-decision → T3 (Decision Under Uncertainty / Multi-Criteria Decision / etc.).
-- Parties'-conflict-first → T8 (Stakeholder Mapping / Conflict Structure).
+```yaml
+cross_territory_questions:
+  "T3|T8": "cross-t3-t8"
+routing_questions:
+  - id: cross-t3-t8
+    text: "Is this fundamentally your decision to make (with the parties as inputs), or is it a situation where the parties' conflict itself is what needs to be worked through first?"
+    territories: ["T3","T8"]
+    answers:
+      - {"phrases":["your-decision","my decision","your decision","parties as inputs","make a call"],"targets":[{"kind":"territory","id":"T3"}],"qualification":"The user owns the decision; the parties are inputs."}
+      - {"phrases":["parties' conflict first","conflict itself","conflict first","understand the conflict"],"targets":[{"kind":"territory","id":"T8"}],"qualification":"The conflict among parties is the analytical object."}
+      - {"phrases":["both","conflict first then decision","map positions before deciding"],"targets":[{"kind":"territory","id":"T8"},{"kind":"territory","id":"T3"}],"qualification":"Characterize conflict before framing the decision when the positions are not yet mapped."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"My team wants A, my boss wants B, the client wants C — I have to decide."* → T3.
@@ -174,11 +250,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both ask "why" — but at different levels. T4 traces causes within the assumed frame; T9 asks whether the frame itself is generating the apparent problem.
 
-**Disambiguating question.** "Looking for the causes within how the problem is currently framed, or stepping back to ask whether the framing itself is generating the problem?"
-
-**Routing.**
-- Within-frame → T4 (Root Cause Analysis / Systems Dynamics Causal / Causal DAG / Process Tracing).
-- Frame-as-cause → T9 (Paradigm Suspension / Frame Comparison / Worldview Cartography), possibly with T4 follow-up.
+```yaml
+cross_territory_questions:
+  "T4|T9": "cross-t4-t9"
+routing_questions:
+  - id: cross-t4-t9
+    text: "Looking for the causes within how the problem is currently framed, or stepping back to ask whether the framing itself is generating the problem?"
+    territories: ["T4","T9"]
+    answers:
+      - {"phrases":["within-frame","causes within","causes","currently framed"],"targets":[{"kind":"territory","id":"T4"}],"qualification":"Investigate causes within the assumed frame."}
+      - {"phrases":["frame-as-cause","framing itself","frame","paradigm"],"targets":[{"kind":"territory","id":"T9"}],"qualification":"Examine whether the frame generates the apparent problem; a T4 follow-up may become useful after resetting the frame."}
+      - {"phrases":["reset the frame then trace causes","frame first then causes"],"targets":[{"kind":"territory","id":"T9"},{"kind":"territory","id":"T4"}],"qualification":"Optional T4 follow-up follows the frame reset when causal investigation is still needed."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Why does our hiring funnel keep narrowing?"* → T4 (within-frame).
@@ -190,11 +274,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both engage with how things produce outcomes. T4 traces backward from outcome to cause; T16 explains how the parts of a phenomenon work together to produce its behavior.
 
-**Disambiguating question.** "Tracing back to causes, or explaining how the parts produce the behavior?"
-
-**Routing.**
-- Backward-to-causes → T4 (Root Cause Analysis / Systems Dynamics Causal / Causal DAG / Process Tracing).
-- How-it-works → T16 (Mechanism Understanding).
+```yaml
+cross_territory_questions:
+  "T4|T16": "cross-t4-t16"
+routing_questions:
+  - id: cross-t4-t16
+    text: "Tracing back to causes, or explaining how the parts produce the behavior?"
+    territories: ["T4","T16"]
+    answers:
+      - {"phrases":["backward-to-causes","tracing back","causes","why did"],"targets":[{"kind":"territory","id":"T4"}],"qualification":"Trace from outcome back to cause."}
+      - {"phrases":["how-it-works","how it works","parts produce the behavior","mechanism"],"targets":[{"kind":"territory","id":"T16"}],"qualification":"Explain the working principle producing the behavior."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Why did the rollout fail?"* → T4.
@@ -206,11 +297,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both can engage with workflows or systems. T4 asks why a pattern recurs; T17 maps the process as it currently is, identifying components, flows, and bottlenecks.
 
-**Disambiguating question.** "Why does this keep happening (causes), or how does this currently work (process map)?"
-
-**Routing.**
-- Causal investigation → T4 (Root Cause Analysis / Systems Dynamics Causal / etc.).
-- Process mapping → T17 (Systems Dynamics Structural / Process Mapping / Organizational Structure).
+```yaml
+cross_territory_questions:
+  "T4|T17": "cross-t4-t17"
+routing_questions:
+  - id: cross-t4-t17
+    text: "Why does this keep happening (causes), or how does this currently work (process map)?"
+    territories: ["T4","T17"]
+    answers:
+      - {"phrases":["causal investigation","why does this keep happening","causes","why"],"targets":[{"kind":"territory","id":"T4"}],"qualification":"Explain why the pattern recurs."}
+      - {"phrases":["process mapping","how does this currently work","process map","workflow"],"targets":[{"kind":"territory","id":"T17"}],"qualification":"Map current components, flows and bottlenecks."}
+      - {"phrases":["both","map the process then investigate causes","process first then causes"],"targets":[{"kind":"territory","id":"T17"},{"kind":"territory","id":"T4"}],"qualification":"When causal investigation requires a process map first, characterize the workflow before asking why it stalls."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Why does our deployment process keep producing outages?"* → T4.
@@ -224,11 +323,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both engage with competing explanations. T5 weighs them within a shared frame; T9 asks whether the disagreement is really about how to see the issue rather than which proposition is true.
 
-**Disambiguating question.** "Are you weighing competing explanations within a shared understanding of the problem, or are the explanations using such different frames that the disagreement is really about how to see the issue?"
-
-**Routing.**
-- Within-frame hypothesis comparison → T5 (Differential Diagnosis / Competing Hypotheses / Bayesian Hypothesis Network).
-- Inter-frame disagreement → T9 (Frame Comparison / Worldview Cartography).
+```yaml
+cross_territory_questions:
+  "T5|T9": "cross-t5-t9"
+routing_questions:
+  - id: cross-t5-t9
+    text: "Are you weighing competing explanations within a shared understanding of the problem, or are the explanations using such different frames that the disagreement is really about how to see the issue?"
+    territories: ["T5","T9"]
+    answers:
+      - {"phrases":["within-frame hypothesis comparison","shared understanding","competing explanations","same frame"],"targets":[{"kind":"territory","id":"T5"}],"qualification":"Weigh candidate explanations within a shared frame."}
+      - {"phrases":["inter-frame disagreement","different frames","different paradigms","how to see the issue"],"targets":[{"kind":"territory","id":"T9"}],"qualification":"Examine how the frames differ before treating the disagreement as competing propositions."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Three theories explain the data — which fits best?"* → T5.
@@ -244,11 +350,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 - `pre-mortem-action` (T6): adversarial-future stance applied to *the action plan* — what could go wrong with this plan as it unfolds.
 - `pre-mortem-fragility` (T7): adversarial-future stance applied to *the system or design* — what failure modes does this structure exhibit under stress.
 
-**Disambiguating question.** "Is this about an action plan that could fail, or about a system or design with structural fragilities?"
-
-**Routing.**
-- Action-plan focus → T6 (Pre-Mortem Action).
-- System-or-design fragility focus → T7 (Pre-Mortem Fragility).
+```yaml
+cross_territory_questions:
+  "T6|T7": "cross-t6-t7"
+routing_questions:
+  - id: cross-t6-t7
+    text: "Is this about an action plan that could fail, or about a system or design with structural fragilities?"
+    territories: ["T6","T7"]
+    answers:
+      - {"phrases":["action-plan focus","action plan","plan","rollout","initiative rollout"],"targets":[{"kind":"active","id":"pre-mortem-action"}],"qualification":"T6 parsed mode: the plan unfolds in time; investigate what could derail it."}
+      - {"phrases":["system-or-design fragility focus","system","design","structural fragilities","architecture"],"targets":[{"kind":"active","id":"pre-mortem-fragility"}],"qualification":"T7 parsed mode: examine structural failure under stress. Both parsed modes remain; they share the klein-pre-mortem lens."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"We're launching this campaign next month — pre-mortem it."* → T6 (Pre-Mortem Action: the plan unfolds in time, what derails it).
@@ -259,11 +372,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both stress-test artifacts. T15's Red Team modes (`red-team-assessment` / `red-team-advocate` — both) model an adversarial actor trying to defeat the artifact; T7's Fragility Audit looks at structural weaknesses regardless of any actor.
 
-**Disambiguating question.** "Adversarial-actor stress test (someone is trying to defeat this), or structural-fragility audit (where could this break under any pressure)?"
-
-**Routing.**
-- Actor-modeling → T15 (`red-team-assessment` / `red-team-advocate` — both). Within T15, secondary disambiguator: own-decision (assessment, default) vs external-use (advocate).
-- Structural fragility → T7 (Pre-Mortem Fragility / Fragility-Antifragility Audit / Fault Tree).
+```yaml
+cross_territory_questions:
+  "T7|T15": "cross-t7-t15"
+routing_questions:
+  - id: cross-t7-t15
+    text: "Adversarial-actor stress test (someone is trying to defeat this), or structural-fragility audit (where could this break under any pressure)?"
+    territories: ["T7","T15"]
+    answers:
+      - {"phrases":["actor-modeling","adversarial actor","someone is trying to defeat this","adversary"],"question":"t15-red-team-operation","qualification":"T15 red-team branch: own-decision assessment is the default; external-use advocacy remains a distinct choice."}
+      - {"phrases":["structural fragility","any pressure","no adversary","where could this break"],"targets":[{"kind":"territory","id":"T7"}],"qualification":"Structural failure does not require an adversarial actor; select the appropriate T7 method."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"How would a competitor attack this strategy?"* → T15 Red Team Assessment (own-decision framing).
@@ -275,11 +395,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both engage with multi-party conflict situations. T8 is descriptive (mapping the conflict structure); T13 is active (guiding negotiation or mediation).
 
-**Disambiguating question.** "Mapping the conflict structure, or guiding active negotiation?"
-
-**Routing.**
-- Mapping → T8 (Stakeholder Mapping / Conflict Structure).
-- Active → T13 (Interest Mapping / Principled Negotiation / Third-Side).
+```yaml
+cross_territory_questions:
+  "T8|T13": "cross-t8-t13"
+routing_questions:
+  - id: cross-t8-t13
+    text: "Mapping the conflict structure, or guiding active negotiation?"
+    territories: ["T8","T13"]
+    answers:
+      - {"phrases":["mapping","conflict structure","descriptive"],"targets":[{"kind":"territory","id":"T8"}],"qualification":"Describe and map the conflict structure."}
+      - {"phrases":["active","negotiation","mediation","guiding"],"targets":[{"kind":"territory","id":"T13"}],"qualification":"Guide negotiation or mediation."}
+      - {"phrases":["both","understand before intervening","map conflict then negotiate"],"targets":[{"kind":"territory","id":"T8"},{"kind":"territory","id":"T13"}],"qualification":"When negotiation is needed but conflict structure is not mapped, mapping precedes active guidance."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Lay out who's on what side and why."* → T8.
@@ -292,11 +420,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both engage with multiple frames or knowledge bodies. T9 examines paradigms (suspending, comparing, critiquing them); T12 integrates across them.
 
-**Disambiguating question.** "Stepping back to examine the paradigms, or integrating across paradigms?"
-
-**Routing.**
-- Examining → T9 (Paradigm Suspension / Frame Comparison / Worldview Cartography).
-- Integrating → T12 (Synthesis / Dialectical Analysis / Cross-Domain Analogical).
+```yaml
+cross_territory_questions:
+  "T9|T12": "cross-t9-t12"
+routing_questions:
+  - id: cross-t9-t12
+    text: "Stepping back to examine the paradigms, or integrating across paradigms?"
+    territories: ["T9","T12"]
+    answers:
+      - {"phrases":["examining","examine the paradigms","compare paradigms","worldview"],"targets":[{"kind":"territory","id":"T9"}],"qualification":"Suspend, compare or critique paradigms."}
+      - {"phrases":["integrating","integrating across paradigms","integrate","synthesis"],"targets":[{"kind":"territory","id":"T12"}],"qualification":"Integrate across knowledge bodies, hold productive tension or identify a structural analogy."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Compare how economics and sociology frame this."* → T9.
@@ -308,12 +443,26 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** These three cluster tightly because they all engage with how something works internally — but they ask different questions about it. T16 asks how the gears interlock to produce behavior; T17 asks how the flow runs in sequence; T11 asks how the parts relate as a structure.
 
-**Disambiguating question.** "Is the question about *how* this works (the gears), about the *flow or process* (sequence), or about how the *parts relate* (structure)?"
-
-**Routing.**
-- How → T16 (Mechanism Understanding).
-- Flow → T17 (Systems Dynamics Structural / Process Mapping / Organizational Structure).
-- Structure → T11 (Relationship Mapping / Spatial Reasoning).
+```yaml
+cross_territory_questions:
+  "T11|T16": "cross-t11-t16-t17"
+  "T11|T17": "cross-t11-t16-t17"
+  "T16|T17": "cross-t11-t16-t17"
+routing_questions:
+  - id: cross-t11-t16-t17
+    text: "Is the question about how this works (the gears), about the flow or process (sequence), or about how the parts relate (structure)?"
+    territories: ["T11","T16","T17"]
+    answers:
+      - {"phrases":["how","gears","mechanism","working principle"],"targets":[{"kind":"territory","id":"T16"}],"qualification":"Explain how the parts produce behavior."}
+      - {"phrases":["flow","process","sequence","procedural"],"targets":[{"kind":"territory","id":"T17"}],"qualification":"Map the sequence or lived flow."}
+      - {"phrases":["structure","parts relate","relations","formal relationships"],"targets":[{"kind":"territory","id":"T11"}],"qualification":"Map the relations among parts."}
+      - {"phrases":["structure and process","relations and flow"],"targets":[{"kind":"territory","id":"T11"},{"kind":"territory","id":"T17"}],"qualification":"When both are needed, structure precedes process."}
+      - {"phrases":["structure and mechanism","relations and how it works"],"targets":[{"kind":"territory","id":"T11"},{"kind":"territory","id":"T16"}],"qualification":"When both are needed, structure precedes mechanism."}
+      - {"phrases":["process and mechanism","flow and working principle"],"targets":[{"kind":"territory","id":"T17"},{"kind":"territory","id":"T16"}],"qualification":"When both are needed, process precedes mechanism."}
+      - {"phrases":["all three","structure process and mechanism"],"targets":[{"kind":"territory","id":"T11"},{"kind":"territory","id":"T17"},{"kind":"territory","id":"T16"}],"qualification":"Lighter structure first, process second, mechanism third; each builds on the prior."}
+      - {"phrases":["both"],"targets":[{"kind":"action","id":"sequential-selection"}],"territory_order":["T11","T17","T16"],"qualification":"Select the two territories actually implicated by the prompt; order T11 before T17 before T16. Do not add the unrequested third territory. Keep the canonical question pending if exactly two cannot be identified."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"How does this engine actually produce torque?"* → T16.
@@ -328,11 +477,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Same input — a diagram or visual artifact — answers different questions. T11 reads the diagram as notation: what relations are asserted among elements. T19 reads the diagram as composition: what the layout itself is doing.
 
-**Disambiguating question.** "Is the question about what relations the diagram asserts among elements, or about what the layout or composition itself is doing?"
-
-**Routing.**
-- Relation-extraction (the diagram-as-notation) → T11 (Relationship Mapping / Spatial Reasoning).
-- Layout-doing (the diagram-as-composition) → T19 (Compositional Dynamics / Ma Reading / Place Reading / Information Density).
+```yaml
+cross_territory_questions:
+  "T11|T19": "cross-t11-t19"
+routing_questions:
+  - id: cross-t11-t19
+    text: "Is the question about what relations the diagram asserts among elements, or about what the layout or composition itself is doing?"
+    territories: ["T11","T19"]
+    answers:
+      - {"phrases":["relation-extraction","relations asserted","notation","who is connected to whom"],"targets":[{"kind":"territory","id":"T11"}],"qualification":"Read the diagram as notation; extract its asserted relations."}
+      - {"phrases":["layout-doing","layout","composition","what the layout does"],"targets":[{"kind":"territory","id":"T19"}],"qualification":"Read what the composition itself is doing."}
+      - {"phrases":["both","relations and layout","asserts and layout"],"targets":[{"kind":"territory","id":"T11"},{"kind":"territory","id":"T19"}],"qualification":"Extract the more determinate relations first; compositional reading builds on that characterized artifact."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"What does this org chart say about reporting lines?"* → T11.
@@ -347,11 +504,18 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Both engage with unfamiliar or open spaces. T14 is analytical — what's here, what's the lay of the land. T20 is generative — what could be, what opens up.
 
-**Disambiguating question.** "Trying to orient in an unfamiliar space (what's here), or generating in an open space (what could be)?"
-
-**Routing.**
-- Orienting → T14 (Quick Orientation / Terrain Mapping / Domain Induction).
-- Generating → T20 (Passion Exploration / Idea Development / Research Question Generation).
+```yaml
+cross_territory_questions:
+  "T14|T20": "cross-t14-t20"
+routing_questions:
+  - id: cross-t14-t20
+    text: "Trying to orient in an unfamiliar space (what's here), or generating in an open space (what could be)?"
+    territories: ["T14","T20"]
+    answers:
+      - {"phrases":["orienting","orient","what is here","lay of the land"],"targets":[{"kind":"territory","id":"T14"}],"qualification":"Analytical orientation in an unfamiliar space."}
+      - {"phrases":["generating","generate","what could be","open exploration"],"targets":[{"kind":"territory","id":"T20"}],"qualification":"Generative exploration of what could open up."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"I'm new to this codebase — give me the lay of the land."* → T14.
@@ -363,11 +527,19 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 
 **Why adjacent.** Aesthetic inputs (paintings, gardens, scenes) can be read analytically (T19 — defeasible operations on what the composition does) or explored open-endedly (T20 — what the work opens up for the viewer).
 
-**Disambiguating question.** "Are you asking for analytical reading of the composition, or for open-ended exploration of what it opens up?"
-
-**Routing.**
-- Analytical reading → T19 (Compositional Dynamics / Ma Reading / Place Reading / Information Density).
-- Open exploration → T20 (Passion Exploration / Idea Development).
+```yaml
+cross_territory_questions:
+  "T19|T20": "cross-t19-t20"
+routing_questions:
+  - id: cross-t19-t20
+    text: "Are you asking for analytical reading of the composition, or for open-ended exploration of what it opens up?"
+    territories: ["T19","T20"]
+    answers:
+      - {"phrases":["analytical reading","composition","read compositionally","layout"],"targets":[{"kind":"territory","id":"T19"}],"qualification":"Perform defeasible analysis of the composition."}
+      - {"phrases":["open exploration","what it opens up","explore","fascinates me"],"targets":[{"kind":"territory","id":"T20"}],"qualification":"Open-ended exploration of what the work opens up for the viewer."}
+      - {"phrases":["both","read it and let me explore"],"targets":[{"kind":"territory","id":"T19"},{"kind":"territory","id":"T20"}],"qualification":"Analytical reading first grounds the open exploration that follows."}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 **Examples.**
 - *"Read this painting compositionally — what is the layout doing?"* → T19.
@@ -377,6 +549,160 @@ This file documents the cross-territory disambiguation patterns consulted by Sta
 - *"Both — read it and let me explore."* → T19 + T20 (sequential, T19 first to ground the exploration).
 
 **Sequential dispatch note.** When both fire on aesthetic input, T19 typically runs first because the analytical reading grounds the open exploration that T20 then carries.
+
+### T2 ↔ T18 (Interest and Power ↔ Strategic Interaction)
+
+**Why adjacent.** T2 maps who benefits and who holds power; T18 analyzes the moves, information and incentives through which strategic players respond to one another.
+
+```yaml
+cross_territory_questions:
+  "T2|T18": "cross-t2-t18"
+routing_questions:
+  - id: cross-t2-t18
+    text: "Are you asking who benefits and where power sits, or how the players will respond to one another and what incentives shape their choices?"
+    territories: ["T2","T18"]
+    answers:
+      - {"phrases":["who benefits","where power sits","interests","power"],"targets":[{"kind":"territory","id":"T2"}]}
+      - {"phrases":["players respond","equilibrium","strategic moves","incentives"],"targets":[{"kind":"territory","id":"T18"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T9 ↔ T10 (Paradigm Examination ↔ Conceptual Clarification)
+
+**Why adjacent.** A concept can be embedded in a paradigm dispute. T10 clarifies or revises the meaning of the concept; T9 examines the wider frame that organizes the issue.
+
+```yaml
+cross_territory_questions:
+  "T9|T10": "cross-t9-t10"
+routing_questions:
+  - id: cross-t9-t10
+    text: "Is the question about what a particular concept means or should mean, or about the wider paradigm through which the issue is understood?"
+    territories: ["T9","T10"]
+    answers:
+      - {"phrases":["particular concept","meaning","definition","what it should mean"],"targets":[{"kind":"territory","id":"T10"}]}
+      - {"phrases":["wider paradigm","frame","worldview","assumptions"],"targets":[{"kind":"territory","id":"T9"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T2 ↔ T3 (Interest and Power ↔ Decision Under Uncertainty)
+
+**Why adjacent.** Decision Clarity in T2 is the analyst’s document for a third-party decision-maker. T3 works through the user’s choice among alternatives, constraints, uncertainty and criteria.
+
+```yaml
+cross_territory_questions:
+  "T2|T3": "cross-t2-t3"
+routing_questions:
+  - id: cross-t2-t3
+    text: "Are you analyzing interests and power or preparing decision clarity for another decision-maker, or working through the choice you need to make?"
+    territories: ["T2","T3"]
+    answers:
+      - {"phrases":["interests and power","who benefits"],"targets":[{"kind":"territory","id":"T2"}]}
+      - {"phrases":["decision clarity for another decision-maker","for someone else","analyst document"],"targets":[{"kind":"active","id":"decision-clarity"}],"qualification":"The user is the analyst; another person owns the decision."}
+      - {"phrases":["my choice","my decision","choose among alternatives","choice I need to make"],"targets":[{"kind":"territory","id":"T3"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T7 ↔ T18 (Risk and Failure ↔ Strategic Interaction)
+
+**Why adjacent.** A strategic interaction can be examined for its moves and equilibrium (T18) or for where its structure could fail (T7).
+
+```yaml
+cross_territory_questions:
+  "T7|T18": "cross-t7-t18"
+routing_questions:
+  - id: cross-t7-t18
+    text: "Are you analyzing the players’ strategic responses, or examining where this strategic structure could fail under pressure?"
+    territories: ["T7","T18"]
+    answers:
+      - {"phrases":["strategic responses","moves","equilibrium","players"],"targets":[{"kind":"territory","id":"T18"}]}
+      - {"phrases":["could fail","under pressure","fragility","failure"],"targets":[{"kind":"territory","id":"T7"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T13 ↔ T18 (Negotiation ↔ Strategic Interaction)
+
+**Why adjacent.** T13 guides an actual negotiation or mediation. T18 models strategic interaction, including formal payoffs and incentive structures.
+
+```yaml
+cross_territory_questions:
+  "T13|T18": "cross-t13-t18"
+routing_questions:
+  - id: cross-t13-t18
+    text: "Do you need guidance for conducting a negotiation or mediation, or a model of the strategic game, payoffs and incentives?"
+    territories: ["T13","T18"]
+    answers:
+      - {"phrases":["negotiation guidance","conduct negotiation","mediation","mediator"],"targets":[{"kind":"territory","id":"T13"}]}
+      - {"phrases":["strategic game","formal payoffs","equilibrium","incentive structure"],"targets":[{"kind":"territory","id":"T18"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T12 ↔ T20 (Knowledge Synthesis ↔ Open Exploration)
+
+**Why adjacent.** T12 integrates existing knowledge bodies or works through their tensions. T20 explores what an open interest could become.
+
+```yaml
+cross_territory_questions:
+  "T12|T20": "cross-t12-t20"
+routing_questions:
+  - id: cross-t12-t20
+    text: "Are you integrating existing knowledge or working through its tensions, or exploring new directions an open interest could take?"
+    territories: ["T12","T20"]
+    answers:
+      - {"phrases":["integrate existing knowledge","synthesis","tensions","knowledge bodies"],"targets":[{"kind":"territory","id":"T12"}]}
+      - {"phrases":["explore new directions","open interest","generative","what could be"],"targets":[{"kind":"territory","id":"T20"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T11 ↔ T14 (Relationship Mapping ↔ Orientation)
+
+**Why adjacent.** Orientation in T14 can produce a relationship map as a side-effect. T11 elaborates the relations among particular entities when those relations themselves are the object.
+
+```yaml
+cross_territory_questions:
+  "T11|T14": "cross-t11-t14"
+routing_questions:
+  - id: cross-t11-t14
+    text: "Do you need the lay of the land in an unfamiliar domain, or a map of how particular entities relate to one another?"
+    territories: ["T11","T14"]
+    answers:
+      - {"phrases":["lay of the land","unfamiliar domain","orientation","terrain"],"targets":[{"kind":"territory","id":"T14"}]}
+      - {"phrases":["particular entities","relationships","relations","map how parts relate"],"targets":[{"kind":"territory","id":"T11"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T16 ↔ T19 (Mechanism Understanding ↔ Spatial Composition)
+
+**Why adjacent.** T16 explains the mechanism that produces behavior. T19 reads what the spatial arrangement itself makes possible or impossible.
+
+```yaml
+cross_territory_questions:
+  "T16|T19": "cross-t16-t19"
+routing_questions:
+  - id: cross-t16-t19
+    text: "Are you asking how the mechanism produces its behavior, or what the spatial composition and layout are doing?"
+    territories: ["T16","T19"]
+    answers:
+      - {"phrases":["mechanism","how it works","produces behavior","working principle"],"targets":[{"kind":"territory","id":"T16"}]}
+      - {"phrases":["spatial composition","layout","composition","arrangement"],"targets":[{"kind":"territory","id":"T19"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
+
+### T17 ↔ T19 (Process Analysis ↔ Spatial Composition)
+
+**Why adjacent.** T17 maps process, flow and feedback over time. T19 reads the effects of spatial arrangement and composition.
+
+```yaml
+cross_territory_questions:
+  "T17|T19": "cross-t17-t19"
+routing_questions:
+  - id: cross-t17-t19
+    text: "Is the question about the process, sequence or feedback over time, or about what the spatial layout and composition are doing?"
+    territories: ["T17","T19"]
+    answers:
+      - {"phrases":["process","sequence","feedback","flow over time"],"targets":[{"kind":"territory","id":"T17"}]}
+      - {"phrases":["spatial layout","composition","arrangement","layout"],"targets":[{"kind":"territory","id":"T19"}]}
+    default: {"targets":[{"kind":"fallback","id":"route-by-intent"}],"qualification":"The boundary remains unresolved without enough intent; retain clarification rather than picking a territory by roster order."}
+```
 
 ---
 

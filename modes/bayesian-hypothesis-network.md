@@ -13,21 +13,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: bayesian-hypothesis-network
-canonical_name: Bayesian Hypothesis Network
-suffix_rule: analysis
-educational_name: Bayesian hypothesis network (probabilistic posterior over competing explanations)
+mode_id: "bayesian-hypothesis-network"
+canonical_name: "Bayesian Hypothesis Network"
+suffix_rule: "analysis"
+educational_name: "Bayesian hypothesis network (probabilistic posterior over competing explanations)"
 
 # 1. TERRITORY AND POSITION
-territory: T5-hypothesis-evaluation
+territory: "T5-hypothesis-evaluation"
 gradation_position:
-  axis: depth
-  value: molecular
+  axis: "depth"
+  value: "molecular"
 adjacent_modes_in_territory:
-  - mode_id: differential-diagnosis
-    relationship: depth-light sibling (medical-tradition triage)
-  - mode_id: competing-hypotheses
-    relationship: depth-thorough sibling (Heuer ACH)
+  - mode_id: "differential-diagnosis"
+    relationship: "depth-light sibling (medical-tradition triage)"
+  - mode_id: "competing-hypotheses"
+    relationship: "depth-thorough sibling (Heuer ACH)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -47,38 +47,49 @@ disambiguation_routing:
     - "hypotheses are interdependent (one's truth affects another's prior)"
     - "user willing to spend 10+ minutes for full molecular pass"
   routes_away_when:
-    - "want quick triage among 3-5 explanations" → differential-diagnosis
-    - "want full ACH matrix without Bayesian formalism" → competing-hypotheses
-    - "the disagreement is really about frame, not within-frame hypothesis weighing" → frame-comparison or worldview-cartography
+    - condition: "want quick triage among 3-5 explanations"
+      targets: [{"kind": "active", "id": "differential-diagnosis"}]
+      qualification: "differential-diagnosis"
+    - condition: "want full ACH matrix without Bayesian formalism"
+      targets: [{"kind": "active", "id": "competing-hypotheses"}]
+      qualification: "competing-hypotheses"
+    - condition: "the disagreement is really about frame, not within-frame hypothesis weighing"
+      targets: [{"kind": "active", "id": "frame-comparison"}, {"kind": "active", "id": "worldview-cartography"}]
+      qualification: "frame-comparison or worldview-cartography"
 when_not_to_invoke:
-  - "User has no priors and no evidence-likelihood intuitions to anchor" → competing-hypotheses (qualitative ACH)
-  - "Hypotheses are arguments-as-artifacts to audit" → T1 (argument-audit)
+  - condition: "User has no priors and no evidence-likelihood intuitions to anchor"
+    targets: [{"kind": "active", "id": "competing-hypotheses"}]
+    qualification: "competing-hypotheses (qualitative ACH)"
+  - condition: "Hypotheses are arguments-as-artifacts to audit"
+    targets: [{"kind": "active", "id": "argument-audit"}]
+    qualification: "T1 (argument-audit)"
 
 # 3. EXECUTION STRUCTURE
-composition: molecular
+composition: "molecular"
 molecular_spec:
+  companion_source: "frameworks/book/bayesian-hypothesis-network-analysis.md"
   components:
-    - mode_id: differential-diagnosis
-      runs: fragment
+    - mode_id: "differential-diagnosis"
+      runs: "fragment"
       fragment_spec: "hypothesis-list-only — produce the candidate hypothesis set without ranking or full triage; serves as breadth seed for the Bayesian network"
-    - mode_id: competing-hypotheses
-      runs: full
+    - mode_id: "competing-hypotheses"
+      runs: "full"
   synthesis_stages:
-    - name: prior-elicitation
-      type: parallel-merge
+    - name: "prior-elicitation"
+      type: "parallel-merge"
       input: [differential-diagnosis-fragment, competing-hypotheses]
       output: "consolidated hypothesis set with elicited prior probabilities per hypothesis (and noted base-rate sources)"
-    - name: bayesian-network-construction
-      type: sequenced-build
+    - name: "bayesian-network-construction"
+      type: "sequenced-build"
       input: [prior-elicitation, competing-hypotheses]
       output: "Bayesian hypothesis network: hypotheses as nodes with priors; evidence-items as nodes with likelihoods; conditional dependencies between hypotheses named explicitly"
-    - name: posterior-update
-      type: dialectical-resolution
+    - name: "posterior-update"
+      type: "dialectical-resolution"
       input: [bayesian-network-construction]
       output: "posterior probability distribution over hypotheses after evidence integration; sensitivity analysis identifying which evidence items most shift the posterior"
   partial_composition_handling:
-    on_component_failure: proceed-with-gap
-    on_low_confidence: flag affected stage; if priors cannot be elicited with confidence, document as flat-prior assumption rather than fabricating point estimates
+    on_component_failure: "proceed-with-gap"
+    on_low_confidence: "flag affected stage; if priors cannot be elicited with confidence, document as flat-prior assumption rather than fabricating point estimates"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -93,65 +104,98 @@ input_contract:
   detection:
     expert_signals: ["prior probability", "likelihood", "base rate", "P(H)", "P(E|H)"]
     accessible_signals: ["competing explanations", "what's the most likely"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the phenomenon you're trying to explain, and what candidate explanations are on the table?'"
     on_underspecified: "Ask the user whether they want the full Bayesian network pass or a lighter ACH matrix (competing-hypotheses)."
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have priors been elicited from base rates or domain knowledge, or are they fabricated point estimates?"
-    failure_mode_if_unmet: prior-fabrication
-  - cq_id: CQ2
+    failure_mode_if_unmet: "prior-fabrication"
+  - cq_id: "CQ2"
     question: "Have conditional dependencies among hypotheses been surfaced, or has the network treated all hypotheses as independent?"
-    failure_mode_if_unmet: independence-assumption-collapse
-  - cq_id: CQ3
+    failure_mode_if_unmet: "independence-assumption-collapse"
+  - cq_id: "CQ3"
     question: "Has sensitivity analysis identified which evidence items most shift the posterior, or does the output present a single posterior without robustness check?"
-    failure_mode_if_unmet: sensitivity-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "sensitivity-omission"
+  - cq_id: "CQ4"
     question: "Are the hypotheses mutually exclusive and collectively exhaustive (or is non-MECE structure explicitly named)?"
-    failure_mode_if_unmet: mece-violation-unnamed
+    failure_mode_if_unmet: "mece-violation-unnamed"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: prior-fabrication
+  - name: "prior-fabrication"
     detection_signal: "Priors are stated as round numbers (0.5, 0.33) without base-rate or domain-knowledge anchor."
-    correction_protocol: re-dispatch (with explicit base-rate-elicitation prompt) or flag and convert to flat-prior assumption
-  - name: independence-assumption-collapse
+    correction_protocol: "re-dispatch (with explicit base-rate-elicitation prompt) or flag and convert to flat-prior assumption"
+  - name: "independence-assumption-collapse"
     detection_signal: "Network has no conditional-dependency arcs even when hypotheses share underlying mechanism."
-    correction_protocol: re-dispatch
-  - name: sensitivity-omission
+    correction_protocol: "re-dispatch"
+  - name: "sensitivity-omission"
     detection_signal: "Posterior reported without indication of which evidence items dominate the update."
-    correction_protocol: flag and re-dispatch
-  - name: mece-violation-unnamed
+    correction_protocol: "flag and re-dispatch"
+  - name: "mece-violation-unnamed"
     detection_signal: "Hypotheses overlap or do not exhaust the space, and this is not flagged in the output."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - heuer-ach-diagnosticity
+  - heuer-ach-diagnosticity
   optional:
-    - pearl-do-calculus (when network has causal interpretation)
-    - tetlock-superforecasting (when long-horizon hypotheses)
+  - lens_id: pearl-do-calculus
+    qualification: when network has causal interpretation
+  - lens_id: tetlock-superforecasting
+    qualification: when long-horizon hypotheses
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
-
+  - kahneman-tversky-bias-catalog
+  - knightian-risk-uncertainty-ambiguity
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 3
-expected_runtime: ~10+min
+expected_runtime: "~10+min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Bayesian Hypothesis Network is the heaviest mode in T5."
   sideways:
-    target_mode_id: null
+    target: null
     when: "No within-T5 stance/complexity sibling beyond depth ladder."
   downward:
-    target_mode_id: competing-hypotheses
+    target: {"kind": "active", "id": "competing-hypotheses"}
     when: "User has time pressure or priors cannot be elicited; full ACH matrix substitutes."
 ```
+
+## Display Description
+
+Builds an explicit Bayesian network over hypotheses and evidence, propagating posteriors quantitatively.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work through these hypotheses with priors"
+  signals:
+    - {"signal": "Bayesian network", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Bayesian hypothesis network", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "probabilistic posterior over hypotheses", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "ACH with priors", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "ACH plus priors", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "Bayes net", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "Pearl Bayesian network", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author + method reference"}
+    - {"signal": "posterior probability", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "likelihood ratios across hypotheses", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "sensitivity to priors", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "differential plus ACH plus Bayesian", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "full hypothesis network", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "comprehensive hypothesis evaluation", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "bayesian reasoning", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "base rate neglect", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

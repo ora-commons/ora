@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: paradigm-suspension
-canonical_name: Paradigm Suspension
-suffix_rule: analysis
-educational_name: paradigm suspension and assumption surfacing
+mode_id: "paradigm-suspension"
+canonical_name: "Paradigm Suspension"
+suffix_rule: "analysis"
+educational_name: "paradigm suspension and assumption surfacing"
 
 # 1. TERRITORY AND POSITION
-territory: T9-paradigm-and-assumption-examination
+territory: "T9-paradigm-and-assumption-examination"
 gradation_position:
-  axis: stance
-  value: suspending
+  axis: "stance"
+  value: "suspending"
 adjacent_modes_in_territory:
-  - mode_id: frame-comparison
-    relationship: stance counterpart (comparing rather than suspending)
-  - mode_id: worldview-cartography
-    relationship: depth-molecular sibling (deeper synthesis across paradigms)
+  - mode_id: "frame-comparison"
+    relationship: "stance counterpart (comparing rather than suspending)"
+  - mode_id: "worldview-cartography"
+    relationship: "depth-molecular sibling (deeper synthesis across paradigms)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -45,20 +45,32 @@ disambiguation_routing:
     - "challenge the foundational assumptions a single consensus depends on"
     - "evaluate evidence without the interpretive overlay of the dominant frame"
   routes_away_when:
-    - "compare two or more paradigms side by side" → frame-comparison
-    - "build a synthesis across worldviews" → worldview-cartography
-    - "challenge a single argument's coherence within its own frame" → coherence-audit (T1)
-    - "trace institutional interests behind the position" → cui-bono (T2)
+    - condition: "compare two or more paradigms side by side"
+      targets: [{"kind": "active", "id": "frame-comparison"}]
+      qualification: "frame-comparison"
+    - condition: "build a synthesis across worldviews"
+      targets: [{"kind": "active", "id": "worldview-cartography"}]
+      qualification: "worldview-cartography"
+    - condition: "challenge a single argument's coherence within its own frame"
+      targets: [{"kind": "active", "id": "coherence-audit"}]
+      qualification: "coherence-audit (T1)"
+    - condition: "trace institutional interests behind the position"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono (T2)"
 when_not_to_invoke:
-  - "User accepts the consensus and wants to work within it" → Project Mode or Constraint Mapping
-  - "Question targets a specific claim's truth, not the framework that gives it sense" → Deep Clarification
+  - condition: "User accepts the consensus and wants to work within it"
+    targets: [{"kind": "active", "id": "project-mode"}, {"kind": "active", "id": "constraint-mapping"}]
+    qualification: "Project Mode or Constraint Mapping"
+  - condition: "Question targets a specific claim's truth, not the framework that gives it sense"
+    targets: [{"kind": "active", "id": "deep-clarification"}]
+    qualification: "Deep Clarification"
   - "User wants to push back against observation rather than against authority — Einstein guard rail violation"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: suspending
+  posture: "suspending"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -73,68 +85,96 @@ input_contract:
   detection:
     expert_signals: ["Lakatosian", "Kuhnian", "hard core", "protective belt", "paradigm shift", "anomaly"]
     accessible_signals: ["what if X is wrong", "the standard view", "this can't be the whole story"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the consensus position or accepted explanation you want to question?'"
     on_underspecified: "Ask: 'Are you challenging the evidence behind a position, or the interests pushing it? If interests, route to Cui Bono.'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have foundational assumptions been stated as testable propositions, or are they smuggled in as conclusions?"
-    failure_mode_if_unmet: assumption-as-conclusion
-  - cq_id: CQ2
+    failure_mode_if_unmet: "assumption-as-conclusion"
+  - cq_id: "CQ2"
     question: "Is observational evidence cleanly separated from interpretive evidence, with the same standard applied to consensus and alternatives?"
-    failure_mode_if_unmet: asymmetric-evidence-standard
-  - cq_id: CQ3
+    failure_mode_if_unmet: "asymmetric-evidence-standard"
+  - cq_id: "CQ3"
     question: "Is the Einstein guard rail honoured — push back against authority, never against observation?"
-    failure_mode_if_unmet: einstein-guard-rail-violation
-  - cq_id: CQ4
+    failure_mode_if_unmet: "einstein-guard-rail-violation"
+  - cq_id: "CQ4"
     question: "Are alternatives genuinely distinct from the consensus and grounded in observational evidence, not strawmen?"
-    failure_mode_if_unmet: false-equivalence
+    failure_mode_if_unmet: "false-equivalence"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: contrarianism-trap
+  - name: "contrarianism-trap"
     detection_signal: "Mode concludes the consensus is wrong without evidential grounding for the rejection."
-    correction_protocol: flag
-  - name: false-equivalence
+    correction_protocol: "flag"
+  - name: "false-equivalence"
     detection_signal: "Fringe alternative treated as equally supported by the same kind of evidence the consensus rests on."
-    correction_protocol: flag
-  - name: interpretive-evidence-trap
+    correction_protocol: "flag"
+  - name: "interpretive-evidence-trap"
     detection_signal: "Alternative's evidence accepted uncritically while consensus evidence is held to a higher standard (or vice versa)."
-    correction_protocol: re-dispatch (apply observational/interpretive distinction symmetrically)
-  - name: einstein-guard-rail-violation
+    correction_protocol: "re-dispatch (apply observational/interpretive distinction symmetrically)"
+  - name: "einstein-guard-rail-violation"
     detection_signal: "An observation is dismissed in order to favour a preferred alternative."
-    correction_protocol: flag
-  - name: assumption-as-conclusion
+    correction_protocol: "flag"
+  - name: "assumption-as-conclusion"
     detection_signal: "A foundational assumption is stated in conclusion form ('therefore X') rather than testable form ('it is claimed that X')."
-    correction_protocol: re-dispatch (rewrite as testable proposition)
+    correction_protocol: "re-dispatch (rewrite as testable proposition)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - lakatos-hard-core-protective-belt
+    - "lakatos-hard-core-protective-belt"
   optional:
-    - kuhn-paradigm-incommensurability
-    - hermeneutic-circle
+    - "kuhn-paradigm-incommensurability"
+    - "hermeneutic-circle"
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
+    - "kahneman-tversky-bias-catalog"
+    - "knightian-risk-uncertainty-ambiguity"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: worldview-cartography
+    target: {"kind": "active", "id": "worldview-cartography"}
     when: "Suspension reveals multiple paradigms in genuine tension that warrant integrative synthesis."
   sideways:
-    target_mode_id: frame-comparison
+    target: {"kind": "active", "id": "frame-comparison"}
     when: "Suspension surfaces two or more paradigms; user wants comparative reading rather than single-frame suspension."
   downward:
-    target_mode_id: null
+    target: null
     when: "Paradigm Suspension is the lightest stance position in T9."
 ```
+
+## Display Description
+
+Suspends the assumed frame to test whether unspoken paradigm commitments are doing load-bearing work.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll suspend the assumptions in this {artifact}"
+  signals:
+    - {"signal": "paradigm suspension", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "suspend the paradigm", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "question the frame", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what if the consensus is wrong", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what if X is wrong", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "heterodox", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "Kuhnian", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "Lakatosian", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "foundational assumption", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "Einstein guard rail", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "mode-internal vocabulary"}
+    - {"signal": "consensus is data", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (consensus-as-evidence)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

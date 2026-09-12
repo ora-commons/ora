@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: interest-mapping
-canonical_name: Interest Mapping
-suffix_rule: analysis
-educational_name: interest mapping (Fisher-Ury principled negotiation lighter sibling)
+mode_id: "interest-mapping"
+canonical_name: "Interest Mapping"
+suffix_rule: "analysis"
+educational_name: "interest mapping (Fisher-Ury principled negotiation lighter sibling)"
 
 # 1. TERRITORY AND POSITION
-territory: T13-negotiation-and-conflict-resolution
+territory: "T13-negotiation-and-conflict-resolution"
 gradation_position:
-  axis: depth
-  value: light
+  axis: "depth"
+  value: "light"
 adjacent_modes_in_territory:
-  - mode_id: principled-negotiation
-    relationship: depth-heavier sibling (full Fisher-Ury — Wave 3)
-  - mode_id: third-side
-    relationship: stance-counterpart (mediator-stance, multi-party — Wave 3)
+  - mode_id: "principled-negotiation"
+    relationship: "depth-heavier sibling (full Fisher-Ury — Wave 3)"
+  - mode_id: "third-side"
+    relationship: "stance-counterpart (mediator-stance, multi-party — Wave 3)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -49,20 +49,34 @@ disambiguation_routing:
     - "user wants the interests-vs-positions distinction applied lightly without full Fisher-Ury orchestration"
     - "the negotiation is two-party (or treated as two-party for the purpose of mapping)"
   routes_away_when:
-    - "user wants full Fisher-Ury including BATNA, options-for-mutual-gain, objective-criteria" → principled-negotiation
-    - "user wants multi-party mediation perspective" → third-side
-    - "user wants descriptive interest-power analysis without negotiation framing" → cui-bono (T2)
-    - "user wants stakeholder landscape without active negotiation" → stakeholder-mapping (T8)
+    - condition: "user wants full Fisher-Ury including BATNA, options-for-mutual-gain, objective-criteria"
+      targets: [{"kind": "active", "id": "principled-negotiation"}]
+      qualification: "principled-negotiation"
+    - condition: "user wants multi-party mediation perspective"
+      targets: [{"kind": "active", "id": "third-side"}]
+      qualification: "third-side"
+    - condition: "user wants descriptive interest-power analysis without negotiation framing"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono (T2)"
+    - condition: "user wants stakeholder landscape without active negotiation"
+      targets: [{"kind": "active", "id": "stakeholder-mapping"}]
+      qualification: "stakeholder-mapping (T8)"
 when_not_to_invoke:
-  - "User has time and depth for full Fisher-Ury" → principled-negotiation
-  - "Conflict is multi-party and a single mediator-perspective is needed" → third-side
-  - "User is post-negotiation and wants retrospective analysis" → other modes per question shape
+  - condition: "User has time and depth for full Fisher-Ury"
+    targets: [{"kind": "active", "id": "principled-negotiation"}]
+    qualification: "principled-negotiation"
+  - condition: "Conflict is multi-party and a single mediator-perspective is needed"
+    targets: [{"kind": "active", "id": "third-side"}]
+    qualification: "third-side"
+  - condition: "User is post-negotiation and wants retrospective analysis"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "other modes per question shape"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -77,61 +91,95 @@ input_contract:
   detection:
     expert_signals: ["the parties are", "stated positions", "BATNA", "Fisher Ury", "interests vs positions"]
     accessible_signals: ["going into a negotiation", "they're saying X but mean Y", "underlying interests", "what each side really wants"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Who are the parties, and what is each one currently saying they want?'"
     on_underspecified: "Ask: 'For each party, what would they need to walk away feeling the negotiation worked for them?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the analysis maintained the Fisher-Ury distinction between positions (what each party is asking for) and interests (what each party actually needs), or has it conflated the two?"
-    failure_mode_if_unmet: position-interest-collapse
-  - cq_id: CQ2
+    failure_mode_if_unmet: "position-interest-collapse"
+  - cq_id: "CQ2"
     question: "Have inferred interests been distinguished from confirmed interests — i.e., flagged as hypotheses to test in the negotiation rather than asserted as known facts?"
-    failure_mode_if_unmet: inference-as-fact
-  - cq_id: CQ3
+    failure_mode_if_unmet: "inference-as-fact"
+  - cq_id: "CQ3"
     question: "Has the analysis surfaced both shared/compatible interests (where integrative moves are possible) and genuinely opposed interests (where distributive bargaining or value-based difference remains), rather than presenting the situation as either fully integrative or fully zero-sum?"
-    failure_mode_if_unmet: integrative-overreach-or-zero-sum-default
+    failure_mode_if_unmet: "integrative-overreach-or-zero-sum-default"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: position-interest-collapse
+  - name: "position-interest-collapse"
     detection_signal: "Inferred interests track stated positions too closely, suggesting the analyst restated what each side asked for in interest-language without descending to underlying need."
-    correction_protocol: re-dispatch
-  - name: inference-as-fact
+    correction_protocol: "re-dispatch"
+  - name: "inference-as-fact"
     detection_signal: "Inferred interests presented without flagging as hypotheses; flagged-unknowns section is empty."
-    correction_protocol: re-dispatch
-  - name: integrative-overreach-or-zero-sum-default
+    correction_protocol: "re-dispatch"
+  - name: "integrative-overreach-or-zero-sum-default"
     detection_signal: "Output presents the negotiation as either fully solvable through integrative moves (no genuinely opposed interests acknowledged) or fully zero-sum (no shared interests surfaced)."
-    correction_protocol: flag
-  - name: cultural-context-flatness
+    correction_protocol: "flag"
+  - name: "cultural-context-flatness"
     detection_signal: "Interest inferences applied without consideration of how cultural, organizational, or relational context shapes which interests are surfaceable in the negotiation."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - fisher-ury-principled-negotiation
+  - fisher-ury-principled-negotiation
   optional:
-    - voss-tactical-empathy (when negotiation is high-stakes or adversarial)
-    - lewicki-negotiation-frameworks (when context calls for distributive analysis alongside integrative)
+  - lens_id: voss-tactical-empathy
+    qualification: when negotiation is high-stakes or adversarial
+  - lens_id: lewicki-negotiation-frameworks
+    qualification: when context calls for distributive analysis alongside integrative
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: principled-negotiation
+    target: {"kind": "active", "id": "principled-negotiation"}
     when: "Negotiation requires full Fisher-Ury including BATNA assessment, options-for-mutual-gain generation, objective-criteria selection."
   sideways:
-    target_mode_id: third-side
+    target: {"kind": "active", "id": "third-side"}
     when: "Negotiation has more than two parties or requires a mediator-stance rather than a party-stance."
   downward:
-    target_mode_id: null
+    target: null
     when: "Interest-mapping is already the lightest mode in T13."
 ```
+
+## Display Description
+
+Maps positions to underlying interests across parties (Fisher-Ury short form).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll map the interests around this {artifact}"
+  signals:
+    - {"signal": "interest mapping", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Fisher Ury", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Fisher-Ury", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "interests not positions", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "interests vs positions", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "underlying interests", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "negotiation interests", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "BATNA mapping", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "BATNA", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "principled negotiation light", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what does each side really want", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "going into a negotiation", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (active-negotiation)"}
+    - {"signal": "they're saying X but mean Y", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (position-vs-interest)"}
+    - {"signal": "fisher ury principled negotiation", "territory": "T13-negotiation-and-conflict-resolution", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "batna", "territory": "T13-negotiation-and-conflict-resolution", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "best alternative to a negotiated agreement", "territory": "T13-negotiation-and-conflict-resolution", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

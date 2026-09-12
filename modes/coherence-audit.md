@@ -12,26 +12,26 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: coherence-audit
-canonical_name: Coherence Audit
-suffix_rule: analysis
-educational_name: argument coherence audit (Toulmin model + fallacy taxonomy)
+mode_id: "coherence-audit"
+canonical_name: "Coherence Audit"
+suffix_rule: "analysis"
+educational_name: "argument coherence audit (Toulmin model + fallacy taxonomy)"
 
 # 1. TERRITORY AND POSITION
-territory: T1-argumentative-artifact-examination
+territory: "T1-argumentative-artifact-examination"
 gradation_position:
-  axis: depth
-  value: light
-  stance_axis_value: neutral
+  axis: "depth"
+  value: "light"
+  stance_axis_value: "neutral"
 adjacent_modes_in_territory:
-  - mode_id: frame-audit
-    relationship: depth-light + stance-suspending sibling (built Wave 2)
-  - mode_id: propaganda-audit
-    relationship: specificity-specialized + adversarial-stance sibling (built Wave 2)
-  - mode_id: argument-audit
-    relationship: depth-molecular sibling (composes coherence + frame + propaganda; Wave 4)
-  - mode_id: position-genealogy
-    relationship: specificity-sibling (stance-historical; gap-deferred per CR-6)
+  - mode_id: "frame-audit"
+    relationship: "depth-light + stance-suspending sibling (built Wave 2)"
+  - mode_id: "propaganda-audit"
+    relationship: "specificity-specialized + adversarial-stance sibling (built Wave 2)"
+  - mode_id: "argument-audit"
+    relationship: "depth-molecular sibling (composes coherence + frame + propaganda; Wave 4)"
+  - mode_id: "position-genealogy"
+    relationship: "specificity-sibling (stance-historical; gap-deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -56,21 +56,37 @@ disambiguation_routing:
     - "user wants Toulmin reconstruction (claim, data, warrant, backing, qualifier, rebuttal) plus fallacy-taxonomy check"
     - "user wants the audit conclusion-agnostic (the argument fails, but the conclusion may still be true)"
   routes_away_when:
-    - "user wants frame-surfacing rather than inferential check" → frame-audit
-    - "user suspects propaganda specifically" → propaganda-audit
-    - "user wants integrated coherence + frame + propaganda synthesis" → argument-audit (Wave 4)
-    - "user wants to weigh competing hypotheses against evidence (ACH-style)" → competing-hypotheses (T5)
-    - "user wants steelman or red-team-assessment / red-team-advocate evaluation of the artifact as a proposal" → T15 modes
+    - condition: "user wants frame-surfacing rather than inferential check"
+      targets: [{"kind": "active", "id": "frame-audit"}]
+      qualification: "frame-audit"
+    - condition: "user suspects propaganda specifically"
+      targets: [{"kind": "active", "id": "propaganda-audit"}]
+      qualification: "propaganda-audit"
+    - condition: "user wants integrated coherence + frame + propaganda synthesis"
+      targets: [{"kind": "active", "id": "argument-audit"}]
+      qualification: "argument-audit (Wave 4)"
+    - condition: "user wants to weigh competing hypotheses against evidence (ACH-style)"
+      targets: [{"kind": "active", "id": "competing-hypotheses"}]
+      qualification: "competing-hypotheses (T5)"
+    - condition: "user wants steelman or red-team-assessment / red-team-advocate evaluation of the artifact as a proposal"
+      targets: [{"kind": "territory", "id": "T15"}]
+      qualification: "T15 modes"
 when_not_to_invoke:
-  - "Artifact is not argumentative (raw data, narrative, instructions without claims)" → other territory
-  - "User wants to evaluate competing hypotheses against evidence" → competing-hypotheses (T5)
-  - "User wants to evaluate the artifact as a proposal with adopted stance" → T15 modes
+  - condition: "Artifact is not argumentative (raw data, narrative, instructions without claims)"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "other territory"
+  - condition: "User wants to evaluate competing hypotheses against evidence"
+    targets: [{"kind": "active", "id": "competing-hypotheses"}]
+    qualification: "competing-hypotheses (T5)"
+  - condition: "User wants to evaluate the artifact as a proposal with adopted stance"
+    targets: [{"kind": "territory", "id": "T15"}]
+    qualification: "T15 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: neutral
+  posture: "neutral"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -85,77 +101,118 @@ input_contract:
   detection:
     expert_signals: ["Toulmin", "warrant", "backing", "qualifier", "rebuttal", "fallacy", "Walton", "argumentation scheme", "critical questions", "pragma-dialectics", "enthymeme", "modus tollens", "affirming the consequent", "begging the question"]
     accessible_signals: ["does this hold up", "is the reasoning sound", "what's wrong with this argument", "fallacy check"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you paste the argument and tell me roughly which conclusion you want me to audit the support for?'"
     on_underspecified: "Ask: 'Are you noticing something specific that doesn't follow, or do you want a structural sweep across all the inferential moves?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the audit performed charitable reconstruction first — surfacing implicit premises (enthymemes), resolving textual ambiguity in the speaker's favor, and identifying the strongest version of the argument actually present — before flagging any fallacy?"
-    failure_mode_if_unmet: uncharitable-reconstruction
-  - cq_id: CQ2
+    failure_mode_if_unmet: "uncharitable-reconstruction"
+  - cq_id: "CQ2"
     question: "Has the audit decomposed the argument into Toulmin elements (claim, data, warrant, backing, qualifier, rebuttal) per inferential move, surfacing the warrants explicitly so that the inferential move can be examined?"
-    failure_mode_if_unmet: warrant-blindness
-  - cq_id: CQ3
+    failure_mode_if_unmet: "warrant-blindness"
+  - cq_id: "CQ3"
     question: "When fallacies are named, has each been substantiated with (a) the specific quoted text, (b) the inferential move identified, (c) the principle the move violates, and (d) the reason the move fails *here* (not just in the abstract) — to prevent name-without-structure misapplication?"
-    failure_mode_if_unmet: name-without-structure
-  - cq_id: CQ4
+    failure_mode_if_unmet: "name-without-structure"
+  - cq_id: "CQ4"
     question: "Has the audit clearly separated 'this argument as given does not establish its conclusion' from 'the conclusion is false' — refusing to make the latter claim absent independent grounds (the fallacy fallacy / argumentum ad logicam)?"
-    failure_mode_if_unmet: argument-conclusion-conflation
-  - cq_id: CQ5
+    failure_mode_if_unmet: "argument-conclusion-conflation"
+  - cq_id: "CQ5"
     question: "Has the audit looked beyond named fallacies for structural coherence failures (premise smuggling, scope shift, definitional drift, unstated load-bearing assumptions, enthymeme failure) — given that most actual argumentative weakness lives in unnamed structural failures rather than in the named-fallacy taxonomy?"
-    failure_mode_if_unmet: named-fallacy-only-reading
+    failure_mode_if_unmet: "named-fallacy-only-reading"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: uncharitable-reconstruction
+  - name: "uncharitable-reconstruction"
     detection_signal: "Audit flags fallacies in the surface text without first attempting a charitable reconstruction that surfaces implicit premises and resolves textual ambiguity in the speaker's favor."
-    correction_protocol: re-dispatch
-  - name: warrant-blindness
+    correction_protocol: "re-dispatch"
+  - name: "warrant-blindness"
     detection_signal: "Audit examines premises and conclusion without surfacing the warrant (Toulmin) that connects them; inferential failure cannot be examined without the warrant in view."
-    correction_protocol: re-dispatch
-  - name: name-without-structure
+    correction_protocol: "re-dispatch"
+  - name: "name-without-structure"
     detection_signal: "Fallacy claim invokes a label without specifying which inferential move fails, the principle it violates, and why it fails here."
-    correction_protocol: re-dispatch
-  - name: argument-conclusion-conflation
+    correction_protocol: "re-dispatch"
+  - name: "argument-conclusion-conflation"
     detection_signal: "Audit treats demonstrating the argument as fallacious as evidence the conclusion is false (the fallacy fallacy / argumentum ad logicam)."
-    correction_protocol: flag
-  - name: named-fallacy-only-reading
+    correction_protocol: "flag"
+  - name: "named-fallacy-only-reading"
     detection_signal: "Audit checks against the named-fallacy taxonomy but does not look for unnamed structural failures (premise smuggling, scope shift, definitional drift, unstated load-bearing assumptions, enthymeme failure)."
-    correction_protocol: re-dispatch
-  - name: asymmetric-rigor
+    correction_protocol: "re-dispatch"
+  - name: "asymmetric-rigor"
     detection_signal: "Audit applies different standards to comparable inferential moves; severity grading is uneven across the artifact in ways not justified by the moves' structures."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - toulmin-model
-    - walton-schemes-and-critical-questions
+  - toulmin-model
+  - walton-schemes-and-critical-questions
   optional:
-    - hamblin-fallacies-standard-treatment-critique (when named-fallacy invocations require theoretical situating)
-    - pragma-dialectics-rules-for-critical-discussion (when the failure mode is rule-violation rather than form-violation)
-    - copi-informal-fallacy-taxonomy (when the artifact maps cleanly to canonical named fallacies)
-    - alexander-isolated-demands-for-rigor (when asymmetric standards are at issue)
-    - shackel-motte-and-bailey (when multi-turn commitment-tracking is in scope; default home for D2 is argument-audit Wave 4)
+  - lens_id: hamblin-fallacies-standard-treatment-critique
+    qualification: when named-fallacy invocations require theoretical situating
+  - lens_id: pragma-dialectics-rules-for-critical-discussion
+    qualification: when the failure mode is rule-violation rather than form-violation
+  - lens_id: copi-informal-fallacy-taxonomy
+    qualification: when the artifact maps cleanly to canonical named fallacies
+  - lens_id: alexander-isolated-demands-for-rigor
+    qualification: when asymmetric standards are at issue
+  - lens_id: shackel-motte-and-bailey
+    qualification: when multi-turn commitment-tracking is in scope; default home for D2 is argument-audit Wave 4
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: argument-audit
+    target: {"kind": "active", "id": "argument-audit"}
     when: "Audit reveals coherence problems but also frame-manipulation and possible propaganda function; molecular synthesis is needed (Wave 4)."
   sideways:
-    target_mode_id: frame-audit
+    target: {"kind": "active", "id": "frame-audit"}
     when: "On reflection the coherence problems are downstream of frame work; surfacing the frame is the right operation."
   downward:
-    target_mode_id: null
+    target: null
     when: "Coherence Audit is already the lightest atomic mode in T1 for inferential-structure assessment."
 ```
+
+## Display Description
+
+Surfaces internal contradictions, unstated premises, and reasoning-step gaps in a single argumentative artifact.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll check whether this {artifact} holds together"
+  data_shapes: [{"predicate": "pasted_argument", "territory": "T1-argumentative-artifact-examination", "priority": 0, "confidence_weight": "strong"}, {"predicate": "attached_document", "territory": "T1-argumentative-artifact-examination", "priority": 0, "confidence_weight": "weak"}]
+  signals:
+    - {"signal": "coherence audit", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "does this argument hold up", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "is this argument sound", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "does the argument work", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "check the logic", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "fallacy check", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "fallacy detection", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "fallacies", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "internal consistency", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "argument soundness", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Toulmin", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "warrant", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "premises and conclusion", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "inferential audit", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "argumentative coherence", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "audit this argument", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "analyze this attached", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "analyze this pdf", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "help me look at", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

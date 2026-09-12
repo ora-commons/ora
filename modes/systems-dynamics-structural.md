@@ -14,21 +14,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: systems-dynamics-structural
-canonical_name: Systems Dynamics Structural
-suffix_rule: analysis
-educational_name: feedback-system structural mapping (Forrester/Senge lineage)
+mode_id: "systems-dynamics-structural"
+canonical_name: "Systems Dynamics Structural"
+suffix_rule: "analysis"
+educational_name: "feedback-system structural mapping (Forrester/Senge lineage)"
 
 # 1. TERRITORY AND POSITION
-territory: T17-process-and-system-analysis
+territory: "T17-process-and-system-analysis"
 gradation_position:
-  axis: complexity
-  value: feedback
+  axis: "complexity"
+  value: "feedback"
 adjacent_modes_in_territory:
-  - mode_id: process-mapping
-    relationship: specificity-process-flow sibling (linear/non-feedback workflow)
-  - mode_id: systems-dynamics-causal
-    relationship: operation-counterpart (T4 home; causal-investigation posture; same feedback lenses, different operation)
+  - mode_id: "process-mapping"
+    relationship: "specificity-process-flow sibling (linear/non-feedback workflow)"
+  - mode_id: "systems-dynamics-causal"
+    relationship: "operation-counterpart (T4 home; causal-investigation posture; same feedback lenses, different operation)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -48,19 +48,31 @@ disambiguation_routing:
     - "user wants the layout of stocks, flows, and loops without a specific recurring symptom to diagnose"
     - "feedback dynamics matter to the structure, but the operation is mapping, not causal investigation"
   routes_away_when:
-    - "the question is why a recurring symptom persists (causal diagnosis)" → systems-dynamics-causal
-    - "no feedback dynamics, just a linear workflow" → process-mapping
-    - "static structural relations without temporal dynamics" → relationship-mapping (T11)
-    - "specific failure event needing backward causal trace" → root-cause-analysis (T4)
+    - condition: "the question is why a recurring symptom persists (causal diagnosis)"
+      targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+      qualification: "systems-dynamics-causal"
+    - condition: "no feedback dynamics, just a linear workflow"
+      targets: [{"kind": "active", "id": "process-mapping"}]
+      qualification: "process-mapping"
+    - condition: "static structural relations without temporal dynamics"
+      targets: [{"kind": "active", "id": "relationship-mapping"}]
+      qualification: "relationship-mapping (T11)"
+    - condition: "specific failure event needing backward causal trace"
+      targets: [{"kind": "active", "id": "root-cause-analysis"}]
+      qualification: "root-cause-analysis (T4)"
 when_not_to_invoke:
-  - "User is diagnosing a recurring symptom rather than mapping current operation" → systems-dynamics-causal (T4)
-  - "User wants the principle-level explanation of how parts produce behaviour rather than the operational map" → mechanism-understanding (T16)
+  - condition: "User is diagnosing a recurring symptom rather than mapping current operation"
+    targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+    qualification: "systems-dynamics-causal (T4)"
+  - condition: "User wants the principle-level explanation of how parts produce behaviour rather than the operational map"
+    targets: [{"kind": "active", "id": "mechanism-understanding"}]
+    qualification: "mechanism-understanding (T16)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -75,78 +87,106 @@ input_contract:
   detection:
     expert_signals: ["map the structure", "stocks and flows", "feedback structure", "system archetype", "structural diagram", "current-state map"]
     accessible_signals: ["how does this work", "show me the loops", "structural picture"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What system do you want mapped, and what is your purpose for the map (orientation, intervention design, communication)?'"
     on_underspecified: "Ask: 'Are you trying to map how the system currently works (structural), or to diagnose why a recurring symptom persists (causal)? The first invokes Systems Dynamics Structural; the second invokes Systems Dynamics Causal.'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are the declared loops genuine cycles in the graph (closing edge present), or are they linear chains mis-labelled as loops?"
-    failure_mode_if_unmet: linear-masquerading-as-loop
-  - cq_id: CQ2
+    failure_mode_if_unmet: "linear-masquerading-as-loop"
+  - cq_id: "CQ2"
     question: "Does each loop's declared type (R or B) match its polarity parity (even number of negative edges → R; odd → B)?"
-    failure_mode_if_unmet: polarity-parity-mismatch
-  - cq_id: CQ3
+    failure_mode_if_unmet: "polarity-parity-mismatch"
+  - cq_id: "CQ3"
     question: "Has the system boundary been stated explicitly, or has the map silently absorbed every adjacent variable?"
-    failure_mode_if_unmet: boundary-dishonesty
-  - cq_id: CQ4
+    failure_mode_if_unmet: "boundary-dishonesty"
+  - cq_id: "CQ4"
     question: "Does the structural map describe the system as it currently is, or has it drifted into prescriptive recommendations that belong in a different mode?"
-    failure_mode_if_unmet: prescriptive-drift
-  - cq_id: CQ5
+    failure_mode_if_unmet: "prescriptive-drift"
+  - cq_id: "CQ5"
     question: "If a system archetype is named, does its characteristic loop topology actually appear in the declared loops, or is it a name-drop?"
-    failure_mode_if_unmet: archetype-name-drop
+    failure_mode_if_unmet: "archetype-name-drop"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: linear-masquerading-as-loop
+  - name: "linear-masquerading-as-loop"
     detection_signal: "A declared loop's members do not return influence to the start variable along an edge in the graph."
-    correction_protocol: re-dispatch (verify closing edge or remove the loop from declarations)
-  - name: polarity-parity-mismatch
+    correction_protocol: "re-dispatch (verify closing edge or remove the loop from declarations)"
+  - name: "polarity-parity-mismatch"
     detection_signal: "Loop declared as R has odd negative-edge count, or B has even — declared type contradicts parity."
-    correction_protocol: flag (mandatory; validator rejects)
-  - name: boundary-dishonesty
+    correction_protocol: "flag (mandatory; validator rejects)"
+  - name: "boundary-dishonesty"
     detection_signal: "Map omits explicit boundary statement; variables outside the relevant scope absorbed silently."
-    correction_protocol: flag
-  - name: prescriptive-drift
+    correction_protocol: "flag"
+  - name: "prescriptive-drift"
     detection_signal: "Map drifts from describing what is to recommending what should be — leverage-point recommendations or intervention proposals appear in the structural mapping."
-    correction_protocol: re-dispatch (strip prescriptions; route to systems-dynamics-causal if recommendations are wanted)
-  - name: archetype-name-drop
+    correction_protocol: "re-dispatch (strip prescriptions; route to systems-dynamics-causal if recommendations are wanted)"
+  - name: "archetype-name-drop"
     detection_signal: "Archetype named in prose without a matching loop topology in the declared loops."
-    correction_protocol: re-dispatch
-  - name: everything-connects-holism
+    correction_protocol: "re-dispatch"
+  - name: "everything-connects-holism"
     detection_signal: "Unfalsifiable claim that 'everything connects' without specific mechanism per link."
-    correction_protocol: re-dispatch
-  - name: observer-blindness
+    correction_protocol: "re-dispatch"
+  - name: "observer-blindness"
     detection_signal: "Map positions analyst and user outside the system when they are part of it."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - feedback-loops
-    - senge-system-archetypes
+  - feedback-loops
+  - senge-system-archetypes
   optional:
-    - sterman-system-dynamics-modelling (when quantitative stock-and-flow modelling is in play)
-    - forrester-industrial-dynamics (foundational source-tradition lens)
-    - meadows-twelve-leverage-points (named for transparency; used only if structural map enables intervention discussion)
+  - lens_id: sterman-system-dynamics-modelling
+    qualification: when quantitative stock-and-flow modelling is in play
+  - lens_id: forrester-industrial-dynamics
+    qualification: foundational source-tradition lens
+  - lens_id: meadows-twelve-leverage-points
+    qualification: named for transparency; used only if structural map enables intervention discussion
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Systems Dynamics Structural is the heaviest feedback-aware structural mode in T17."
   sideways:
-    target_mode_id: systems-dynamics-causal
+    target: {"kind": "active", "id": "systems-dynamics-causal"}
     when: "User actually wants to diagnose why a recurring symptom persists — switch from structural to causal posture."
   downward:
-    target_mode_id: process-mapping
+    target: {"kind": "active", "id": "process-mapping"}
     when: "On inspection the system has no significant feedback dynamics — a linear process map suffices."
 ```
+
+## Display Description
+
+Applies feedback-loop analysis to a system's structural composition rather than its causal trajectory (parsed from Systems Dynamics per Decision D).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  aliases: ["Systems Dynamics (Structural)"]
+  signals:
+    - {"signal": "systems dynamics", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "CLD", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "abbreviation (causal loop diagram)"}
+    - {"signal": "stock and flow", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Meadows leverage points", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "reinforcing loop", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "balancing loop", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "Senge archetype", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "draw the feedback structure", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: feedback? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "feedback loops", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

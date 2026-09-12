@@ -4443,28 +4443,25 @@ def _parse_setup_questions(text: str) -> list[dict] | None:
     return questions if questions else None
 
 
-def load_mode(mode_name: str) -> str:
-    """Load a mode file from modes/.
+_COMPILED_ROUTING_CACHE: dict | None = None
 
-    Returns the file contents on success, empty string when the file does
-    not exist. Missing files are surfaced to stderr (and to the pipeline
-    trace via ``record_missing_mode_file`` when the caller has wired a
-    trace_dir) so the silent "mode dispatched but file is empty" failure
-    class (#3 / #8 in the silent-failure catalogue) becomes visible.
-    """
-    if not mode_name:
-        return ""
-    path = os.path.join(MODES_DIR, f"{mode_name}.md")
-    try:
-        with open(path, "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        print(
-            f"[load_mode] mode file not found: {mode_name}.md "
-            f"— the dispatch will run with empty per-step instructions",
-            flush=True,
-        )
-        return ""
+
+def load_routing_sources() -> dict:
+    """Load and validate the entire canonical routing closure once per process."""
+    global _COMPILED_ROUTING_CACHE
+    if _COMPILED_ROUTING_CACHE is None:
+        from pathlib import Path
+        try:
+            from routing_sources import compile_routing_sources
+        except ImportError:
+            from orchestrator.routing_sources import compile_routing_sources
+        _COMPILED_ROUTING_CACHE = compile_routing_sources(Path(WORKSPACE))
+    return _COMPILED_ROUTING_CACHE
+
+
+def load_mode(mode_name: str) -> str:
+    """Return the validated mode's unchanged analytical instructions."""
+    return load_routing_sources()["modes"].get(mode_name, {}).get("text", "")
 
 
 # ---------------------------------------------------------------------------
@@ -4504,75 +4501,12 @@ def compose_dispatch_announcement(mode_id: str, user_prompt: str) -> str:
 
 def _compose_plain_language_description(mode_id: str, user_prompt: str,
                                         edu_name: str) -> str:
-    """Build the plain-language description preceding the parenthetical.
-
-    Maps each mode_id to a short opening verb phrase that names what the
-    mode will do, then references the user's input concretely. Falls back
-    to a generic phrasing when no specific template is registered.
-    """
-    template = _DISPATCH_DESCRIPTION_TEMPLATES.get(mode_id)
-    artifact_label = _detect_artifact_label(user_prompt)
+    """Use the mode owner's display description for the dispatch announcement."""
+    mode = load_routing_sources()["modes"].get(mode_id, {})
+    template = mode.get("selection", {}).get("dispatch_description")
     if template:
-        return template.format(artifact=artifact_label)
-    return f"I'll work through your {artifact_label} using {edu_name.split('(')[0].strip()}"
-
-
-_DISPATCH_DESCRIPTION_TEMPLATES = {
-    "steelman-construction": "I'll make the strongest case for this {artifact}",
-    "red-team": "I'll push back hard on this {artifact}",
-    "balanced-critique": "I'll weigh both sides of this {artifact}",
-    "benefits-analysis": "I'll lay out what this {artifact} would gain you",
-    "coherence-audit": "I'll check whether this {artifact} holds together",
-    "frame-audit": "I'll surface the frame this {artifact} is using",
-    "argument-audit": "I'll work through this {artifact} from frame to logic",
-    "propaganda-audit": "I'll look at this {artifact} as rhetoric",
-    "cui-bono": "I'll trace who benefits from this {artifact}",
-    "boundary-critique": "I'll surface whose voices this {artifact} leaves out",
-    "wicked-problems": "I'll work through the tangled structure of this {artifact}",
-    "decision-clarity": "I'll prepare a decision-maker brief on this {artifact}",
-    "stakeholder-mapping": "I'll map the stakeholders in this {artifact}",
-    "conflict-structure": "I'll lay out the structure of the conflict in this {artifact}",
-    "constraint-mapping": "I'll walk through the trade-offs of this {artifact}",
-    "decision-under-uncertainty": "I'll work through the uncertainty around this {artifact}",
-    "multi-criteria-decision": "I'll weigh the criteria for this {artifact}",
-    "decision-architecture": "I'll build the full decision picture for this {artifact}",
-    "root-cause-analysis": "I'll trace the root cause behind this {artifact}",
-    "systems-dynamics-causal": "I'll surface the feedback structure in this {artifact}",
-    "causal-dag": "I'll build a formal causal model of this {artifact}",
-    "process-tracing": "I'll trace step by step how this {artifact} unfolded",
-    "differential-diagnosis": "I'll do a quick read on which explanation fits this {artifact} best",
-    "competing-hypotheses": "I'll lay out evidence against each of these explanations",
-    "bayesian-hypothesis-network": "I'll work through these hypotheses with priors",
-    "consequences-and-sequel": "I'll think through the likely consequences of this {artifact}",
-    "probabilistic-forecasting": "I'll put probability estimates on how this {artifact} could unfold",
-    "scenario-planning": "I'll sketch alternative futures around this {artifact}",
-    "pre-mortem-action": "I'll work backward from how this {artifact} could fail",
-    "wicked-future": "I'll work through the entangled futures around this {artifact}",
-    "pre-mortem-fragility": "I'll stress-test this {artifact} for fragility",
-    "fragility-antifragility-audit": "I'll audit this {artifact} for what helps and hurts under stress",
-    "failure-mode-scan": "I'll scan this {artifact} for failure modes",
-    "fault-tree": "I'll build a fault tree for this {artifact}",
-    "paradigm-suspension": "I'll suspend the assumptions in this {artifact}",
-    "frame-comparison": "I'll compare the frames at play in this {artifact}",
-    "worldview-cartography": "I'll map the worldviews in this {artifact}",
-    "deep-clarification": "I'll clarify what's meant by the key terms in this {artifact}",
-    "conceptual-engineering": "I'll work on sharpening this concept",
-    "relationship-mapping": "I'll map the relationships in this {artifact}",
-    "interest-mapping": "I'll map the interests around this {artifact}",
-    "principled-negotiation": "I'll prep this negotiation around interests, options, and standards",
-    "third-side": "I'll work this conflict from the third-side mediator stance",
-    "quick-orientation": "I'll give you a quick read on this {artifact}",
-    "terrain-mapping": "I'll map the terrain of this {artifact}",
-    "domain-induction": "I'll induct you into this domain",
-    "spatial-reasoning": "I'll work through the spatial structure of this {artifact}",
-    "compositional-dynamics": "I'll read the compositional dynamics in this {artifact}",
-    "place-reading-genius-loci": "I'll read the place-character of this {artifact}",
-    "information-density": "I'll audit the information density of this {artifact}",
-    "mechanism-understanding": "I'll explain how this {artifact} works",
-    "process-mapping": "I'll map the process behind this {artifact}",
-    "strategic-interaction": "I'll analyze the strategic interaction at play in this {artifact}",
-    "passion-exploration": "I'll explore this passion area with you",
-}
+        return template.format(artifact=_detect_artifact_label(user_prompt))
+    return mode.get("description", f"I'll work through this using {edu_name}")
 
 
 def _detect_artifact_label(user_prompt: str) -> str:
@@ -4605,19 +4539,8 @@ def _detect_artifact_label(user_prompt: str) -> str:
 
 
 def load_educational_name(mode_id: str) -> str | None:
-    """Read the ``educational_name`` YAML field from a mode file.
-
-    Returns ``None`` if the mode file is missing or the field is absent.
-    Used by ``format_dispatch_announcement`` to pair plain-language phrasing
-    with the technique name learners can search for.
-    """
-    mode_path = os.path.join(MODES_DIR, f"{mode_id}.md")
-    if not os.path.exists(mode_path):
-        return None
-    with open(mode_path, "r") as f:
-        content = f.read()
-    match = re.search(r'^educational_name:\s*(.+?)$', content, re.MULTILINE)
-    return match.group(1).strip() if match else None
+    """Return the educational name from the compiled mode declaration."""
+    return load_routing_sources()["modes"].get(mode_id, {}).get("educational_name")
 
 
 # ---------------------------------------------------------------------------
@@ -4625,140 +4548,8 @@ def load_educational_name(mode_id: str) -> str | None:
 # Spec: ~/ora/architecture/pre-routing-pipeline.md §Stage 1
 # ---------------------------------------------------------------------------
 
-# Bypass triggers split into two priority levels:
-#   - STRONG_BYPASS: always wins over analytical signals (system commands,
-#     prior-conversation references, factual lookups)
-#   - WEAK_BYPASS: loses to strong analytical signals (greetings, ack)
-EXPLICIT_ANALYSIS_OPT_OUT_TRIGGERS = [
-    "don't analyze", "do not analyze", "no analysis",
-    "skip the analysis", "no need to analyze", "without analysis",
-]
-
-STRONG_BYPASS_TRIGGERS = EXPLICIT_ANALYSIS_OPT_OUT_TRIGGERS + [
-    # factual / lookup — answerable from system state or training, no RAG needed
-    "what time", "what's the date", "what's the time",
-    "what time is it", "what's today", "what day is it",
-    "what's today's date", "what year is it", "what's the year",
-    # NOTE: capital-of and "remind me" moved to GEAR2_RAG_TRIGGERS — capitals
-    # do change (Myanmar/Burma, Kazakhstan→Astana, Indonesia→Nusantara), and
-    # "remind me of <X>" is ambiguous between conversation-meta and factual
-    # lookup. Both safer with RAG available.
-    # prior-conversation / system-meta references
-    "what did you just say", "what did i just say",
-    "what did you say earlier", "what did i ask",
-    "repeat that", "say that again", "say it again",
-    "how many tokens", "how many tokens does",
-    # prior-conversation references
-    "what did you say", "earlier you said",
-    "show me the previous", "repeat what you", "what was your previous",
-    # system commands and service requests
-    "/help", "/?", "save this conversation", "convert this pdf",
-    # mechanical translation / formatting
-    "translate this", "spell-check", "spell check",
-    "fix the spelling", "fix the grammar", "fix the typo",
-]
-
-WEAK_BYPASS_TRIGGERS = [
-    # greetings + acknowledgements
-    "hello", "hi ", "hi!", "hi.", "hey ", "hey!", "hey.",
-    "good morning", "good afternoon", "good evening",
-    "thanks", "thank you", "yes, go ahead", "yes go ahead",
-]
-
-# Backwards-compat: combined list still used by tests.
-BYPASS_TRIGGERS = STRONG_BYPASS_TRIGGERS + WEAK_BYPASS_TRIGGERS
-
-# ---------------------------------------------------------------------------
-# 2026-05-24 gear-architecture redesign: Gear 2 RAG dispatch
-# Spec: pre-routing-pipeline.md §"Stage 1.5 — Gear 2 RAG Dispatch"
-# ---------------------------------------------------------------------------
-# GEAR2_RAG_TRIGGERS: substring patterns that indicate "information request
-# requiring retrieval but no judgment." Match here + no judgment markers in
-# the prompt → dispatch directly to factual-lookup (Gear 2) without entering
-# Stage 2 mode disambiguation.
-#
-# The list is intentionally narrow. Ambiguous patterns ("what is X") are NOT
-# here — they fall through to Stage 2 where signal vocabulary can disambiguate.
-# Only high-confidence retrieval markers are listed.
-GEAR2_RAG_TRIGGERS = [
-    # Capitals, populations, named-position queries — facts that may have
-    # changed since training (Myanmar/Burma, Kazakhstan→Astana, Indonesia)
-    "what is the capital", "what's the capital",
-    "what is the population", "what's the population",
-    # "Remind me of X" — ambiguous between conversation-meta and factual
-    # lookup. The substring can't tell the difference, so route to Gear 2
-    # which has both retrieval AND access to conversation context.
-    "remind me of", "remind me what",
-    # Current state of named positions or institutions
-    "who is the current", "who's the current",
-    "current president", "current prime minister",
-    "current ceo of", "current chair of",
-    "current head of", "current leader of",
-    "current governor", "current senator",
-    # Time-localized event lookups
-    "who won the", "what was the score",
-    "what happened in 2024", "what happened in 2025", "what happened in 2026",
-    "latest news", "what's the latest",
-    "any news on", "any updates on",
-    "what's new with", "what's new in",
-    # Weather
-    "weather today", "weather tomorrow", "the weather in",
-    "is it raining", "will it rain",
-    "current temperature", "what's the forecast",
-    # Real-time lookups
-    "stock price", "current price of",
-    "exchange rate",
-    "is it open", "are they open", "open right now",
-    "still open", "still in business",
-    # Sports
-    "the score of", "who's winning",
-    # News context
-    "what's happening in", "what's happening with",
-]
-
-# SUBJECTIVE_TRIGGERS: substrings that indicate the prompt is asking for
-# opinion, preference, or aesthetic judgment with no objective criteria.
-# When present, route to subjective-inquiry (Gear 3) instead of general-inquiry.
-SUBJECTIVE_TRIGGERS = [
-    # Aesthetic judgment
-    "more attractive", "more beautiful", "better looking",
-    "prettier", "ugliest", "uglier",
-    # Preference / taste
-    "favorite", "favourite",
-    "best tasting", "most enjoyable", "most fun",
-    "do you prefer", "do you like",
-    "what's your favorite", "what's your favourite",
-    # Personal experience
-    "what's it like to", "what is it like to",
-    "is it worth", "would you recommend",
-    # Subjective comparative
-    "what do you think about", "what do you think of",
-    "what's your take on", "what is your opinion",
-    # Fan / rivalry shape
-    "vs the", "versus the",  # weak — also needs other markers
-]
-
-
-# JUDGMENT_MARKERS: substrings that indicate the prompt requires judgment.
-# When present, the prompt does NOT route to Gear 2 even if it also contains
-# a GEAR2_RAG marker — judgment beats retrieval. Routes to Stage 2 mode
-# disambiguation instead, or falls through to general-inquiry / Gear 3.
-JUDGMENT_MARKERS = [
-    "should", "ought", "best", "better", "worst",
-    "compare", "comparison", "evaluate", "analyze", "analyse",
-    "audit", "review", "decide", "recommend", "recommendation",
-    "assess", "assessment", "critique", "judge",
-    "pre-mortem", "premortem", "pre mortem",
-    "cui bono", "who benefits", "why does", "why did",
-    "pros and cons", "tradeoffs", "trade-offs", "trade offs",
-    "make the case", "steelman", "red team", "red-team",
-    "stress test", "stress-test",
-    "root cause", "root-cause",
-    "frame audit", "frame check",
-    "propaganda",
-    "is X better than", "is x better than",
-    "do you think", "what do you think",
-]
+# Bypass, retrieval, and judgment vocabulary is owned by the compiled modes.
+# Matching, priority, negation, and the early-serving boundary remain mechanical.
 
 # Negation markers used for ±3-token window detection around analytical signals.
 NEGATION_MARKERS = {"not", "don't", "dont", "no", "without", "skip", "never"}
@@ -4845,481 +4636,17 @@ def _is_negated(prompt: str, signal: str) -> bool:
 # strong matches the same way registry entries do. Vault registry updates
 # are the canonical fix; this dict is the orchestrator-side bridge until
 # those land.
-_PHASE9_SIGNAL_ALIASES: list[dict] = [
-    # T15 — Steelman / stance evaluation
-    {"signal": "make the case for",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "steelman-construction", "confidence_weight": "strong"},
-    {"signal": "make the strongest case",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "steelman-construction", "confidence_weight": "strong"},
-    {"signal": "strongest case for",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "steelman-construction", "confidence_weight": "strong"},
-    {"signal": "red team this",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "red-team", "confidence_weight": "strong"},
-    {"signal": "push back hard",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "red-team", "confidence_weight": "strong"},
-    {"signal": "tear apart",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "red-team", "confidence_weight": "strong"},
 
-    # T6/T7 — pre-mortem
-    {"signal": "what could go wrong",
-     "territory": "T6-future-exploration",
-     "mode": "pre-mortem-action", "confidence_weight": "strong"},
-    {"signal": "pre mortem",
-     "territory": "T6-future-exploration",
-     "mode": "pre-mortem-action", "confidence_weight": "strong"},
-    {"signal": "premortem",
-     "territory": "T6-future-exploration",
-     "mode": "pre-mortem-action", "confidence_weight": "strong"},
-    {"signal": "stress test",
-     "territory": "T7-risk-and-failure-analysis",
-     "mode": "pre-mortem-fragility", "confidence_weight": "strong"},
-
-    # T8 — Stakeholder mapping
-    {"signal": "map the stakeholders",
-     "territory": "T8-stakeholder-conflict",
-     "mode": "stakeholder-mapping", "confidence_weight": "strong"},
-    {"signal": "stakeholders in this",
-     "territory": "T8-stakeholder-conflict",
-     "mode": "stakeholder-mapping", "confidence_weight": "strong"},
-    {"signal": "all the stakeholders",
-     "territory": "T8-stakeholder-conflict",
-     "mode": "stakeholder-mapping", "confidence_weight": "strong"},
-
-    # T9 — Frame comparison
-    {"signal": "compare these frames",
-     "territory": "T9-paradigm-and-assumption-examination",
-     "mode": "frame-comparison", "confidence_weight": "strong"},
-    {"signal": "compare how",
-     "territory": "T9-paradigm-and-assumption-examination",
-     "mode": "frame-comparison", "confidence_weight": "weak"},
-    {"signal": "frame this issue",
-     "territory": "T9-paradigm-and-assumption-examination",
-     "mode": "frame-comparison", "confidence_weight": "strong"},
-    {"signal": "frame this issue differently",
-     "territory": "T9-paradigm-and-assumption-examination",
-     "mode": "frame-comparison", "confidence_weight": "strong"},
-
-    # T1 — Coherence audit
-    {"signal": "argumentative coherence",
-     "territory": "T1-argumentative-artifact-examination",
-     "mode": "coherence-audit", "confidence_weight": "strong"},
-    {"signal": "audit this argument",
-     "territory": "T1-argumentative-artifact-examination",
-     "mode": "coherence-audit", "confidence_weight": "strong"},
-    {"signal": "audit fully",
-     "territory": "T1-argumentative-artifact-examination",
-     "mode": "argument-audit", "confidence_weight": "strong"},
-
-    # T2 — Cui bono variations
-    {"signal": "cui bono this",
-     "territory": "T2-interest-and-power",
-     "mode": "cui-bono", "confidence_weight": "strong"},
-
-    # T2 — Decision clarity
-    {"signal": "decision clarity document",
-     "territory": "T2-interest-and-power",
-     "mode": "decision-clarity", "confidence_weight": "strong"},
-    {"signal": "decision clarity",
-     "territory": "T2-interest-and-power",
-     "mode": "decision-clarity", "confidence_weight": "strong"},
-
-    # T3 — Constraint mapping
-    {"signal": "trade offs",
-     "territory": "T3-decision-under-uncertainty",
-     "mode": "constraint-mapping", "confidence_weight": "strong"},
-    {"signal": "trade off of",
-     "territory": "T3-decision-under-uncertainty",
-     "mode": "constraint-mapping", "confidence_weight": "strong"},
-    {"signal": "compare and choose",
-     "territory": "T3-decision-under-uncertainty",
-     "mode": "constraint-mapping", "confidence_weight": "strong"},
-    {"signal": "weigh these options",
-     "territory": "T3-decision-under-uncertainty",
-     "mode": "constraint-mapping", "confidence_weight": "strong"},
-
-    # T4 — Process tracing
-    {"signal": "process trace",
-     "territory": "T4-causal-investigation",
-     "mode": "process-tracing", "confidence_weight": "strong"},
-
-    # T6 — Probabilistic forecasting
-    {"signal": "forecast this",
-     "territory": "T6-future-exploration",
-     "mode": "probabilistic-forecasting", "confidence_weight": "strong"},
-    {"signal": "calibrated probability",
-     "territory": "T6-future-exploration",
-     "mode": "probabilistic-forecasting", "confidence_weight": "strong"},
-
-    # T10 — Conceptual engineering
-    {"signal": "engineer the concept",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "strong"},
-    {"signal": "engineer this concept",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "strong"},
-    {"signal": "engineer it again",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "strong"},
-    {"signal": "ameliorative analysis",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "strong"},
-    {"signal": "engineer the term",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "strong"},
-
-    # T5 — Quick read on hypotheses
-    {"signal": "which of these explanations",
-     "territory": "T5-hypothesis-evaluation",
-     "mode": "differential-diagnosis", "confidence_weight": "strong"},
-    {"signal": "quick read on which",
-     "territory": "T5-hypothesis-evaluation",
-     "mode": "differential-diagnosis", "confidence_weight": "strong"},
-
-    # T11 — Spatial reasoning (visual gap detection)
-    {"signal": "look at how things connect",
-     "territory": "T11-structural-relationship-mapping",
-     "mode": "spatial-reasoning", "confidence_weight": "weak"},
-
-    # Cross-territory: argumentative coherence on attached PDF
-    {"signal": "analyze this attached",
-     "territory": "T1-argumentative-artifact-examination",
-     "mode": "coherence-audit", "confidence_weight": "weak"},
-    {"signal": "analyze this pdf",
-     "territory": "T1-argumentative-artifact-examination",
-     "mode": "coherence-audit", "confidence_weight": "weak"},
-
-    # Phase 9 round 2 — additional registry coverage
-    {"signal": "compare these two frames",
-     "territory": "T9-paradigm-and-assumption-examination",
-     "mode": "frame-comparison", "confidence_weight": "strong"},
-    {"signal": "compare these frames on",
-     "territory": "T9-paradigm-and-assumption-examination",
-     "mode": "frame-comparison", "confidence_weight": "strong"},
-    {"signal": "settle a question about whether",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "strong"},
-    {"signal": "is doing what it should",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "weak"},
-    {"signal": "as the field uses it",
-     "territory": "T10-conceptual-clarification",
-     "mode": "conceptual-engineering", "confidence_weight": "weak"},
-    {"signal": "look at how things connect",
-     "territory": "T11-structural-relationship-mapping",
-     "mode": "spatial-reasoning", "confidence_weight": "strong"},
-    {"signal": "things connect here",
-     "territory": "T11-structural-relationship-mapping",
-     "mode": "spatial-reasoning", "confidence_weight": "weak"},
-    {"signal": "help me look at",
-     "territory": "T1-argumentative-artifact-examination",
-     "mode": "coherence-audit", "confidence_weight": "weak"},
-]
-
-
-# Phase 9.5 — SWOT alias added per user request. SWOT analysis maps to
-# balanced-critique (T15) since SWOT's structure (strengths, weaknesses,
-# opportunities, threats) is essentially balanced critique with a fixed
-# four-axis framing.
-
-
-
-# Targeted hard-lens signals (2026-06-01): distinctive-named lenses that were
-# mis-routing as standalone prompts. Code-side, sync-proof.
-_PHASE9_SIGNAL_ALIASES.extend([
-    {"signal": 'conceptual metaphor', "territory": 'T9-paradigm-and-assumption-examination', "mode": 'frame-comparison', "confidence_weight": "strong"},
-    {"signal": 'conceptual metaphors', "territory": 'T9-paradigm-and-assumption-examination', "mode": 'frame-comparison', "confidence_weight": "strong"},
-    {"signal": 'entman framing functions', "territory": 'T9-paradigm-and-assumption-examination', "mode": 'frame-comparison', "confidence_weight": "strong"},
-    {"signal": 'framing functions', "territory": 'T9-paradigm-and-assumption-examination', "mode": 'frame-comparison', "confidence_weight": "strong"},
-    {"signal": 'costly signal', "territory": 'T18-strategic-interaction', "mode": 'mechanism-design', "confidence_weight": "strong"},
-    {"signal": 'signaling game', "territory": 'T18-strategic-interaction', "mode": 'mechanism-design', "confidence_weight": "strong"},
-    {"signal": 'signal quality', "territory": 'T18-strategic-interaction', "mode": 'mechanism-design', "confidence_weight": "strong"},
-    {"signal": 'attention restoration', "territory": 'T19-spatial-composition', "mode": 'place-reading-genius-loci', "confidence_weight": "strong"},
-    {"signal": 'attention-restoration theory', "territory": 'T19-spatial-composition', "mode": 'place-reading-genius-loci', "confidence_weight": "strong"},
-    {"signal": 'decision tree', "territory": 'T3-decision-making-under-uncertainty', "mode": 'decision-architecture', "confidence_weight": "strong"},
-    {"signal": 'decision trees', "territory": 'T3-decision-making-under-uncertainty', "mode": 'decision-architecture', "confidence_weight": "strong"},
-    {"signal": 'expected-value rollback', "territory": 'T3-decision-making-under-uncertainty', "mode": 'decision-architecture', "confidence_weight": "strong"},
-])
-
-# New-mode routing (market-dynamics T17, mechanism-design T18), code-side so it
-# survives vault->ora syncs of the signal-vocabulary registry (2026-06-01).
-_PHASE9_SIGNAL_ALIASES.extend([
-    {"signal": 'market dynamics', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'supply and demand', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'supply-demand', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'market equilibrium', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'price equilibrium', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'network effects', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'critical mass', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'creative destruction', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": "gresham's law", "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'red queen effect', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'diminishing returns', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'how will this market behave', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'what happens to prices if', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'why is this industry consolidating', "territory": "T17-process-and-system-analysis", "mode": "market-dynamics", "confidence_weight": "strong"},
-    {"signal": 'adverse selection', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'moral hazard', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": "winner's curse", "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'winners curse', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'mechanism design', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'incentive compatible', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'incentive-compatible', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'screening', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'principal-agent', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'information asymmetry', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'hidden information', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'hidden action', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'market for lemons', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-    {"signal": 'auction design', "territory": "T18-strategic-interaction", "mode": "mechanism-design", "confidence_weight": "strong"},
-])
-
-# Lens-forward routing (2026-06-01). Canonical mental-model lens names become
-# routing signals so naming a lens directs the (possibly ambiguous) prompt to a
-# mode that foregrounds it. Generic single-word lens names are intentionally
-# omitted (they would hijack routing); those rely on host-mode wording. Code-side
-# bridge per the note above; the canonical signal-vocabulary-registry update is a
-# separate vault-paired pass.
-#
-# Collected as a named list and tagged evidence="lens-alias" (tagging loop
-# after the block) so Stage 2 can treat a named lens as a *decisive* signal:
-# when a strong lens-alias uniquely identifies a host mode and the prompt
-# does not explicitly name a different technique, the lens directs routing
-# to its host — overriding the cross-territory / within-territory
-# disambiguation that would otherwise fire on the ambiguous remainder.
-_LENS_FORWARD_ALIASES: list[dict] = [
-    {"signal": "allison's three lenses", "territory": 'T12-cross-domain-and-knowledge-synthesis', "mode": 'dialectical-analysis', "confidence_weight": "strong"},
-    {"signal": 'allisons three lenses', "territory": 'T12-cross-domain-and-knowledge-synthesis', "mode": 'dialectical-analysis', "confidence_weight": "strong"},
-    {"signal": 'bayesian reasoning', "territory": 'T5-hypothesis-evaluation', "mode": 'bayesian-hypothesis-network', "confidence_weight": "strong"},
-    {"signal": 'confirmation bias', "territory": 'T5-hypothesis-evaluation', "mode": 'competing-hypotheses', "confidence_weight": "strong"},
-    {"signal": 'base rate neglect', "territory": 'T5-hypothesis-evaluation', "mode": 'bayesian-hypothesis-network', "confidence_weight": "strong"},
-    {"signal": 'tragedy of the commons', "territory": 'T2-interest-and-power', "mode": 'boundary-critique', "confidence_weight": "strong"},
-    {"signal": 'ulrich csh boundary categories', "territory": 'T2-interest-and-power', "mode": 'boundary-critique', "confidence_weight": "strong"},
-    {"signal": 'pearl causal graphs', "territory": 'T4-causal-investigation', "mode": 'causal-dag', "confidence_weight": "strong"},
-    {"signal": 'pearl causal graphs and the ladder of causation', "territory": 'T4-causal-investigation', "mode": 'causal-dag', "confidence_weight": "strong"},
-    {"signal": 'arnheim compositional forces', "territory": 'T19-spatial-composition', "mode": 'compositional-dynamics', "confidence_weight": "strong"},
-    {"signal": 'gestalt grouping principles', "territory": 'T19-spatial-composition', "mode": 'compositional-dynamics', "confidence_weight": "strong"},
-    {"signal": 'framing effect', "territory": 'T9-paradigm-and-assumption-examination', "mode": 'frame-comparison', "confidence_weight": "strong"},
-    {"signal": 'feedback loops', "territory": 'T17-process-and-system-analysis', "mode": 'systems-dynamics-structural', "confidence_weight": "strong"},
-    {"signal": 'principal agent problem', "territory": 'T2-interest-and-power', "mode": 'cui-bono', "confidence_weight": "strong"},
-    {"signal": 'principal-agent problem', "territory": 'T2-interest-and-power', "mode": 'cui-bono', "confidence_weight": "strong"},
-    {"signal": 'schelling point', "territory": 'T18-strategic-interaction', "mode": 'strategic-interaction', "confidence_weight": "strong"},
-    {"signal": 'tit for tat', "territory": 'T18-strategic-interaction', "mode": 'strategic-interaction', "confidence_weight": "strong"},
-    {"signal": 'loss aversion', "territory": 'T3-decision-making-under-uncertainty', "mode": 'decision-architecture', "confidence_weight": "strong"},
-    {"signal": 'ooda loop', "territory": 'T14-orientation-in-unfamiliar-territory', "mode": 'domain-induction', "confidence_weight": "strong"},
-    {"signal": 'availability heuristic', "territory": 'T1-argumentative-artifact-examination', "mode": 'propaganda-audit', "confidence_weight": "strong"},
-    {"signal": 'normal accident theory', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'normalization of deviance', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'swiss cheese model', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'fragility and antifragility', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'taleb fragility and antifragility', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'taleb fragility antifragility', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'lakoff conceptual metaphor', "territory": 'T9-paradigm-and-assumption-examination', "mode": 'frame-comparison', "confidence_weight": "strong"},
-    {"signal": 'cleveland mcgill perceptual tasks', "territory": 'T19-spatial-composition', "mode": 'information-density', "confidence_weight": "strong"},
-    {"signal": 'tufte data ink chartjunk', "territory": 'T19-spatial-composition', "mode": 'information-density', "confidence_weight": "strong"},
-    {"signal": 'tufte data-ink and chartjunk', "territory": 'T19-spatial-composition', "mode": 'information-density', "confidence_weight": "strong"},
-    {"signal": 'fisher ury principled negotiation', "territory": 'T13-negotiation-and-conflict-resolution', "mode": 'interest-mapping', "confidence_weight": "strong"},
-    {"signal": 'japanese aesthetics catalog', "territory": 'T19-spatial-composition', "mode": 'ma-reading', "confidence_weight": "strong"},
-    {"signal": 'appleton prospect refuge', "territory": 'T19-spatial-composition', "mode": 'place-reading-genius-loci', "confidence_weight": "strong"},
-    {"signal": 'appleton prospect-refuge', "territory": 'T19-spatial-composition', "mode": 'place-reading-genius-loci', "confidence_weight": "strong"},
-    {"signal": 'norberg schulz genius loci', "territory": 'T19-spatial-composition', "mode": 'place-reading-genius-loci', "confidence_weight": "strong"},
-    {"signal": 'norberg-schulz genius loci', "territory": 'T19-spatial-composition', "mode": 'place-reading-genius-loci', "confidence_weight": "strong"},
-    {"signal": 'klein pre mortem', "territory": 'T6-future-exploration', "mode": 'pre-mortem-action', "confidence_weight": "strong"},
-    {"signal": 'regression to mean', "territory": 'T6-future-exploration', "mode": 'probabilistic-forecasting', "confidence_weight": "strong"},
-    {"signal": 'regression to the mean', "territory": 'T6-future-exploration', "mode": 'probabilistic-forecasting', "confidence_weight": "strong"},
-    {"signal": 'tetlock superforecasting', "territory": 'T6-future-exploration', "mode": 'probabilistic-forecasting', "confidence_weight": "strong"},
-    {"signal": 'walton schemes and critical questions', "territory": 'T15-artifact-evaluation-by-stance', "mode": 'steelman-construction', "confidence_weight": "strong"},
-    {"signal": 'mutually assured destruction', "territory": 'T18-strategic-interaction', "mode": 'strategic-interaction', "confidence_weight": "strong"},
-    {"signal": "prisoner's dilemma", "territory": 'T18-strategic-interaction', "mode": 'strategic-interaction', "confidence_weight": "strong"},
-    {"signal": 'prisoners dilemma', "territory": 'T18-strategic-interaction', "mode": 'strategic-interaction', "confidence_weight": "strong"},
-    {"signal": 'affect heuristic', "territory": 'T1-argumentative-artifact-examination', "mode": 'propaganda-audit', "confidence_weight": "strong"},
-    {"signal": "devil's advocacy", "territory": 'T15-artifact-evaluation-by-stance', "mode": 'red-team-advocate', "confidence_weight": "strong"},
-    {"signal": 'devils advocacy', "territory": 'T15-artifact-evaluation-by-stance', "mode": 'red-team-advocate', "confidence_weight": "strong"},
-    {"signal": 'narrative instinct', "territory": 'T9-paradigm-and-assumption-examination', "mode": 'frame-comparison', "confidence_weight": "strong"},
-    {"signal": "occam's razor", "territory": 'T5-hypothesis-evaluation', "mode": 'competing-hypotheses', "confidence_weight": "strong"},
-    {"signal": 'occams razor', "territory": 'T5-hypothesis-evaluation', "mode": 'competing-hypotheses', "confidence_weight": "strong"},
-    {"signal": 'hindsight bias', "territory": 'T6-future-exploration', "mode": 'pre-mortem-action', "confidence_weight": "strong"},
-    {"signal": 'prospect theory', "territory": 'T3-decision-making-under-uncertainty', "mode": 'decision-architecture', "confidence_weight": "strong"},
-    {"signal": 'second order thinking', "territory": 'T6-future-exploration', "mode": 'consequences-and-sequel', "confidence_weight": "strong"},
-    {"signal": 'second-order thinking', "territory": 'T6-future-exploration', "mode": 'consequences-and-sequel', "confidence_weight": "strong"},
-    {"signal": "arrow's impossibility", "territory": 'T2-interest-and-power', "mode": 'boundary-critique', "confidence_weight": "strong"},
-    {"signal": "arrow's impossibility theorem", "territory": 'T2-interest-and-power', "mode": 'boundary-critique', "confidence_weight": "strong"},
-    {"signal": 'arrows impossibility theorem', "territory": 'T2-interest-and-power', "mode": 'boundary-critique', "confidence_weight": "strong"},
-    {"signal": 'bounded rationality', "territory": 'T2-interest-and-power', "mode": 'boundary-critique', "confidence_weight": "strong"},
-    {"signal": 'pearl do calculus', "territory": 'T4-causal-investigation', "mode": 'causal-dag', "confidence_weight": "strong"},
-    {"signal": 'pearl do-calculus', "territory": 'T4-causal-investigation', "mode": 'causal-dag', "confidence_weight": "strong"},
-    {"signal": 'cappelen plunkett conceptual engineering', "territory": 'T10-conceptual-clarification', "mode": 'conceptual-engineering', "confidence_weight": "strong"},
-    {"signal": 'cappelen-plunkett conceptual engineering', "territory": 'T10-conceptual-clarification', "mode": 'conceptual-engineering', "confidence_weight": "strong"},
-    {"signal": 'map territory', "territory": 'T10-conceptual-clarification', "mode": 'conceptual-engineering', "confidence_weight": "strong"},
-    {"signal": 'the map is not the territory', "territory": 'T10-conceptual-clarification', "mode": 'conceptual-engineering', "confidence_weight": "strong"},
-    {"signal": 'decision trees', "territory": 'T3-decision-making-under-uncertainty', "mode": 'decision-architecture', "confidence_weight": "strong"},
-    {"signal": 'first principles', "territory": 'T10-conceptual-clarification', "mode": 'deep-clarification', "confidence_weight": "strong"},
-    {"signal": 'first principles thinking', "territory": 'T10-conceptual-clarification', "mode": 'deep-clarification', "confidence_weight": "strong"},
-    {"signal": 'system 1 / system 2', "territory": 'T10-conceptual-clarification', "mode": 'deep-clarification', "confidence_weight": "strong"},
-    {"signal": 'system one system two', "territory": 'T10-conceptual-clarification', "mode": 'deep-clarification', "confidence_weight": "strong"},
-    {"signal": 'differential diagnosis schema', "territory": 'T5-hypothesis-evaluation', "mode": 'differential-diagnosis', "confidence_weight": "strong"},
-    {"signal": 'representativeness heuristic', "territory": 'T5-hypothesis-evaluation', "mode": 'differential-diagnosis', "confidence_weight": "strong"},
-    {"signal": 'circle of competence', "territory": 'T14-orientation-in-unfamiliar-territory', "mode": 'domain-induction', "confidence_weight": "strong"},
-    {"signal": 'margin of safety', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'recovery window', "territory": 'T7-risk-and-failure-analysis', "mode": 'fragility-antifragility-audit', "confidence_weight": "strong"},
-    {"signal": 'choice architecture', "territory": 'T1-argumentative-artifact-examination', "mode": 'frame-audit', "confidence_weight": "strong"},
-    {"signal": 'mcdm methods', "territory": 'T3-decision-making-under-uncertainty', "mode": 'multi-criteria-decision', "confidence_weight": "strong"},
-    {"signal": 'multi-criteria decision making methods', "territory": 'T3-decision-making-under-uncertainty', "mode": 'multi-criteria-decision', "confidence_weight": "strong"},
-    {"signal": 'evolution by natural selection', "territory": 'T20-open-exploration', "mode": 'passion-exploration', "confidence_weight": "strong"},
-    {"signal": 'evolution natural selection', "territory": 'T20-open-exploration', "mode": 'passion-exploration', "confidence_weight": "strong"},
-    {"signal": 'bachelard topoanalysis', "territory": 'T19-spatial-composition', "mode": 'place-reading-genius-loci', "confidence_weight": "strong"},
-    {"signal": 'premortem analysis', "territory": 'T6-future-exploration', "mode": 'pre-mortem-action', "confidence_weight": "strong"},
-    {"signal": 'procedural justice', "territory": 'T13-negotiation-and-conflict-resolution', "mode": 'principled-negotiation', "confidence_weight": "strong"},
-    {"signal": 'wisdom of crowds', "territory": 'T6-future-exploration', "mode": 'probabilistic-forecasting', "confidence_weight": "strong"},
-    {"signal": 'practical drift', "territory": 'T17-process-and-system-analysis', "mode": 'process-mapping', "confidence_weight": "strong"},
-    {"signal": 'bennett checkel process tracing tests', "territory": 'T4-causal-investigation', "mode": 'process-tracing', "confidence_weight": "strong"},
-    {"signal": 'bennett-checkel process-tracing tests', "territory": 'T4-causal-investigation', "mode": 'process-tracing', "confidence_weight": "strong"},
-    {"signal": 'commitment and consistency bias', "territory": 'T1-argumentative-artifact-examination', "mode": 'propaganda-audit', "confidence_weight": "strong"},
-    {"signal": 'commitment consistency', "territory": 'T1-argumentative-artifact-examination', "mode": 'propaganda-audit', "confidence_weight": "strong"},
-    {"signal": 'social proof', "territory": 'T1-argumentative-artifact-examination', "mode": 'propaganda-audit', "confidence_weight": "strong"},
-    {"signal": 'pareto principle', "territory": 'T14-orientation-in-unfamiliar-territory', "mode": 'quick-orientation', "confidence_weight": "strong"},
-    {"signal": 'asymmetric warfare', "territory": 'T15-artifact-evaluation-by-stance', "mode": 'red-team-advocate', "confidence_weight": "strong"},
-    {"signal": 'fishbone diagram', "territory": 'T4-causal-investigation', "mode": 'root-cause-analysis', "confidence_weight": "strong"},
-    {"signal": 'five whys', "territory": 'T4-causal-investigation', "mode": 'root-cause-analysis', "confidence_weight": "strong"},
-    {"signal": 'stakeholder analysis frameworks', "territory": 'T8-stakeholder-conflict', "mode": 'stakeholder-mapping', "confidence_weight": "strong"},
-    {"signal": 'endowment effect', "territory": 'T0-default-judgment', "mode": 'subjective-inquiry', "confidence_weight": "strong"},
-    {"signal": 'reward undermining', "territory": 'T4-causal-investigation', "mode": 'systems-dynamics-causal', "confidence_weight": "strong"},
-    {"signal": 'psychological safety', "territory": 'T13-negotiation-and-conflict-resolution', "mode": 'third-side', "confidence_weight": "strong"},
-    {"signal": 'anchoring bias', "territory": 'T1-argumentative-artifact-examination', "mode": 'propaganda-audit', "confidence_weight": "strong"},
-    {"signal": 'the anchoring effect', "territory": 'T1-argumentative-artifact-examination', "mode": 'propaganda-audit', "confidence_weight": "strong"},
-    {"signal": 'batna', "territory": 'T13-negotiation-and-conflict-resolution', "mode": 'interest-mapping', "confidence_weight": "strong"},
-    {"signal": 'best alternative to a negotiated agreement', "territory": 'T13-negotiation-and-conflict-resolution', "mode": 'interest-mapping', "confidence_weight": "strong"},
-]
-# Tag the lens-forward block so Stage 2 can detect a named-lens signal and
-# make it decisive (Problem 2 fix), then fold it into the alias list.
-for _lf in _LENS_FORWARD_ALIASES:
-    _lf.setdefault("evidence", "lens-alias")
-_PHASE9_SIGNAL_ALIASES.extend(_LENS_FORWARD_ALIASES)
-
-_PHASE9_SIGNAL_ALIASES.extend([
-    {"signal": "causal analysis",
-     "territory": "T4-causal-investigation",
-     "mode": "root-cause-analysis", "confidence_weight": "strong"},
-    {"signal": "swot",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "balanced-critique", "confidence_weight": "strong"},
-    {"signal": "swot analysis",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "balanced-critique", "confidence_weight": "strong"},
-    {"signal": "strengths weaknesses opportunities threats",
-     "territory": "T15-artifact-evaluation-by-stance",
-     "mode": "balanced-critique", "confidence_weight": "strong"},
-    {"signal": "five whys",
-     "territory": "T4-causal-investigation",
-     "mode": "root-cause-analysis", "confidence_weight": "strong"},
-    {"signal": "5 whys",
-     "territory": "T4-causal-investigation",
-     "mode": "root-cause-analysis", "confidence_weight": "strong"},
-    {"signal": "pestel",
-     "territory": "T6-future-exploration",
-     "mode": "scenario-planning", "confidence_weight": "strong"},
-    {"signal": "porter five forces",
-     "territory": "T18-strategic-interaction",
-     "mode": "strategic-interaction", "confidence_weight": "strong"},
-    {"signal": "five forces",
-     "territory": "T18-strategic-interaction",
-     "mode": "strategic-interaction", "confidence_weight": "strong"},
-    {"signal": "six thinking hats",
-     "territory": "T9-paradigm-and-assumption-examination",
-     "mode": "frame-comparison", "confidence_weight": "strong"},
-    {"signal": "post mortem",
-     "territory": "T7-risk-and-failure-analysis",
-     "mode": "pre-mortem-fragility", "confidence_weight": "strong"},
-    {"signal": "postmortem",
-     "territory": "T4-causal-investigation",
-     "mode": "root-cause-analysis", "confidence_weight": "strong"},
-])
-
-
-# ---------------------------------------------------------------------------
-# Phase 9.5 — Fuzzy framework-name matching (typos, near-misses)
-# ---------------------------------------------------------------------------
-# Multi-word typo / variant lookup. Maps user phrasings to a canonical
-# registry signal. Difflib handles single-word typos; this dict handles
-# multi-word phrases where character-level fuzzy matching fails.
-_FRAMEWORK_PHRASE_TYPOS = {
-    "casual dag": "causal dag",
-    "casual analysis": "causal analysis",
-    "principle negotiation": "principled negotiation",
-    "principle negotiations": "principled negotiation",
-    "pre morten": "pre-mortem",
-    "pre morten action": "pre-mortem-action",
-    "premorten": "pre-mortem",
-    "post-mortem": "post mortem",
-    "kwee bono": "cui bono",
-    "key bono": "cui bono",
-    "argument analysis": "argument audit",
-    "argument review": "argument audit",
-    "stake holder mapping": "stakeholder mapping",
-    "frame audit": "frame audit",  # canonical, included for completeness
-    "ach analysis": "ach",
-    "rca analysis": "rca",
-    "wpf analysis": "wicked problems",
-    "wicked problems framework": "wicked problems",
-    "scenario planning": "scenario planning",
-    "what if scenarios": "scenario planning",
-    "alternative futures": "scenario planning",
-    "decision tree analysis": "decision tree",
-    "ev calculation": "expected value",
-    "expected value calculation": "expected value",
-    "competitive analysis": "boundary critique",
-    "five forces analysis": "five forces",
-    "porter analysis": "porter five forces",
-    "swot analysis": "swot",
-    "swat analysis": "swot",  # the user's own typo example
-}
-
-# Module-level cache for the parsed signal vocabulary registry. Populated
-# lazily on first call and reused across pipeline runs (the registry file
-# changes only when vault canonical updates).
-_SIGNAL_REGISTRY_CACHE: list[dict] | None = None
-_FRAMEWORK_TOKENS_CACHE: set | None = None
-
-# Single-word T21 project-mode execution verbs that must NOT be fuzzy-match
-# targets (Problem 1). They still exact-match via the registry; this only
-# stops near-words ("product", "designed", "produced") from being typo-
-# corrected into a project-mode dispatch.
-_FUZZY_EXCLUDED_TOKENS = {"create", "draft", "design", "produce"}
 
 
 def _build_framework_tokens() -> set:
-    """Extract single-word framework tokens (≥4 chars) from the registry.
-
-    These are the tokens difflib will fuzzy-match against. We exclude
-    short tokens (≤3 chars) because they false-match too easily.
-    """
-    global _FRAMEWORK_TOKENS_CACHE
-    if _FRAMEWORK_TOKENS_CACHE is not None:
-        return _FRAMEWORK_TOKENS_CACHE
-    tokens: set = set()
-    for entry in _load_signal_registry():
-        sig = entry["signal"].lower()
-        # Single-word framework name
-        if " " not in sig and "-" not in sig and len(sig) >= 4:
-            # Skip T21 project-mode's generic execution verbs (Problem 1).
-            # These are everyday English words, not distinctive technique
-            # names: a near-match ("product"→"produce", "designed"→"design")
-            # is almost always the real word, not a typo — and fuzzy-matching
-            # them hijacks analytical prompts to the execution mode.
-            if sig in _FUZZY_EXCLUDED_TOKENS:
-                continue
-            tokens.add(sig)
-        # Multi-word phrases — keep the first significant word too
-        # so e.g., "frame audit" contributes "frame".
-    # Manually add a few well-known framework names that may not be in registry
-    tokens.update({"swot", "premortem", "postmortem", "pestel"})
-    _FRAMEWORK_TOKENS_CACHE = tokens
-    return tokens
+    """Derive bounded typo candidates exclusively from authored identities."""
+    return {
+        alias.lower()
+        for mode in load_routing_sources()["modes"].values()
+        for alias in mode["aliases"]
+        if " " not in alias and "-" not in alias and len(alias) >= 4
+    }
 
 
 def _detect_fuzzy_framework_matches(prompt: str,
@@ -5345,19 +4672,7 @@ def _detect_fuzzy_framework_matches(prompt: str,
     found: list[dict] = []
     seen_typos: set = set()
 
-    # 1. Multi-word phrase typos (lookup dict)
-    for typo_phrase, canonical in _FRAMEWORK_PHRASE_TYPOS.items():
-        if typo_phrase in norm and canonical not in norm:
-            # Find a registry entry matching the canonical phrase
-            for entry in _load_signal_registry():
-                if entry["signal"].lower() == canonical.lower():
-                    if entry["mode"] not in seen_typos:
-                        synthetic = dict(entry)
-                        synthetic["fuzzy_typo"] = typo_phrase
-                        synthetic["fuzzy_canonical"] = canonical
-                        found.append(synthetic)
-                        seen_typos.add(entry["mode"])
-                        break
+
 
     # 2. Single-word fuzzy matches (difflib). Cutoff 0.85 + substring check
     # to avoid common English words fuzzy-matching to framework names
@@ -5619,237 +4934,71 @@ def _detect_attached_artifact(context: dict | None) -> str | None:
     return None
 
 
-# Mapping from data shapes to candidate modes/territories.
-_DATA_SHAPE_TO_CANDIDATES = {
-    "enum_hypotheses": [
-        ("competing-hypotheses", "T5-hypothesis-evaluation"),
-        ("differential-diagnosis", "T5-hypothesis-evaluation"),
-    ],
-    "enum_options": [
-        ("constraint-mapping", "T3-decision-under-uncertainty"),
-        ("multi-criteria-decision", "T3-decision-under-uncertainty"),
-    ],
-    "enum_parties": [
-        ("stakeholder-mapping", "T8-stakeholder-conflict"),
-        ("cui-bono", "T2-interest-and-power"),
-    ],
-    "enum_frames": [
-        ("frame-comparison", "T9-paradigm-and-assumption-examination"),
-    ],
-    "enum_scenarios": [
-        ("scenario-planning", "T6-future-exploration"),
-    ],
-    "pasted_argument": [
-        ("coherence-audit", "T1-argumentative-artifact-examination"),
-        ("steelman-construction", "T15-artifact-evaluation-by-stance"),
-    ],
-    "decision_with_options": [
-        ("constraint-mapping", "T3-decision-under-uncertainty"),
-        ("decision-under-uncertainty", "T3-decision-under-uncertainty"),
-    ],
-    "failure_description": [
-        ("root-cause-analysis", "T4-causal-investigation"),
-    ],
-    "conflict_description": [
-        ("conflict-structure", "T8-stakeholder-conflict"),
-        ("stakeholder-mapping", "T8-stakeholder-conflict"),
-    ],
-    "spatial_description": [
-        ("place-reading-genius-loci", "T19-spatial-composition"),
-        ("compositional-dynamics", "T19-spatial-composition"),
-    ],
-    "attached_image": [
-        ("spatial-reasoning", "T11-structural-relationship-mapping"),
-        ("compositional-dynamics", "T19-spatial-composition"),
-    ],
-    "attached_document": [
-        ("coherence-audit", "T1-argumentative-artifact-examination"),
-        ("cui-bono", "T2-interest-and-power"),
-    ],
-}
+
+
+
+def _routing_predicate(name: str | None, prompt: str, context: dict | None) -> bool:
+    """Bind authored conditions to the finite existing mechanical detectors."""
+    if not name:
+        return True
+    enum = _detect_enumerated_items(prompt)
+    if name.startswith("enum_"):
+        return bool(enum and name == f"enum_{enum['kind']}")
+    detectors = {
+        "pasted_argument": lambda: _detect_pasted_argument(prompt),
+        "decision_with_options": lambda: _detect_decision_with_options(prompt),
+        "failure_description": lambda: _detect_failure_description(prompt),
+        "conflict_description": lambda: _detect_conflict_description(prompt),
+        "spatial_description": lambda: _detect_spatial_description(prompt),
+        "attached_image": lambda: _detect_attached_artifact(context) == "image",
+        "attached_document": lambda: _detect_attached_artifact(context) in ("document", "file"),
+        "red_team_subject_missing": lambda: _routing_subject_missing(prompt, context),
+        "mechanism_subject_missing": lambda: _routing_subject_missing(prompt, context),
+        "passion_subject_missing": lambda: _routing_subject_missing(prompt, context),
+    }
+    if name not in detectors:
+        raise ValueError(f"Unbound routing predicate: {name}")
+    return bool(detectors[name]())
+
+
+def _routing_subject_missing(prompt: str, context: dict | None) -> bool:
+    remainder = prompt
+    aliases = [signal["signal"] for signal in _load_signal_registry()
+               if _signal_kind(signal) == "explicit_framework"]
+    for alias in sorted(aliases, key=len, reverse=True):
+        pattern = r"[\s—–-]+".join(re.escape(token) for token in _normalize_for_match(alias).split())
+        remainder = re.sub(r"(?<!\w)" + pattern + r"(?!\w)", "", remainder, flags=re.I)
+    return not (_has_artifact_content(prompt, context) or _has_concrete_noun(remainder))
 
 
 def _detect_data_shapes(prompt: str, context: dict | None) -> list[dict]:
-    """Detect routing-relevant data shapes in the prompt and context.
-
-    Returns a list of shape signal dicts each with the same shape as
-    registry entries (for uniform handling in Stage 2): signal, territory,
-    mode, confidence_weight, evidence, plus a 'data_shape' tag.
-    """
-    signals: list[dict] = []
-
-    enum = _detect_enumerated_items(prompt)
-    if enum:
-        kind_key = f"enum_{enum['kind']}"
-        if kind_key in _DATA_SHAPE_TO_CANDIDATES:
-            for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES[kind_key]:
-                signals.append({
-                    "signal": f"data-shape:{kind_key}({enum['count']} items)",
-                    "territory": territory,
-                    "mode": mode_id,
-                    "confidence_weight": "strong",
-                    "evidence": "data-shape detection",
-                    "data_shape": kind_key,
-                })
-
-    if _detect_pasted_argument(prompt):
-        for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES["pasted_argument"]:
+    """Detect structure using the destinations declared in the source records."""
+    signals = []
+    for shape, candidates in load_routing_sources()["data_shape_records"].items():
+        if not _routing_predicate(shape, prompt, context):
+            continue
+        for priority, candidate in enumerate(candidates):
+            entry = dict(candidate) if isinstance(candidate, dict) else {
+                "mode": candidate[0], "territory": candidate[1],
+            }
             signals.append({
-                "signal": "data-shape:pasted_argument",
-                "territory": territory,
-                "mode": mode_id,
-                # Strong signal — when both T1 and T15 candidates fire, the
-                # cross-territory check in Stage 2 surfaces the disambiguation
-                # question rather than dispatching blindly.
-                "confidence_weight": "strong",
+                **entry,
+                "signal": f"data-shape:{shape}",
+                "confidence_weight": entry["confidence_weight"],
                 "evidence": "data-shape detection",
-                "data_shape": "pasted_argument",
+                "data_shape": shape,
+                "priority": priority,
             })
-
-    if _detect_decision_with_options(prompt):
-        for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES["decision_with_options"]:
-            signals.append({
-                "signal": "data-shape:decision_with_options",
-                "territory": territory,
-                "mode": mode_id,
-                "confidence_weight": "strong",
-                "evidence": "data-shape detection",
-                "data_shape": "decision_with_options",
-            })
-
-    if _detect_failure_description(prompt):
-        for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES["failure_description"]:
-            signals.append({
-                "signal": "data-shape:failure_description",
-                "territory": territory,
-                "mode": mode_id,
-                "confidence_weight": "strong",
-                "evidence": "data-shape detection",
-                "data_shape": "failure_description",
-            })
-
-    if _detect_conflict_description(prompt):
-        for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES["conflict_description"]:
-            signals.append({
-                "signal": "data-shape:conflict_description",
-                "territory": territory,
-                "mode": mode_id,
-                "confidence_weight": "strong",
-                "evidence": "data-shape detection",
-                "data_shape": "conflict_description",
-            })
-
-    if _detect_spatial_description(prompt):
-        for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES["spatial_description"]:
-            signals.append({
-                "signal": "data-shape:spatial_description",
-                "territory": territory,
-                "mode": mode_id,
-                "confidence_weight": "strong",
-                "evidence": "data-shape detection",
-                "data_shape": "spatial_description",
-            })
-
-    attached = _detect_attached_artifact(context)
-    if attached == "image":
-        for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES["attached_image"]:
-            signals.append({
-                "signal": "data-shape:attached_image",
-                "territory": territory,
-                "mode": mode_id,
-                "confidence_weight": "weak",
-                "evidence": "data-shape detection (attached image)",
-                "data_shape": "attached_image",
-            })
-    elif attached in ("document", "file"):
-        for mode_id, territory in _DATA_SHAPE_TO_CANDIDATES["attached_document"]:
-            signals.append({
-                "signal": "data-shape:attached_document",
-                "territory": territory,
-                "mode": mode_id,
-                "confidence_weight": "weak",
-                "evidence": "data-shape detection (attached document)",
-                "data_shape": "attached_document",
-            })
-
     return signals
 
 
 def _load_signal_registry() -> list[dict]:
-    """Parse the signal vocabulary registry into a list of signal entries.
-
-    Each entry: {signal, territory, mode, disambiguation_answer,
-    confidence_weight, evidence}. Strong-confidence entries are the trigger
-    set; weak entries contribute disambiguation context. The
-    ``_PHASE9_SIGNAL_ALIASES`` augmentation is appended last so corpus-
-    expected phrases the canonical registry doesn't yet cover still fire.
-
-    Cached after first call. Returns empty list if file missing.
-    """
-    global _SIGNAL_REGISTRY_CACHE
-    if _SIGNAL_REGISTRY_CACHE is not None:
-        return _SIGNAL_REGISTRY_CACHE
-
-    entries: list[dict] = []
-    if os.path.exists(SIGNAL_REGISTRY_FILE):
-        with open(SIGNAL_REGISTRY_FILE, "r") as f:
-            content = f.read()
-    else:
-        # Loud stderr warning — without the registry file Stage 1 sees only
-        # the small Phase-9 alias list and most analytical signals don't
-        # match. Pre-routing degrades silently to bypass / fallback dispatch.
-        # Same observability pattern as load_mode and load_framework.
-        print(
-            f"[load_signal_vocabulary] registry file not found at "
-            f"{SIGNAL_REGISTRY_FILE} — only the Phase-9 code-side aliases "
-            f"will populate the signal registry. Pre-routing will under-match.",
-            file=sys.stderr,
-            flush=True,
-        )
-        content = ""
-
-    for line in content.split("\n"):
-        if not line.startswith("|"):
-            continue
-        parts = [p.strip() for p in line.strip().split("|")]
-        # Markdown table rows: leading and trailing pipes produce empty cells
-        parts = [p for p in parts if p != ""]
-        if len(parts) < 6:
-            continue
-        # Skip header rows and separator rows
-        if parts[0].lower() == "signal":
-            continue
-        if all(c in "-: " for c in parts[0]):
-            continue
-        signal_text = parts[0]
-        if not signal_text or signal_text.startswith("-"):
-            continue
-        entries.append({
-            "signal": signal_text,
-            "territory": parts[1],
-            "mode": parts[2],
-            "disambiguation_answer": parts[3],
-            "confidence_weight": parts[4].lower(),
-            "evidence": parts[5] if len(parts) > 5 else "",
-        })
-
-    # Phase 9 — append code-side aliases.
-    for alias in _PHASE9_SIGNAL_ALIASES:
-        entries.append({
-            "signal": alias["signal"],
-            "territory": alias["territory"],
-            "mode": alias["mode"],
-            "disambiguation_answer": alias.get("disambiguation_answer", "—"),
-            "confidence_weight": alias["confidence_weight"],
-            "evidence": alias.get("evidence", "phase-9 alias"),
-        })
-
-    _SIGNAL_REGISTRY_CACHE = entries
-    return entries
+    """Expose the validated, mode-owned signals from the compiled closure."""
+    return load_routing_sources()["signals"]
 
 
 def _check_strong_bypass(prompt: str) -> dict | None:
-    """Run only the STRONG_BYPASS_TRIGGERS scan over ``prompt``.
+    """Scan the compiled strong-bypass cues over ``prompt``.
 
     Returns the bypass-result dict when a trigger fires, ``None`` otherwise.
     Used by both ``pre_phase_a_bypass_check`` (which runs on the raw user
@@ -5860,7 +5009,9 @@ def _check_strong_bypass(prompt: str) -> dict | None:
     "what does 'no analysis' mean") are skipped so the bypass doesn't
     misread quoted or negated discussion of the trigger phrase as an opt-out.
     """
-    for trigger in STRONG_BYPASS_TRIGGERS:
+    selection = load_routing_sources()["modes"]["simple"]["selection"]
+    opt_out = selection["analysis_opt_out_triggers"]
+    for trigger in opt_out + selection["strong_bypass_triggers"]:
         stripped = trigger.strip()
         if _signal_present(prompt, stripped) and not _is_negated(prompt, stripped):
             result = {
@@ -5868,32 +5019,20 @@ def _check_strong_bypass(prompt: str) -> dict | None:
                 "matches": [],
                 "rationale": f"strong bypass trigger: '{stripped}'",
             }
-            if stripped in EXPLICIT_ANALYSIS_OPT_OUT_TRIGGERS:
+            if stripped in opt_out:
                 result["visual_exception"] = "explicit_opt_out"
             return result
     return None
 
 
 def _has_judgment_marker(prompt: str) -> bool:
-    """Return True when the prompt contains any JUDGMENT_MARKERS substring
+    """Return True when the prompt contains a compiled judgment marker
     (not under negation). Used to gate Gear 2 dispatch — a prompt that
     contains both a retrieval trigger AND a judgment marker is judgment-first
     and routes to Stage 2 / general-inquiry / specific analytical mode.
     """
-    for marker in JUDGMENT_MARKERS:
+    for marker in load_routing_sources()["modes"]["general-inquiry"]["selection"]["judgment_markers"]:
         if _signal_present(prompt, marker) and not _is_negated(prompt, marker):
-            return True
-    return False
-
-
-def _has_subjective_marker(prompt: str) -> bool:
-    """Return True when the prompt contains any SUBJECTIVE_TRIGGERS substring
-    (not under negation). Used to route fallback dispatches to subjective-inquiry
-    rather than general-inquiry when the question is about taste / preference /
-    aesthetic judgment.
-    """
-    for trigger in SUBJECTIVE_TRIGGERS:
-        if _signal_present(prompt, trigger) and not _is_negated(prompt, trigger):
             return True
     return False
 
@@ -5902,8 +5041,8 @@ def _check_gear2_rag(prompt: str) -> dict | None:
     """Check whether the prompt is a Gear 2 retrieval dispatch.
 
     Returns a dispatch dict when:
-      - The prompt contains at least one GEAR2_RAG_TRIGGERS substring, AND
-      - The prompt contains NO JUDGMENT_MARKERS substring.
+      - The prompt contains a compiled retrieval trigger, AND
+      - The prompt contains no compiled judgment marker.
 
     Returns None otherwise. The caller (pre_phase_a_bypass_check and Stage 1)
     short-circuits to factual-lookup mode (Gear 2) when this fires.
@@ -5915,7 +5054,7 @@ def _check_gear2_rag(prompt: str) -> dict | None:
     """
     if _has_judgment_marker(prompt):
         return None
-    for trigger in GEAR2_RAG_TRIGGERS:
+    for trigger in load_routing_sources()["modes"]["factual-lookup"]["selection"]["retrieval_triggers"]:
         stripped = trigger.strip()
         if _signal_present(prompt, stripped) and not _is_negated(prompt, stripped):
             return {
@@ -5927,7 +5066,7 @@ def _check_gear2_rag(prompt: str) -> dict | None:
 
 
 def _check_weak_bypass(prompt: str) -> dict | None:
-    """Run only the WEAK_BYPASS_TRIGGERS scan over ``prompt``.
+    """Scan the compiled weak-bypass cues over ``prompt``.
 
     Greetings and acknowledgements — fire as bypass only when there is no
     strong analytical signal in the same prompt. Used inside Stage 1 (after
@@ -5938,7 +5077,7 @@ def _check_weak_bypass(prompt: str) -> dict | None:
     Negation-aware: a quoted or negated mention of a greeting trigger
     ("don't just say hello, actually analyse this") does not fire bypass.
     """
-    for trigger in WEAK_BYPASS_TRIGGERS:
+    for trigger in load_routing_sources()["modes"]["simple"]["selection"]["weak_bypass_triggers"]:
         stripped = trigger.strip()
         if _signal_present(prompt, stripped) and not _is_negated(prompt, stripped):
             return {
@@ -6001,14 +5140,7 @@ def pre_phase_a_bypass_check(prompt: str) -> dict | None:
         # as a real bypass.
         norm = _normalize_for_match(prompt)
         word_count = len(norm.split())
-        analytical_hint_tokens = (
-            "analyze", "analyse", "evaluate", "audit", "steelman",
-            "argument", "decision", "tradeoff", "tradeoffs", "trade off",
-            "compare", "examine", "investigate", "explain why", "explain how",
-            "why does", "why did", "how does", "how did", "cui bono",
-            "pre mortem", "premortem", "root cause", "consequences",
-            "what would happen", "stress test", "stress-test",
-        )
+        analytical_hint_tokens = load_routing_sources()["modes"]["simple"]["selection"]["analytical_hint_tokens"]
         if word_count <= 8 and not any(t in norm for t in analytical_hint_tokens):
             weak["stage"] = "pre-phase-a"
             return weak
@@ -6054,18 +5186,22 @@ def stage1_pre_analysis_filter(prompt: str, context: dict | None = None) -> dict
     # 2. Analytical-artifact signal detection — registry strong-weight entries.
     registry = _load_signal_registry()
     matches: list[dict] = []
-    seen_signals: set[str] = set()
+    seen_signals: set[tuple] = set()
 
     sorted_registry = sorted(registry, key=lambda e: -len(e["signal"]))
 
     for entry in sorted_registry:
         sig = _normalize_for_match(entry["signal"])
-        if not sig or sig in seen_signals:
+        identity = (sig, entry.get("mode"), entry.get("territory"),
+                    entry.get("confidence_weight"), entry.get("predicate"),
+                    entry.get("disambiguation_answer"), entry.get("evidence"))
+        if not sig or identity in seen_signals:
             continue
-        if _signal_present(prompt, entry["signal"]):
+        if (_signal_present(prompt, entry["signal"])
+                and _routing_predicate(entry.get("predicate"), prompt, context)):
             if _is_negated(prompt, entry["signal"]):
                 continue
-            seen_signals.add(sig)
+            seen_signals.add(identity)
             matches.append(entry)
 
     # 3. Phase 9.5 — Fuzzy framework-name matching (typos, near-misses).
@@ -6119,16 +5255,6 @@ def stage1_pre_analysis_filter(prompt: str, context: dict | None = None) -> dict
 
 # Conflict-pair definitions — contradictory signals that must surface a
 # disambiguation question rather than auto-dispatch.
-_CONFLICT_PAIRS = [
-    # depth conflicts
-    (("quick", "fast", "quickly", "fast read"),
-     ("deep dive", "deep-dive", "deep read", "thorough", "full"),
-     "depth"),
-    # stance conflicts
-    (("steelman", "make the case for", "strongest case"),
-     ("red team", "red-team", "push back", "tear apart"),
-     "stance"),
-]
 
 
 def _territory_of(entry: dict) -> str:
@@ -6146,237 +5272,38 @@ def _matches_grouped_by_territory(matches: list[dict]) -> dict[str, list[dict]]:
 
 
 def _detect_conflicts(prompt: str) -> list[dict]:
-    """Detect contradictory signal pairs in the prompt.
-
-    Returns a list of conflict dicts with axis + the two competing signal
-    sets that fired.
-    """
-    conflicts: list[dict] = []
-    for set_a, set_b, axis in _CONFLICT_PAIRS:
-        a_hits = [s for s in set_a
-                  if _signal_present(prompt, s) and not _is_negated(prompt, s)]
-        b_hits = [s for s in set_b
-                  if _signal_present(prompt, s) and not _is_negated(prompt, s)]
+    conflicts = []
+    for conflict in load_routing_sources()["conflicts"]:
+        a_hits = [phrase for phrase in conflict["side_a"]
+                  if _signal_present(prompt, phrase) and not _is_negated(prompt, phrase)]
+        b_hits = [phrase for phrase in conflict["side_b"]
+                  if _signal_present(prompt, phrase) and not _is_negated(prompt, phrase)]
         if a_hits and b_hits:
-            conflicts.append({
-                "axis": axis,
-                "side_a": a_hits,
-                "side_b": b_hits,
-            })
+            conflicts.append({**conflict, "side_a": a_hits, "side_b": b_hits})
     return conflicts
-
-
-# Vague prompt patterns — phrases that signal "I don't know what I want;
-# please ask me." When matched, Stage 2 should disambiguate rather than
-# auto-dispatch on whatever weak signal happens to fire first.
-_VAGUE_PROMPT_PATTERNS = [
-    r"\bhelp me think about\b",
-    r"\bhelp me think through\b",
-    r"\bwalk me through this\b(?!\s+(?:debate|argument|decision))",  # bare "walk me through this"
-    r"\btell me about\b",
-    r"\bexplore (?:where|what)\b",
-    r"\bi('m| am) interested in\b",
-    r"\b(?:two|three|several|multiple) (?:approaches|ideas|frameworks|things) keep showing up\b",
-    r"\b(?:suspend|examine) (?:the|this) paradigm\b.+\b(?:synthesize|integrate|combine)\b",
-]
-
-
-def _is_vague_prompt(prompt: str) -> bool:
-    """Return True when the prompt is too vague for direct dispatch."""
-    if not prompt:
-        return False
-    norm = _normalize_for_match(prompt)
-    for pat in _VAGUE_PROMPT_PATTERNS:
-        if re.search(pat, norm):
-            return True
-    return False
 
 
 def _detect_depth_signal(prompt: str) -> str | None:
     """Return 'tier-1' / 'tier-2' / 'tier-3' if the prompt explicitly signals
     a depth, else None (so default-on-ambiguity Tier-2 applies)."""
-    tier_1 = ["quickly", "quick read", "quick scan", "fast read", "quick", "brief"]
-    tier_3 = ["deep dive", "deep-dive", "thoroughly", "thorough", "molecular",
-              "comprehensive", "full", "complete analysis", "deeply"]
-    for sig in tier_1:
-        if _signal_present(prompt, sig) and not _is_negated(prompt, sig):
-            return "tier-1"
-    for sig in tier_3:
-        if _signal_present(prompt, sig) and not _is_negated(prompt, sig):
-            return "tier-3"
+    for tier, phrases in load_routing_sources()["depth_signals"].items():
+        if any(_signal_present(prompt, phrase) and not _is_negated(prompt, phrase)
+               for phrase in phrases):
+            return tier
     return None
 
 
 def _format_within_territory_question(territory: str) -> str:
-    """Plain-language disambiguation question per Within-Territory Trees.
-
-    Returns the canonical Q1 question for the territory in plain English
-    per Disambiguation Style Guide §5.3. Returns the generic Pattern A
-    intent disambiguation when the territory has no within-territory tree
-    or is a singleton.
-    """
-    return _WITHIN_TERRITORY_QUESTIONS.get(territory, _GENERIC_INTENT_QUESTION)
-
-
-_GENERIC_INTENT_QUESTION = (
-    "Quick check on what you're after — are you mostly trying to: "
-    "(a) figure out who benefits from this; "
-    "(b) check whether the argument holds up; "
-    "(c) decide what to do; "
-    "(d) understand why this happened?"
-)
-
-_WITHIN_TERRITORY_QUESTIONS = {
-    "T1": (
-        "Is the question about whether the argument holds together internally, "
-        "or about the frame it's using to see the issue, or both at once?"
-    ),
-    "T2": (
-        "Are you trying to figure out who benefits from this single situation, "
-        "map out a landscape of multiple parties, or work through something "
-        "that feels tangled across many dimensions?"
-    ),
-    "T3": (
-        "Is the environment basically known and you're picking from clear "
-        "options, are there real unknowns about how things will play out, "
-        "or are you weighing several criteria that don't reduce to one number?"
-    ),
-    "T4": (
-        "Is the question more like 'what one thing went wrong here', "
-        "'what set of things keep producing this', or do you want a formal "
-        "causal model with arrows you can reason over?"
-    ),
-    "T5": (
-        "Quick read on which explanation fits best, lay out evidence "
-        "systematically against each candidate, or a probabilistic model "
-        "with priors?"
-    ),
-    "T6": (
-        "Mostly looking forward to anticipate likely consequences, wanting "
-        "probability estimates, wanting alternative future stories, or "
-        "stress-testing a plan against how it could go wrong?"
-    ),
-    "T7": (
-        "Stress-testing for how this could fail, or auditing what makes it "
-        "fragile vs. antifragile under stress?"
-    ),
-    "T8": (
-        "Mapping who all the parties are and what they want, or laying out "
-        "the structure of the conflict between them?"
-    ),
-    "T9": (
-        "Suspending the assumptions in this single piece, comparing "
-        "different frames at play, or mapping the worldviews more broadly?"
-    ),
-    "T10": (
-        "Clarifying what a key term currently means, or working on what it "
-        "should come to mean for the work going forward?"
-    ),
-    "T13": (
-        "Mapping interests before the negotiation, prepping a principled "
-        "negotiation strategy, or stepping into a mediator role?"
-    ),
-    "T14": (
-        "Want a quick orientation, a fuller terrain map, or a full domain "
-        "induction?"
-    ),
-    "T15": (
-        "Want me to make the strongest case for it, the strongest case "
-        "against it, or weigh both sides?"
-    ),
-    "T19": (
-        "Reading the spatial composition, the place-character, or the "
-        "information density?"
-    ),
-}
-
-
-# Cross-territory adjacency questions per ~/ora/architecture/cross-territory-adjacency.md.
-# Plain-language disambiguators that distinguish the two adjacent territories.
-_CROSS_TERRITORY_QUESTIONS = {
-    frozenset(["T1", "T2"]): (
-        "Are you mostly asking whether the argument itself holds up, "
-        "or who benefits if people accept it?"
-    ),
-    frozenset(["T1", "T5"]): (
-        "Are the competing positions each a complete argument you want me "
-        "to audit, or are they propositions you want weighed against evidence?"
-    ),
-    frozenset(["T1", "T9"]): (
-        "Are you evaluating this single argument's frame, or comparing "
-        "different paradigms that frame the issue differently?"
-    ),
-    frozenset(["T1", "T10"]): (
-        "Is the issue with how the argument deploys a specific concept "
-        "(clarify the concept first), or with how the argument coheres "
-        "given any reasonable reading of the concept?"
-    ),
-    frozenset(["T1", "T15"]): (
-        "Want me to evaluate the argument's soundness (does it hold up?), "
-        "or evaluate the proposal with a particular stance "
-        "(steelman / push back / weigh both)?"
-    ),
-    frozenset(["T2", "T8"]): (
-        "Mostly asking who benefits or has power, or asking how the parties' "
-        "competing claims can be worked through?"
-    ),
-    frozenset(["T2", "T13"]): (
-        "Are you mapping the interest landscape, or are you about to "
-        "negotiate (or advise a negotiation)?"
-    ),
-    frozenset(["T3", "T6"]): (
-        "Are you choosing among options now, or exploring how the future "
-        "might unfold?"
-    ),
-    frozenset(["T3", "T7"]): (
-        "Choosing among options where risk is one input among several, "
-        "or specifically stress-testing how things could fail?"
-    ),
-    frozenset(["T3", "T8"]): (
-        "Is this fundamentally your decision to make (with the parties as "
-        "inputs), or is it a situation where the parties' conflict itself "
-        "is what needs to be worked through first?"
-    ),
-    frozenset(["T4", "T9"]): (
-        "Looking for the causes within how the problem is currently framed, "
-        "or stepping back to ask whether the framing itself is generating "
-        "the problem?"
-    ),
-    frozenset(["T4", "T16"]): (
-        "Tracing back to causes, or explaining how the parts produce the "
-        "behavior?"
-    ),
-    frozenset(["T6", "T7"]): (
-        "Mapping how the future could unfold (multiple stories), or "
-        "stress-testing a specific plan for how it could fail?"
-    ),
-    frozenset(["T8", "T13"]): (
-        "Mapping how the parties relate, or stepping into negotiation "
-        "or mediation?"
-    ),
-}
-
-
-# Catch-all modes — if a more specific mode also fires strongly, prefer
-# the specific mode. These modes act as fallbacks when no specific signal
-# is present and shouldn't win a tie against a named framework.
-_CATCH_ALL_MODES = {
-    "passion-exploration",
-    "terrain-mapping",
-    "standard",
-    "adversarial",
-    "simple",
-    "structured-output",
-}
+    sources = load_routing_sources()
+    question_id = sources["territory_questions"].get(territory, "generic_intent")
+    return sources["questions"][question_id]["text"]
 
 
 def _data_shape_candidate_index(mode_id: str) -> int:
-    """Position of mode_id in any data-shape's candidate list (lower = preferred).
-    Returns 999 if mode_id isn't in any data-shape mapping."""
-    for candidates in _DATA_SHAPE_TO_CANDIDATES.values():
-        for i, (m, _t) in enumerate(candidates):
-            if m == mode_id:
-                return i
+    for candidates in load_routing_sources()["data_shapes"].values():
+        for index, candidate in enumerate(candidates):
+            if (candidate.get("mode") if isinstance(candidate, dict) else candidate[0]) == mode_id:
+                return index
     return 999
 
 
@@ -6408,8 +5335,11 @@ def _select_dispatch_mode(matches: list[dict],
     matches first, and fall back to project-mode only when nothing analytical
     dispatched (e.g. "Build me a React app" — pure execution intent).
     """
-    if any(m.get("mode") == "project-mode" for m in matches):
-        analytical = [m for m in matches if m.get("mode") != "project-mode"]
+    sources = load_routing_sources()
+    if any(sources["modes"].get(m.get("mode"), {}).get("selection", {}).get("deprioritize")
+           for m in matches):
+        analytical = [m for m in matches if not sources["modes"].get(
+            m.get("mode"), {}).get("selection", {}).get("deprioritize")]
         mode_id, conf = _select_dispatch_mode_core(analytical, depth_signal)
         if mode_id:
             return mode_id, conf
@@ -6446,7 +5376,8 @@ def _select_dispatch_mode_core(matches: list[dict],
         return None, "low"
 
     def specific_only(modes: dict) -> dict:
-        spec = {m: c for m, c in modes.items() if m not in _CATCH_ALL_MODES}
+        spec = {m: c for m, c in modes.items() if not load_routing_sources()["modes"].get(
+            m, {}).get("selection", {}).get("catch_all")}
         return spec if spec else modes
 
     # Tier 1: explicit framework name
@@ -6468,7 +5399,7 @@ def _select_dispatch_mode_core(matches: list[dict],
     if data:
         data = specific_only(data)
         # Tie-break: prefer mode with phrase corroboration; if still tied,
-        # use the order from _DATA_SHAPE_TO_CANDIDATES (first listed wins —
+        # use the compiled candidate order (first listed wins —
         # the simpler/more common mode for the shape).
         best = max(data.keys(), key=lambda mid: (
             data[mid],
@@ -6497,229 +5428,321 @@ def _select_dispatch_mode_core(matches: list[dict],
     return None, "low"
 
 
-def stage2_sufficiency_analyzer(prompt: str, stage1_output: dict,
-                                context: dict | None = None) -> dict:
-    """Stage 2 of the pre-routing pipeline: prompt sufficiency analyzer.
-
-    Determines whether the prompt contains enough signal to dispatch to a
-    specific mode without disambiguation, or whether disambiguation
-    questions are needed (and which). Per spec §Stage 2.
-
-    Returns:
-        {
-            "dispatched_mode_id": <mode_id> | None,
-            "disambiguation_questions_asked": [<plain-language questions>],
-            "disambiguation_answers_received": [],
-            "confidence": "high" | "medium" | "low",
-            "territory": <territory_id> | None,
-            "rationale": str,
-        }
-    """
-    matches = stage1_output.get("matches", [])
-    depth_signal = _detect_depth_signal(prompt)
-
-    # 2.3 Conflict detection — fires before any dispatch.
-    conflicts = _detect_conflicts(prompt)
-    if conflicts:
-        c = conflicts[0]
-        if c["axis"] == "depth":
-            q = (
-                "I see both a quick-read and a deep-dive cue — want a quick "
-                "first read, or should I take the longer route?"
-            )
-        elif c["axis"] == "stance":
-            q = (
-                "Want me to make the strongest case for it, push back on it, "
-                "or weigh both sides?"
-            )
-        else:
-            q = (
-                "I'm seeing competing cues in your prompt — could you tell "
-                "me which way you'd like me to lean?"
-            )
-        return {
-            "dispatched_mode_id": None,
-            "disambiguation_questions_asked": [q],
-            "disambiguation_answers_received": [],
-            "confidence": "low",
-            "territory": None,
-            "rationale": f"conflict on axis '{c['axis']}'",
-        }
-
-    # 2.3b Named-lens decisiveness (Problem 2). A canonical mental-model lens
-    # name (tagged evidence="lens-alias") is a strong, specific signal that
-    # should DIRECT routing to its host mode even when the prompt also carries
-    # competing or ambiguous signals that would otherwise trigger a
-    # cross-territory / within-territory disambiguation question. Fires only
-    # when the strong lens-aliases point to a single mode AND the prompt does
-    # not explicitly name a different technique (an explicit framework/mode
-    # name still wins — e.g. "principled negotiation ... BATNA"). The
-    # lens_dispatch flag lets Stage 3 treat the named-lens prompt as
-    # self-sufficient rather than re-eliciting an artifact (Problem 3).
-    strong_lens = [m for m in matches
-                   if m["confidence_weight"] == "strong"
-                   and (m.get("evidence") or "") == "lens-alias"]
-    if strong_lens:
-        lens_modes = {m["mode"] for m in strong_lens}
-        explicit_modes = {m["mode"] for m in matches
-                          if m["confidence_weight"] == "strong"
-                          and _signal_kind(m) == "explicit_framework"}
-        if len(lens_modes) == 1 and not (explicit_modes - lens_modes):
-            lens_mode = next(iter(lens_modes))
-            lens_match = next(m for m in strong_lens if m["mode"] == lens_mode)
-            return {
-                "dispatched_mode_id": lens_mode,
-                "disambiguation_questions_asked": [],
-                "disambiguation_answers_received": [],
-                "confidence": "high",
-                "territory": _territory_of(lens_match),
-                "rationale": f"named-lens decisive dispatch on {lens_mode}",
-                "lens_dispatch": True,
-            }
-
-    # 2.4 Cross-territory adjacency check — when signals straddle two
-    # territories, the cross-territory question fires first.
-    # Decision G exception: when a T15 mode-name signal fires (steelman /
-    # red-team / etc.), T15 is the home and T1/T9/T10 are cross-references —
-    # don't ask the cross-territory question.
-    by_territory = _matches_grouped_by_territory(matches)
-    strong_territories = [
-        t for t, ms in by_territory.items()
-        if any(m["confidence_weight"] == "strong" for m in ms)
-    ]
-
-    home_territory_modes = {
-        "T15": {"steelman-construction", "red-team", "balanced-critique",
-                "benefits-analysis"},
-    }
-    suppressed_territories = set()
-    for home, modes in home_territory_modes.items():
-        if home in strong_territories:
-            home_strong = any(
-                m["mode"] in modes and m["confidence_weight"] == "strong"
-                for m in by_territory.get(home, [])
-            )
-            if home_strong:
-                # Suppress the cross-territory question; home territory wins.
-                suppressed_territories.update(t for t in strong_territories
-                                              if t != home)
-
-    effective_territories = [t for t in strong_territories
-                              if t not in suppressed_territories]
-
-    if len(effective_territories) >= 2:
-        effective_territories.sort(
-            key=lambda t: -sum(1 for m in by_territory[t]
-                              if m["confidence_weight"] == "strong")
-        )
-        pair = frozenset(effective_territories[:2])
-        if pair in _CROSS_TERRITORY_QUESTIONS:
-            return {
-                "dispatched_mode_id": None,
-                "disambiguation_questions_asked": [_CROSS_TERRITORY_QUESTIONS[pair]],
-                "disambiguation_answers_received": [],
-                "confidence": "low",
-                "territory": None,
-                "rationale": f"cross-territory ambiguity {sorted(pair)}",
-            }
-
-    # 2.2 Multiple-signal composition: try direct dispatch first.
-    # Priority: explicit framework name > data shape > fuzzy > phrase.
-    mode_id, confidence = _select_dispatch_mode(matches, depth_signal)
-    if mode_id and confidence in ("high", "medium"):
-        territory = None
-        # Pick up the matching entry to detect fuzzy / data-shape provenance
-        winning_match = None
-        for m in matches:
-            if m["mode"] == mode_id:
-                winning_match = m
-                if not territory:
-                    territory = _territory_of(m)
-
-        # "Did you mean?" note for fuzzy dispatches
-        did_you_mean = None
-        for m in matches:
-            if m["mode"] == mode_id and m.get("fuzzy_typo"):
-                did_you_mean = (
-                    f"I noticed you wrote \"{m['fuzzy_typo']}\" — "
-                    f"interpreting as \"{m['fuzzy_canonical']}\". "
-                    f"Let me know if you meant something else."
-                )
-                break
-
-        # Conflict surfacing: when an explicit framework name disagrees
-        # with a data-shape signal, the user may have asked for the wrong
-        # technique. Flag it but proceed with the explicit request.
-        explicit_modes = {m["mode"] for m in matches
-                           if m["confidence_weight"] == "strong"
-                           and _signal_kind(m) == "explicit_framework"}
-        shape_modes = {m["mode"] for m in matches
-                        if m["confidence_weight"] == "strong"
-                        and _signal_kind(m) == "data_shape"}
-        shape_mismatch_note = None
-        if (explicit_modes and shape_modes
-                and not (explicit_modes & shape_modes)
-                and mode_id in explicit_modes):
-            # User asked for X but the data looks like Y
-            shape_alt = next(iter(shape_modes - explicit_modes), None)
-            if shape_alt:
-                shape_mismatch_note = (
-                    f"You asked for {mode_id.replace('-', ' ')}, but the "
-                    f"data you provided looks more like a fit for "
-                    f"{shape_alt.replace('-', ' ')}. I'll go with what "
-                    f"you asked for — let me know if you'd rather switch."
-                )
-
-        return {
-            "dispatched_mode_id": mode_id,
-            "disambiguation_questions_asked": [],
-            "disambiguation_answers_received": [],
-            "confidence": confidence,
-            "territory": territory,
-            "rationale": f"strong direct dispatch on {mode_id}",
-            "did_you_mean_note": did_you_mean,
-            "shape_mismatch_note": shape_mismatch_note,
-        }
-
-    # Suppress dispatch only when the prompt is genuinely vague AND no
-    # strong dispatch is available — phrases like "help me think about
-    # this" with no framework name should disambiguate, not auto-dispatch
-    # on a weak passion-exploration / terrain-mapping match.
-    if _is_vague_prompt(prompt):
-        return {
-            "dispatched_mode_id": None,
-            "disambiguation_questions_asked": [_GENERIC_INTENT_QUESTION],
-            "disambiguation_answers_received": [],
-            "confidence": "low",
-            "territory": None,
-            "rationale": "vague prompt; pattern-A intent question",
-        }
-
-    # 2.5 Within-territory disambiguation: when territory is identified but
-    # mode is ambiguous.
-    weak_territories = list(by_territory.keys())
-    if len(weak_territories) == 1:
-        territory = weak_territories[0]
-        question = _format_within_territory_question(territory)
-        return {
-            "dispatched_mode_id": None,
-            "disambiguation_questions_asked": [question],
-            "disambiguation_answers_received": [],
-            "confidence": "low",
-            "territory": territory,
-            "rationale": f"within-territory ambiguity in {territory}",
-        }
-
-    # 2.6 Default-on-ambiguity: per Style Guide §5.6 — ask Pattern A
-    # (intent disambiguation) when no territory at all is identified.
+def _question_result(question_id: str, rationale: str = "") -> dict:
+    questions = load_routing_sources()["questions"]
+    question = questions[question_id]
+    territories = question.get("territories", [])
     return {
         "dispatched_mode_id": None,
-        "disambiguation_questions_asked": [_GENERIC_INTENT_QUESTION],
+        "dispatched_mode_ids": [],
+        "question_id": question_id,
+        "disambiguation_questions_asked": [question["text"]],
         "disambiguation_answers_received": [],
+        "offered_choices": question.get("answers", []),
+        "optional_questions": [questions[identifier]
+                               for identifier in question.get("optional_questions", [])],
         "confidence": "low",
-        "territory": None,
-        "rationale": "no territory identified; pattern-A intent question",
+        "territory": territories[0] if len(territories) == 1 else None,
+        "rationale": rationale or f"canonical question {question_id}",
     }
+
+
+def _dispatch_targets(targets: list[dict], prompt: str, context: dict | None,
+                      *, confidence: str = "high", rationale: str = "") -> dict:
+    sources = load_routing_sources()
+    active, deferred, pending = [], [], []
+    for target in targets:
+        kind, identifier = target["kind"], target["id"]
+        if kind == "fallback":
+            if identifier != "route-by-intent":
+                raise ValueError(f"Unbound routing fallback: {identifier}")
+            question_id = (context or {}).get("routing_question_id") or "generic_intent"
+            return _question_result(question_id, "intent remains unresolved")
+        if kind == "active":
+            if identifier not in active:
+                active.append(identifier)
+        elif kind == "deferred":
+            deferred.append(identifier)
+        elif kind == "territory":
+            question_id = sources["territory_questions"].get(identifier)
+            if question_id:
+                resolved = _resolve_routing_question(question_id, prompt, context)
+            else:
+                resolved = _dispatch_targets([sources["defaults"][identifier]], prompt, context)
+            for selected in resolved.get("dispatched_mode_ids", []):
+                if selected not in active:
+                    active.append(selected)
+            if resolved.get("disambiguation_questions_asked"):
+                pending.append(resolved)
+        elif kind == "action":
+            return _routing_action(identifier, prompt, context, targets)
+    if pending:
+        result = dict(pending[0])
+        result["requested_targets"] = targets
+        result["resolved_mode_ids"] = active
+        return result
+    if deferred:
+        result = _question_result("generic_intent", "requested technique is deferred")
+        result["deferred_mode_ids"] = deferred
+        result["disambiguation_questions_asked"] = [
+            f"{', '.join(identifier.replace('-', ' ') for identifier in deferred)} "
+            "is declared but is not available to run yet. " + result["disambiguation_questions_asked"][0]
+        ]
+        return result
+    mode_id = active[0] if active else None
+    territory = sources["modes"][mode_id]["metadata"].get("territory") if mode_id else None
+    return {
+        "dispatched_mode_id": mode_id,
+        "dispatched_mode_ids": active,
+        "disambiguation_questions_asked": [],
+        "disambiguation_answers_received": [],
+        "confidence": confidence,
+        "territory": _territory_of({"territory": territory}) if territory else None,
+        "rationale": rationale or "canonical destination",
+    }
+
+
+def _routing_action(identifier: str, prompt: str, context: dict | None,
+                    targets: list[dict]) -> dict:
+    """Only named source actions may cross the existing routing boundary."""
+    if identifier == "keep-selection":
+        selected = (context or {}).get("selected_mode_id")
+        if selected:
+            return _dispatch_targets([{"kind": "active", "id": selected}], prompt, context)
+        question_id = (context or {}).get("routing_question_id") or "generic_intent"
+        return _question_result(question_id, "no selection to retain")
+    if identifier == "ask-for-subject":
+        question_id = (context or {}).get("routing_question_id")
+        selected = next((mid for mid, mode in load_routing_sources()["modes"].items()
+                         if mode["selection"].get("question") == question_id), None)
+        answer = (context or {}).get("routing_answer", "")
+        if selected and answer and not _routing_subject_missing(answer, {}):
+            result = _dispatch_targets([{"kind": "active", "id": selected}], prompt, context)
+            result["subject_answer"] = answer
+            return result
+        return _question_result(question_id or "generic_intent", "specific subject still needed")
+    if identifier in ("bypass", "direct-response"):
+        result = _dispatch_targets([], prompt, context)
+        result["bypass_to_direct_response"] = True
+        return result
+    if identifier == "sequential-selection":
+        context = context or {}
+        implicated = context.get("implicated_territories", [])
+        ordered = [territory for territory in context.get("territory_order", [])
+                   if territory in implicated]
+        if len(ordered) != 2:
+            return _question_result(context.get("routing_question_id", "generic_intent"),
+                                    "the requested pair remains unresolved")
+        return _dispatch_targets([{"kind": "territory", "id": territory}
+                                  for territory in ordered], prompt, context)
+    if identifier == "route-by-intent":
+        question_id = (context or {}).get("routing_question_id") or "generic_intent"
+        return _question_result(question_id, "intent remains unresolved")
+    if identifier == "select-depth":
+        selected = (context or {}).get("selected_mode_id")
+        if selected:
+            result = _dispatch_targets([{"kind": "active", "id": selected}], prompt, context)
+            result["depth_tier"] = (context or {}).get("routing_depth")
+            return result
+        return _question_result("generic_intent", "depth selected; analytical purpose still needed")
+    raise ValueError(f"Unbound routing action: {identifier}")
+
+
+def _resolve_routing_question(question_id: str, prompt: str, context: dict | None,
+                              answer: str | None = None, visited: tuple = ()) -> dict:
+    """Apply canonical answer phrases/defaults without reclassifying an answer."""
+    if question_id in visited:
+        raise ValueError(f"Cyclic routing question: {question_id}")
+    question = load_routing_sources()["questions"][question_id]
+    context = {**(context or {}), "routing_question_id": question_id}
+    if answer is not None:
+        context["routing_answer"] = answer
+    candidate_text = answer if answer is not None else prompt
+    # Specific authored follow-up phrases can already resolve the request.
+    # A bare yes/no belongs only to the question actually being answered.
+    optional_matches = []
+    for identifier in question.get("optional_questions", []):
+        optional = load_routing_sources()["questions"][identifier]
+        for choice in optional.get("answers", []):
+            if choice.get("targets") == [{"kind": "action", "id": "keep-selection"}]:
+                continue
+            phrases = [phrase for phrase in choice.get("phrases", [])
+                       if _normalize_for_match(phrase) not in {"yes", "no"}
+                       and _signal_present(candidate_text, phrase)
+                       and not _is_negated(candidate_text, phrase)]
+            if phrases and _routing_predicate(choice.get("predicate"), prompt, context):
+                optional_matches.append((max(map(len, phrases)), identifier))
+    if optional_matches:
+        longest = max(length for length, _ in optional_matches)
+        identifiers = {identifier for length, identifier in optional_matches if length == longest}
+        if len(identifiers) == 1:
+            return _resolve_routing_question(
+                identifiers.pop(), prompt, context, answer=answer,
+                visited=(*visited, question_id),
+            )
+    if answer is not None:
+        identities = _explicit_mode_matches(answer, [
+            signal for signal in load_routing_sources()["signals"]
+            if _signal_present(answer, signal["signal"])
+            and not _is_negated(answer, signal["signal"])
+        ])
+        selected_ids = list(dict.fromkeys(item["mode"] for item in identities))
+        if selected_ids and not re.search(r"\bor\b", answer, re.I):
+            sources = load_routing_sources()
+            result = _dispatch_targets([
+                {"kind": "active" if identifier in sources["modes"] else "deferred", "id": identifier}
+                for identifier in selected_ids
+            ], prompt, context, rationale=f"explicit answer to {question_id}")
+            result["disambiguation_answers_received"] = [answer]
+            result["answered_question_id"] = question_id
+            depth_choices = [choice for choice in question.get("answers", [])
+                             if choice.get("depth") and any(_signal_present(answer, phrase)
+                                for phrase in choice.get("phrases", []))]
+            depth = (depth_choices[0] if len(depth_choices) == 1 else question.get("default", {})).get("depth")
+            if depth:
+                result["depth_tier"] = depth
+            return result
+    matches = []
+    for choice in question.get("answers", []):
+        if not _routing_predicate(choice.get("predicate"), prompt, context):
+            continue
+        phrases = [phrase for phrase in choice.get("phrases", [])
+                   if _signal_present(candidate_text, phrase)
+                   and not _is_negated(candidate_text, phrase)]
+        if phrases:
+            matches.append((choice, max(len(phrase) for phrase in phrases),
+                            min(_normalize_for_match(candidate_text).find(_normalize_for_match(phrase))
+                                for phrase in phrases)))
+    if (answer is not None and len(matches) > 1
+            and re.search(r"\b(?:then|followed by|in order)\b", answer, re.I)
+            and all("targets" in choice for choice, _, _ in matches)):
+        selected = {"targets": [target for choice, _, _ in sorted(matches, key=lambda item: item[2])
+                                 for target in choice["targets"]]}
+        matched = [selected]
+    else:
+        longest = max((length for _, length, _ in matches), default=0)
+        matched = [choice for choice, length, _ in matches if length == longest]
+    if len(matched) != 1:
+        if answer is None:
+            return _question_result(question_id)
+        selected = question.get("default")
+        if not selected:
+            return _question_result(question_id)
+    else:
+        selected = matched[0]
+    if selected.get("question"):
+        result = _resolve_routing_question(
+            selected["question"], prompt, context, answer=None,
+            visited=(*visited, question_id),
+        )
+    else:
+        result = _dispatch_targets(
+            selected.get("targets", []), prompt,
+            {**context, "routing_depth": selected.get("depth"),
+             "territory_order": selected.get("territory_order", [])},
+            rationale=f"canonical answer/default for {question_id}",
+        )
+    result["disambiguation_answers_received"] = [answer] if answer is not None else []
+    result["answered_question_id"] = question_id
+    if selected.get("depth"):
+        result["depth_tier"] = selected["depth"]
+    if selected.get("qualification"):
+        result["qualification"] = selected["qualification"]
+    return result
+
+
+def _explicit_mode_matches(prompt: str, matches: list[dict]) -> list[dict]:
+    """Keep the longest explicit identity at each position, including collisions."""
+    found = []
+    norm = _normalize_for_match(prompt)
+    for entry in matches:
+        if _signal_kind(entry) != "explicit_framework":
+            continue
+        phrase = _normalize_for_match(entry["signal"])
+        hit = re.search(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", norm)
+        if hit:
+            found.append((hit.start(), hit.end(), entry))
+    kept = [(start, end, entry) for start, end, entry in found
+            if not any(other_start <= start and end <= other_end and other_end - other_start > end - start
+                       for other_start, other_end, _ in found)]
+    return [entry for _, _, entry in sorted(kept, key=lambda item: item[0])]
+
+
+def stage2_sufficiency_analyzer(prompt: str, stage1_output: dict,
+                                context: dict | None = None) -> dict:
+    """Choose only compiled destinations, or return their canonical question."""
+    sources = load_routing_sources()
+    matches = stage1_output.get("matches", [])
+    context = {**(context or {}), "implicated_territories":
+               list(_matches_grouped_by_territory(matches))}
+    explicit = _explicit_mode_matches(prompt, matches)
+    explicit_ids = list(dict.fromkeys(entry["mode"] for entry in explicit))
+    ordered_request = bool(re.search(r"\b(?:then|followed by|plus|in order)\b", prompt, re.I))
+    conflicts = _detect_conflicts(prompt)
+    if conflicts and not (ordered_request and len(explicit_ids) > 1):
+        result = _question_result(conflicts[0]["question"], "competing explicit cues")
+        result["candidate_mode_id"] = _select_dispatch_mode(matches, None)[0]
+        return result
+    if explicit_ids:
+        if len(explicit_ids) == 1 or ordered_request or re.search(r"\b(?:and|both)\b", prompt, re.I):
+            mode_id = explicit_ids[0]
+            selection = sources["modes"].get(mode_id, {}).get("selection", {})
+            question_id = selection.get("question")
+            if question_id and _routing_predicate(selection.get("question_predicate"), prompt, context):
+                return _resolve_routing_question(question_id, prompt, context)
+            return _dispatch_targets([
+                {"kind": "active" if identifier in sources["modes"] else "deferred", "id": identifier}
+                for identifier in explicit_ids
+            ], prompt, context, rationale="explicit canonical identity")
+
+    lens_matches = [entry for entry in matches
+                    if entry.get("confidence_weight") == "strong"
+                    and entry.get("evidence") == "lens-alias"]
+    lens_ids = set(entry["mode"] for entry in lens_matches)
+    if len(lens_ids) == 1 and not explicit_ids:
+        result = _dispatch_targets([{
+            "kind": "active" if next(iter(lens_ids)) in sources["modes"] else "deferred",
+            "id": next(iter(lens_ids)),
+        }], prompt, context, rationale="canonical named lens")
+        result["lens_dispatch"] = True
+        return result
+
+    by_territory = _matches_grouped_by_territory(matches)
+    strong_territories = [
+        territory for territory, entries in by_territory.items()
+        if any(entry.get("confidence_weight") == "strong" for entry in entries)
+    ]
+    home = [entry for entry in matches
+            if entry.get("confidence_weight") == "strong"
+            and sources["modes"].get(entry["mode"], {}).get("selection", {}).get("home_priority")]
+    if home:
+        strong_territories = list(dict.fromkeys(_territory_of(entry) for entry in home))
+    if len(strong_territories) >= 2:
+        pair = "|".join(sorted(strong_territories[:2]))
+        question_id = sources["cross_territory_questions"].get(pair)
+        question_territories = set(
+            sources["questions"].get(question_id, {}).get("territories", [])
+        )
+        if question_id and set(strong_territories) <= question_territories:
+            return _resolve_routing_question(question_id, prompt, context)
+        return _question_result("generic_intent", "multiple territories without a unique destination")
+
+    mode_id, confidence = _select_dispatch_mode(matches, _detect_depth_signal(prompt))
+    if mode_id:
+        selection = sources["modes"].get(mode_id, {}).get("selection", {})
+        question_id = selection.get("question")
+        if question_id and _routing_predicate(selection.get("question_predicate"), prompt, context):
+            return _resolve_routing_question(question_id, prompt, context)
+        return _dispatch_targets([{
+            "kind": "active" if mode_id in sources["modes"] else "deferred", "id": mode_id,
+        }], prompt, context, confidence=confidence, rationale="compiled signal selection")
+
+    territories = list(by_territory)
+    if len(territories) == 1 and territories[0] in sources["territory_questions"]:
+        return _resolve_routing_question(sources["territory_questions"][territories[0]], prompt, context)
+    if len(territories) == 1 and territories[0] in sources["defaults"]:
+        return _dispatch_targets([sources["defaults"][territories[0]]], prompt, context)
+    return _question_result("generic_intent", "no unique territory identified")
 
 
 # ---------------------------------------------------------------------------
@@ -6727,108 +5750,6 @@ def stage2_sufficiency_analyzer(prompt: str, stage1_output: dict,
 # Spec: ~/ora/architecture/pre-routing-pipeline.md §Stage 3
 # ---------------------------------------------------------------------------
 
-def _parse_input_contract(mode_text: str) -> dict:
-    """Parse the input_contract block from a mode file.
-
-    Returns a dict with expert_mode + accessible_mode + detection +
-    graceful_degradation sub-dicts. Naive YAML parser sized for the
-    template structure used in the mode files under ``modes/``.
-    """
-    # Locate the input_contract: line and capture the indented block.
-    # The block runs until the next non-indented, non-blank line (e.g., a
-    # ``# 5. CRITICAL QUESTIONS`` markdown heading, the next YAML key, or
-    # end-of-file). The prior lookahead-based pattern required a strict
-    # `[a-z]\w*:` line to terminate the block and failed when a markdown
-    # comment heading appeared first — silently returning {} so Stage 3
-    # treated every cui-bono prompt as "no contract → passes through".
-    pattern = r"^input_contract:\s*\n((?:[ \t].+\n|\s*\n)+)"
-    m = re.search(pattern, mode_text, re.MULTILINE)
-    if not m:
-        return {}
-
-    block = m.group(1)
-    contract: dict = {}
-    current_section: str | None = None
-    section_buffer: list[str] = []
-
-    def flush():
-        if current_section and section_buffer:
-            contract[current_section] = "\n".join(section_buffer).strip()
-
-    for line in block.split("\n"):
-        if not line.strip():
-            continue
-        if line.startswith("  ") and not line.startswith("    "):
-            # Section header at 2-space indent (e.g., "  expert_mode:")
-            if ":" in line:
-                key = line.strip().rstrip(":").strip()
-                # Detect known section names
-                if key in ("expert_mode", "accessible_mode", "detection",
-                           "graceful_degradation"):
-                    flush()
-                    current_section = key
-                    section_buffer = []
-                    continue
-            section_buffer.append(line.rstrip())
-        elif line.startswith("    "):
-            section_buffer.append(line.rstrip())
-
-    flush()
-    return contract
-
-
-def _parse_required_fields(section_text: str) -> list[str]:
-    """Extract the required: list from a section like expert_mode/accessible_mode."""
-    if not section_text:
-        return []
-    m = re.search(r"required:\s*\[([^\]]*)\]", section_text)
-    if m:
-        body = m.group(1)
-        # YAML flow-list parsing: items are bare identifiers separated by
-        # commas (the input_contract template uses kebab-case identifiers
-        # without quotes). Comma-split is safe here.
-        return [f.strip().strip("'\"") for f in body.split(",") if f.strip()]
-    # Multi-line list form
-    m = re.search(r"required:\s*\n((?:\s+- .+\n?)+)", section_text)
-    if m:
-        return [ln.strip().lstrip("-").strip() for ln in m.group(1).split("\n") if ln.strip()]
-    return []
-
-
-def _parse_detection_signals(detection_text: str, kind: str) -> list[str]:
-    """Extract expert_signals or accessible_signals from a detection block.
-
-    Parses a YAML-flow list like ``["a", "b, with comma", 'c']`` correctly
-    by respecting quote boundaries. Comma-split-on-bare-comma is wrong when
-    list items themselves contain commas.
-    """
-    if not detection_text:
-        return []
-    field = f"{kind}_signals"
-    m = re.search(rf"{field}:\s*\[([^\]]*)\]", detection_text)
-    if not m:
-        return []
-    body = m.group(1)
-    # Split respecting quoted strings: match each "..." or '...' element.
-    items = re.findall(r"\"([^\"]*)\"|'([^']*)'", body)
-    return [a or b for (a, b) in items if (a or b)]
-
-
-def _parse_graceful_degradation(degradation_text: str) -> dict:
-    """Extract the on_missing_required and on_underspecified prompts."""
-    if not degradation_text:
-        return {}
-    out: dict = {}
-    for key in ("on_missing_required", "on_underspecified"):
-        m = re.search(rf"{key}:\s*\"([^\"]+)\"", degradation_text)
-        if m:
-            out[key] = m.group(1)
-        else:
-            m = re.search(rf"{key}:\s*['\"]?([^\n]+?)['\"]?$",
-                          degradation_text, re.MULTILINE)
-            if m:
-                out[key] = m.group(1).strip().strip("'\"")
-    return out
 
 
 # Phase 9 — Stage 3 field categorization. Each required-field name in mode
@@ -7015,7 +5936,12 @@ def _has_artifact_content(user_prompt: str, context: dict | None) -> bool:
         r"file|pdf|image) i (?:shared|posted|sent))\b",
         user_prompt, re.IGNORECASE
     ):
-        return True
+        prior = ctx.get("history") or ctx.get("prior_conversation") or []
+        if isinstance(prior, str):
+            return _has_artifact_content(prior, {})
+        return any(isinstance(message, dict) and message.get("role") == "user"
+                   and _has_artifact_content(message.get("content", ""), {})
+                   for message in prior)
     # Long quoted content
     quoted = re.findall(r"['\"]([^'\"]{30,})['\"]", user_prompt)
     if quoted:
@@ -7400,8 +6326,8 @@ def _classify_field(field_name: str) -> str:
 
 def _is_molecular_mode(mode_text: str) -> bool:
     """True if the mode_text declares molecular composition."""
-    return bool(re.search(r"^composition:\s*molecular\s*$",
-                          mode_text, re.MULTILINE))
+    return any(mode["text"] == mode_text and mode["metadata"].get("composition") == "molecular"
+               for mode in load_routing_sources()["modes"].values())
 
 
 def _detect_field_presence(field_name: str, user_prompt: str,
@@ -7481,7 +6407,7 @@ def _detect_field_presence(field_name: str, user_prompt: str,
     return False
 
 
-def _select_contract_version(detection_text: str, user_prompt: str,
+def _select_contract_version(detection: dict, user_prompt: str,
                              mode_id: str = "") -> str:
     """Apply detection rules to pick expert_mode vs accessible_mode.
 
@@ -7491,8 +6417,8 @@ def _select_contract_version(detection_text: str, user_prompt: str,
     process-tracing mode) are treated as mode-name references, not as
     expert markers — they don't trigger expert_mode selection on their own.
     """
-    expert_signals = _parse_detection_signals(detection_text, "expert")
-    accessible_signals = _parse_detection_signals(detection_text, "accessible")
+    expert_signals = detection.get("expert_signals", [])
+    accessible_signals = detection.get("accessible_signals", [])
     mode_phrase = (mode_id or "").replace("-", " ").lower()
 
     # Filter out mode-name-aliases from expert signals
@@ -7518,16 +6444,6 @@ def _select_contract_version(detection_text: str, user_prompt: str,
     return "accessible_mode"
 
 
-def _load_lighter_sibling(mode_text: str) -> str | None:
-    """Read escalation_signals.downward.target_mode_id from a mode file."""
-    m = re.search(
-        r"escalation_signals:\s*\n(?:.*?\n)*?\s*downward:\s*\n\s*target_mode_id:\s*([^\n]+)",
-        mode_text
-    )
-    if m:
-        target = m.group(1).strip().strip("'\"")
-        return None if target.lower() == "null" else target
-    return None
 
 
 def _mentions_artifact_without_content(user_prompt: str,
@@ -7610,6 +6526,27 @@ def _mentions_artifact_without_content(user_prompt: str,
     return None
 
 
+def _validated_input_value(field_name: str, user_prompt: str,
+                           context: dict | None) -> dict:
+    """Keep the actual supplied material and where it came from."""
+    context = context or {}
+    if field_name in context:
+        return {"source": "context", "value": context[field_name]}
+    if re.search(r"\b(?:earlier|previous|in this thread)\b", user_prompt, re.I):
+        history = context.get("history") or context.get("prior_conversation") or []
+        if isinstance(history, str) and _has_artifact_content(history, {}):
+            return {"source": "prior_conversation", "value": history}
+        for message in reversed(history):
+            if (isinstance(message, dict) and message.get("role") == "user"
+                    and _has_artifact_content(message.get("content", ""), {})):
+                return {"source": "prior_conversation", "value": message["content"]}
+    if _classify_field(field_name) in ("artifact_text", "enumeration"):
+        for key in ("attached_document", "attachments", "image_path"):
+            if context.get(key):
+                return {"source": key, "value": context[key]}
+    return {"source": "prompt", "value": user_prompt}
+
+
 def stage3_input_completeness_check(mode_id: str, user_prompt: str,
                                     context: dict | None = None) -> dict:
     """Stage 3 of the pre-routing pipeline: input completeness check.
@@ -7661,7 +6598,8 @@ def stage3_input_completeness_check(mode_id: str, user_prompt: str,
             "warning": f"mode file not found: {mode_id}",
         }
 
-    contract = _parse_input_contract(mode_text)
+    mode_record = load_routing_sources()["modes"][mode_id]
+    contract = mode_record["input_contract"]
     if not contract:
         # No structured input contract — still check artifact-mention.
         ref_art = _mentions_artifact_without_content(user_prompt, context)
@@ -7691,10 +6629,10 @@ def stage3_input_completeness_check(mode_id: str, user_prompt: str,
             "warning": "no input_contract block in mode file",
         }
 
-    detection = contract.get("detection", "")
+    detection = contract.get("detection", {})
     contract_version = _select_contract_version(detection, user_prompt, mode_id)
-    selected = contract.get(contract_version, "")
-    required = _parse_required_fields(selected)
+    selected = contract.get(contract_version, {})
+    required = selected.get("required", [])
 
     # Top-level artifact-mention check: if the prompt references a typed
     # artifact ("this strategy", "the policy memo") without supplying its
@@ -7707,7 +6645,8 @@ def stage3_input_completeness_check(mode_id: str, user_prompt: str,
     validated: dict = {}
     for field_name in required:
         if _detect_field_presence(field_name, user_prompt, context, mode_text):
-            validated[field_name] = "present (detected from prompt or context)"
+            validated[field_name] = _validated_input_value(
+                field_name, user_prompt, context)
         else:
             missing.append(field_name)
 
@@ -7730,7 +6669,7 @@ def stage3_input_completeness_check(mode_id: str, user_prompt: str,
         }
 
     # Missing fields — load graceful_degradation prompt.
-    degradation = _parse_graceful_degradation(contract.get("graceful_degradation", ""))
+    degradation = contract.get("graceful_degradation", {})
     completeness_question = degradation.get("on_missing_required")
     if not completeness_question:
         # Fall back to plain-language pattern per Style Guide §5.8.1
@@ -7740,14 +6679,27 @@ def stage3_input_completeness_check(mode_id: str, user_prompt: str,
             f"Could you share it?"
         )
 
-    lighter_sibling = _load_lighter_sibling(mode_text)
+    lighter_sibling = next(iter(mode_record["lighter_siblings"]), None)
     graceful_offer = None
     if lighter_sibling:
         # Compose the graceful-degradation offer per Style Guide §5.8.3
-        graceful_offer = (
-            f"I can take a lighter pass with what's here, or wait for "
-            f"more detail and run the fuller analysis. Which would you like?"
-        )
+        sibling_contract = load_routing_sources()["modes"][lighter_sibling]["input_contract"]
+        sibling_version = _select_contract_version(
+            sibling_contract.get("detection", {}), user_prompt, lighter_sibling)
+        sibling_missing = [field for field in sibling_contract.get(sibling_version, {}).get("required", [])
+                           if not _detect_field_presence(field, user_prompt, context,
+                                                         load_mode(lighter_sibling))]
+        if referenced_artifact and not sibling_missing:
+            sibling_missing.append(f"{referenced_artifact.replace(' ', '_')}_text")
+        sibling_name = load_educational_name(lighter_sibling) or lighter_sibling.replace("-", " ")
+        if sibling_missing:
+            needed = ", ".join(field.replace("_", " ") for field in sibling_missing)
+            graceful_offer = (
+                f"You can choose the lighter {sibling_name} analysis, which also needs "
+                f"the missing {needed}, or supply the material for this analysis."
+            )
+        else:
+            graceful_offer = f"I can take a lighter pass with {sibling_name} using what's here, or wait for the missing material."
 
     return {
         "inputs_complete": False,
@@ -7845,42 +6797,25 @@ def run_pre_routing_pipeline(prompt: str,
 
     # --- Stage 2 ---
     s2 = stage2_sufficiency_analyzer(full_prompt, s1, context)
-    if disambiguation_answer:
-        # Re-evaluate Stage 2 with the user's answer appended
-        merged = f"{full_prompt}\n[Answered: {disambiguation_answer}]"
-        s2_after = stage2_sufficiency_analyzer(
-            merged, stage1_pre_analysis_filter(merged, context), context
-        )
-        if s2_after["dispatched_mode_id"]:
-            s2 = s2_after
-        # else fall through and use defaults below
+    if disambiguation_answer is not None and s2.get("question_id"):
+        answer_context = {**context, "routing_answer": disambiguation_answer,
+                          "implicated_territories": list(_matches_grouped_by_territory(s1.get("matches", [])))}
+        if s2.get("candidate_mode_id"):
+            answer_context["selected_mode_id"] = s2["candidate_mode_id"]
+        s2 = _resolve_routing_question(
+            s2["question_id"], full_prompt, answer_context, disambiguation_answer)
+
+    if s2.get("bypass_to_direct_response"):
+        return {"stage1_output": s1, "stage2_output": s2, "stage3_output": None,
+                "dispatched_mode_id": None, "dispatched_mode_ids": [],
+                "bypass_to_direct_response": True, "pending_clarification": None,
+                "pending_clarification_stage": None, "territory": None,
+                "confidence": s2["confidence"], "completeness_gaps": [],
+                "dispatch_announcement": None}
 
     if not s2["dispatched_mode_id"]:
-        # 2026-05-24 — Default-fallback dispatch to T0 catch-all modes
-        # rather than asking the generic clarification. When Stage 2 found
-        # no specific analytical mode AND no disambiguation conflict, the
-        # prompt is judgment-requiring but doesn't fit any specific mode.
-        # Route to subjective-inquiry when subjective markers are present;
-        # otherwise route to general-inquiry. The universal f-* scaffolding
-        # carries the discipline; the mode-specific layer is light.
         if not s2["disambiguation_questions_asked"]:
-            fallback_mode = (
-                "subjective-inquiry" if _has_subjective_marker(full_prompt)
-                else "general-inquiry"
-            )
-            return {
-                "stage1_output": s1,
-                "stage2_output": s2,
-                "stage3_output": None,
-                "dispatched_mode_id": fallback_mode,
-                "bypass_to_direct_response": False,
-                "pending_clarification": None,
-                "pending_clarification_stage": None,
-                "territory": "T0-default-judgment",
-                "confidence": "fallback",
-                "completeness_gaps": [],
-                "dispatch_announcement": None,
-            }
+            s2 = _question_result("generic_intent", "no canonical destination selected")
         return {
             "stage1_output": s1,
             "stage2_output": s2,
@@ -7897,18 +6832,15 @@ def run_pre_routing_pipeline(prompt: str,
 
     # --- Stage 3 ---
     mode_id = s2["dispatched_mode_id"]
-    s3 = stage3_input_completeness_check(mode_id, full_prompt, context)
-
-    # Named-lens dispatch is self-sufficient (Problem 3): the user named a
-    # mental-model lens to apply to the situation they described, so don't
-    # re-elicit a pasted artifact / "who are the parties" — the lens + the
-    # described situation is enough to run. (Prompts that genuinely require a
-    # pasted artifact don't arrive via the lens-alias path; their primes
-    # supply the artifact and dispatch through the normal flow.)
-    if not s3["inputs_complete"] and s2.get("lens_dispatch"):
-        s3 = {**s3, "inputs_complete": True, "missing_fields": [],
-              "completeness_question": None, "graceful_degradation_offer": None,
-              "stage3_status": "complete-lens-dispatch"}
+    if s2.get("subject_answer"):
+        full_prompt = f"{full_prompt}\n\n{s2['subject_answer']}"
+    mode_ids = s2.get("dispatched_mode_ids") or [mode_id]
+    stage3_outputs = {
+        selected: stage3_input_completeness_check(selected, full_prompt, context)
+        for selected in mode_ids
+    }
+    s3 = next((output for output in stage3_outputs.values() if not output["inputs_complete"]),
+              stage3_outputs[mode_id])
 
     if not s3["inputs_complete"]:
         # Completeness question first; graceful-degradation offer second if available
@@ -7927,6 +6859,8 @@ def run_pre_routing_pipeline(prompt: str,
             "stage2_output": s2,
             "stage3_output": s3,
             "dispatched_mode_id": mode_id,
+            "dispatched_mode_ids": mode_ids,
+            "stage3_outputs": stage3_outputs,
             "bypass_to_direct_response": False,
             "pending_clarification": question,
             "pending_clarification_stage": "stage3",
@@ -7960,6 +6894,8 @@ def run_pre_routing_pipeline(prompt: str,
         "stage2_output": s2,
         "stage3_output": s3,
         "dispatched_mode_id": mode_id,
+        "dispatched_mode_ids": mode_ids,
+        "stage3_outputs": stage3_outputs,
         "bypass_to_direct_response": False,
         "pending_clarification": None,
         "pending_clarification_stage": None,
@@ -7972,25 +6908,7 @@ def run_pre_routing_pipeline(prompt: str,
     }
 
 
-def get_mode_registry_summary() -> str:
-    """Build a compact mode registry for Step 1 mode selection."""
-    lines = []
-    for path in sorted(globmod.glob(os.path.join(MODES_DIR, "*.md"))):
-        name = os.path.basename(path).replace(".md", "")
-        # Extract trigger conditions from the mode file
-        try:
-            with open(path) as f:
-                content = f.read()
-            # Pull the first line after TRIGGER CONDITIONS heading
-            match = re.search(
-                r'## TRIGGER CONDITIONS\s*\n\s*\n?(Positive triggers:.*?)(?:\n\n|\nNegative)',
-                content, re.DOTALL
-            )
-            trigger = match.group(1).strip()[:200] if match else ""
-        except Exception:
-            trigger = ""
-        lines.append(f"- **{name}**: {trigger}")
-    return "\n".join(lines)
+
 
 
 def extract_default_gear(mode_text: str) -> int:
@@ -8003,15 +6921,14 @@ def extract_default_gear(mode_text: str) -> int:
     the retrieval-only path. Modes that genuinely want single-pass behavior
     must declare it explicitly.
     """
-    match = re.search(r'## DEFAULT GEAR\s*\n\s*\n?\s*Gear\s*(\d)', mode_text)
-    if match:
-        return int(match.group(1))
-    return 3  # Default to Gear 3 (universal pipeline) if not specified
+    for mode in load_routing_sources()["modes"].values():
+        if mode["text"] == mode_text:
+            return mode["default_gear"]
+    return 3
 
 
 def parse_step1_output(response: str) -> dict:
-    """Parse Phase A cleanup output. Mode/tier parsing is handled separately
-    by parse_classification_output() in the Phase A.5 pass."""
+    """Parse Phase A cleanup; deterministic routing supplies the mode."""
     result = {
         "cleaned_prompt": "",
         "operational_notation": "",
@@ -8115,90 +7032,7 @@ def parse_step1_output(response: str) -> dict:
     return result
 
 
-def parse_classification_output(response: str) -> dict:
-    """Parse Phase A.5 mode classification output.
 
-    Expected format from the Mode Classification Directory:
-        ### MODE CLASSIFICATION
-        - Selected mode: mode-name
-        - Runner-up: mode-name
-        - Confidence: high/medium/low
-        - Intent category: LEARNING/DECIDING/etc.
-        - Reasoning: one sentence
-        - Triage tier: 1/2/3
-        - Detected invocation: mode-name or NONE  (V3 Phase 1 — prose-level invocation)
-
-    ``detected_invocation`` is an empty string when absent or "NONE"; otherwise
-    a mode name validated against MODES_DIR. Used by the alignment prefilter
-    to compare the user's expressed intent against the picked mode.
-    """
-    result = {
-        "mode": "adversarial",
-        "runner_up": "",
-        "confidence": "low",
-        "intent_category": "",
-        "reasoning": "",
-        "triage_tier": 1,
-        "detected_invocation": "",
-    }
-
-    # Strip thinking blocks before parsing
-    cleaned = _extract_final_response(response)
-
-    # Extract selected mode (use findall + reversed to skip any echoed templates)
-    mode_matches = re.findall(r'Selected mode:\s*(\S+)', cleaned)
-    for mode_candidate in reversed(mode_matches):
-        mode_name = mode_candidate.strip().rstrip(".,")
-        if mode_name.startswith("["):
-            continue  # Skip template placeholders like [mode-name]
-        if os.path.exists(os.path.join(MODES_DIR, f"{mode_name}.md")):
-            result["mode"] = mode_name
-            break
-
-    # Extract runner-up
-    runner_matches = re.findall(r'Runner-up:\s*(\S+)', cleaned)
-    for runner_candidate in reversed(runner_matches):
-        name = runner_candidate.strip().rstrip(".,")
-        if not name.startswith("["):
-            result["runner_up"] = name
-            break
-
-    # Extract confidence
-    conf_match = re.search(r'Confidence:\s*(high|medium|low)', cleaned, re.IGNORECASE)
-    if conf_match:
-        result["confidence"] = conf_match.group(1).lower()
-
-    # Extract intent category
-    intent_match = re.search(
-        r'Intent category:\s*(LEARNING|DECIDING|BUILDING|ANALYZING|CONNECTING|QUESTIONING|EXPLORING)',
-        cleaned, re.IGNORECASE
-    )
-    if intent_match:
-        result["intent_category"] = intent_match.group(1).upper()
-
-    # Extract reasoning
-    reason_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', cleaned)
-    if reason_match:
-        result["reasoning"] = reason_match.group(1).strip()
-
-    # Extract triage tier (use last match)
-    tier_matches = re.findall(r'Triage tier:\s*(\d)', cleaned)
-    if tier_matches:
-        result["triage_tier"] = int(tier_matches[-1])
-
-    # V3 Phase 1: extract detected prose-level invocation. Validates against
-    # MODES_DIR; "NONE" / template placeholders / unknown names → empty string
-    # (treated as no invocation). Use last match to skip echoed templates.
-    invocation_matches = re.findall(r'Detected invocation:\s*(\S+)', cleaned)
-    for invocation_candidate in reversed(invocation_matches):
-        name = invocation_candidate.strip().rstrip(".,")
-        if name.startswith("[") or name.upper() == "NONE":
-            break  # Explicit no-invocation; leave default empty string
-        if os.path.exists(os.path.join(MODES_DIR, f"{name}.md")):
-            result["detected_invocation"] = name
-            break
-
-    return result
 
 
 def _diff_raw_vs_operational(raw_prompt: str, operational_notation: str) -> dict:
@@ -8706,9 +7540,9 @@ AMBIGUITY_MODE: {ambiguity_mode}
     # treats the image as satisfying visual-input gaps — preventing the
     # "Could you share the space / chart?" clarification fire when an image
     # IS already attached. None → empty when no image, dict when present.
-    pre_routing_context = (
-        {"attachments": [{"type": "image/upload"}]} if image_attached else None
-    )
+    pre_routing_context = {"history": conversation_history or []}
+    if image_attached:
+        pre_routing_context["attachments"] = [{"type": "image/upload"}]
 
     routing = run_pre_routing_pipeline(
         prompt=raw_prompt,
@@ -8772,58 +7606,26 @@ AMBIGUITY_MODE: {ambiguity_mode}
         step1_result["triage_tier"] = _depth_tier_from_routing(routing)
         step1_result["classification_confidence"] = routing["confidence"]
         step1_result["classification_runner_up"] = ""
-        step1_result["classification_reasoning"] = routing["stage2_output"]["rationale"]
+        step1_result["classification_reasoning"] = (
+            routing.get("stage2_output") or routing["stage1_output"])["rationale"]
         step1_result["classification_intent"] = "ANALYZING"
         step1_result["detected_invocation"] = routing["dispatched_mode_id"]
     else:
-        # Pending clarification — Stage 2 couldn't dispatch.
-        #
-        # Old behaviour (pre-2026-05-15): silently dispatched to the
-        # ``standard`` catch-all mode, whose mode file does not exist; the
-        # downstream pipeline ran with empty per-step instructions and
-        # produced confidently-shaped but contractually-empty output.
-        # This was failures #2, #3, #8 in the silent-failure catalogue.
-        #
-        # New behaviour: pick the highest-confidence candidate mode from
-        # Stage 1 matches (best-guess dispatch); if no matches exist, fall
-        # back to ``deep-clarification`` which is a real analytical mode
-        # designed for "user's intent is unclear, let's surface it through
-        # conceptual analysis." The pending_clarification text is preserved
-        # in classification_reasoning and surfaced via the trace so the user
-        # can see what Stage 2 was unsure about.
-        stage1_matches = routing.get("stage1_output", {}).get("matches", []) or []
-        best_guess, best_reasoning = _best_guess_mode_from_matches(stage1_matches)
-        if best_guess and load_mode(best_guess):
-            step1_result["mode"] = best_guess
-            step1_result["classification_confidence"] = "best-guess"
-            step1_result["classification_intent"] = "ANALYZING_BEST_GUESS"
-            step1_result["detected_invocation"] = best_guess
-            step1_result["classification_reasoning"] = (
-                f"Stage 2 pending clarification ({routing['pending_clarification']!r}); "
-                f"dispatched to {best_guess} as best guess — {best_reasoning}."
-            )
-        else:
-            # No usable matches — fall back to deep-clarification.
-            fallback = _PENDING_CLARIFICATION_FALLBACK_MODE
-            step1_result["mode"] = fallback
-            step1_result["classification_confidence"] = "fallback"
-            step1_result["classification_intent"] = "ANALYZING_FALLBACK"
-            step1_result["detected_invocation"] = fallback
-            step1_result["classification_reasoning"] = (
-                f"Stage 2 pending clarification ({routing['pending_clarification']!r}); "
-                f"no Stage 1 signal matches available for best-guess dispatch; "
-                f"falling back to {fallback} (designed for unclear-intent prompts)."
-            )
+        # Keep the unresolved selection explicit. The existing server boundary
+        # remains responsible for presenting the canonical pending question.
+        step1_result["mode"] = ""
+        step1_result["classification_confidence"] = "pending"
+        step1_result["classification_intent"] = "CLARIFICATION_REQUIRED"
+        step1_result["detected_invocation"] = ""
+        step1_result["classification_reasoning"] = routing["pending_clarification"]
         step1_result["triage_tier"] = 2
         step1_result["classification_runner_up"] = ""
-        # Record the pending clarification separately so the trace + server can
-        # surface it without losing it in classification_reasoning.
-        step1_result["pending_clarification_swallowed"] = routing["pending_clarification"]
 
     # Carry the full routing decision so the server can surface it via SSE
     # (dispatch_announcement, completeness_gaps, residual disambiguation).
     step1_result["pre_routing"] = {
         "dispatched_mode_id": routing.get("dispatched_mode_id"),
+        "dispatched_mode_ids": routing.get("dispatched_mode_ids", []),
         "territory": routing.get("territory"),
         "bypass_to_direct_response": routing.get("bypass_to_direct_response", False),
         "pending_clarification": routing.get("pending_clarification"),
@@ -8991,49 +7793,6 @@ AMBIGUITY_MODE: {ambiguity_mode}
     return step1_result
 
 
-def _best_guess_mode_from_matches(matches: list[dict]) -> tuple[str | None, str]:
-    """When Stage 2 produces pending_clarification but Stage 1 found signal
-    matches, pick the highest-confidence candidate mode rather than punting
-    to the missing ``standard`` catch-all.
-
-    Returns ``(mode_id, reasoning)``. When no matches qualify, returns
-    ``(None, "no matches available")`` and the caller falls back to the
-    default analytical mode (``deep-clarification``).
-
-    Scoring: each match contributes 2 points for ``confidence_weight ==
-    "strong"`` and 1 point for ``weak``. Modes with a registered
-    ``mode`` field score; matches without a mode (territory-only signals)
-    are skipped. Highest total wins; ties break on the first-seen mode.
-    """
-    if not matches:
-        return None, "no matches available"
-    score: dict[str, int] = {}
-    first_seen: dict[str, int] = {}
-    for idx, m in enumerate(matches):
-        mode_id = m.get("mode")
-        if not mode_id:
-            continue
-        weight = m.get("confidence_weight", "weak")
-        pts = 2 if weight == "strong" else 1
-        score[mode_id] = score.get(mode_id, 0) + pts
-        if mode_id not in first_seen:
-            first_seen[mode_id] = idx
-    if not score:
-        return None, "no matches carry a mode_id"
-    best = max(score.items(), key=lambda kv: (kv[1], -first_seen[kv[0]]))
-    return best[0], (
-        f"best-guess from Stage 1 signal matches "
-        f"(score={best[1]}, first-seen-idx={first_seen[best[0]]})"
-    )
-
-
-# Fallback analytical mode when pre-routing produces a pending clarification
-# AND no Stage 1 signal matches exist to best-guess from. ``deep-clarification``
-# is the right default because it is designed to clarify what the user actually
-# needs through ordinary-language conceptual analysis — exactly the operation
-# the user implicitly requested when their prompt didn't trigger any
-# specific-mode signal vocabulary.
-_PENDING_CLARIFICATION_FALLBACK_MODE = "deep-clarification"
 
 
 def _depth_tier_from_routing(routing: dict) -> int:
@@ -9042,11 +7801,10 @@ def _depth_tier_from_routing(routing: dict) -> int:
     Strong direct dispatch with a depth signal in the prompt → that tier.
     Otherwise default to Tier-2 per Style Guide §5.6.
     """
-    rationale = routing.get("stage2_output", {}).get("rationale", "") or ""
-    if "tier-1" in rationale:
-        return 1
-    if "tier-3" in rationale:
-        return 3
+    stage2 = routing.get("stage2_output") or {}
+    depth = stage2.get("depth_tier")
+    if depth in ("tier-1", "tier-2", "tier-3"):
+        return int(depth[-1])
     return 2
 
 
@@ -10729,52 +9487,19 @@ def _load_thinking_tools() -> dict[str, str]:
 
 
 def _load_mental_models() -> dict[str, str]:
-    """Walk ``lenses/*.md`` → ``{stem: body}``.
-
-    ``stem`` is the filename without extension (``nash-equilibrium.md`` →
-    ``nash-equilibrium``). ``body`` is the markdown content with the YAML
-    frontmatter stripped (everything past the second ``---`` delimiter).
-    Files without frontmatter are loaded whole.
-
-    Cached at module level — first call walks the directory. Empty dict
-    on directory-missing (logs to stderr).
-    """
+    """Project the validated lens bodies through the shared compiled authority."""
     global _MENTAL_MODELS_CACHE
-    if _MENTAL_MODELS_CACHE is not None:
-        return _MENTAL_MODELS_CACHE
-
-    models: dict[str, str] = {}
-    if not os.path.isdir(MENTAL_MODELS_DIR):
-        print(
-            f"[perspective_loader] Mental models dir missing: "
-            f"{MENTAL_MODELS_DIR}",
-            file=sys.stderr, flush=True,
-        )
+    if _MENTAL_MODELS_CACHE is None:
+        models = {}
+        for lens_id, lens in load_routing_sources()["lenses"].items():
+            text = lens["text"]
+            if text.startswith("---\n"):
+                end = text.find("\n---\n", 4)
+                if end != -1:
+                    text = text[end + 5:].lstrip()
+            models[lens_id] = text
         _MENTAL_MODELS_CACHE = models
-        return models
-
-    for path in sorted(globmod.glob(os.path.join(MENTAL_MODELS_DIR, "*.md"))):
-        stem = os.path.splitext(os.path.basename(path))[0]
-        # INDEX.md is the human-readable index, not a lens — the lens library
-        # specification says so twice. The loader never filtered it, so any host
-        # whose runtime directory carried INDEX.md was injecting a table of
-        # contents into analyst prompts as though it were an analytical lens.
-        if stem == "INDEX":
-            continue
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                text = f.read()
-        except OSError:
-            continue
-        # Strip YAML frontmatter if present.
-        if text.startswith("---\n"):
-            end = text.find("\n---\n", 4)
-            if end != -1:
-                text = text[end + 5:].lstrip()
-        models[stem] = text
-
-    _MENTAL_MODELS_CACHE = models
-    return models
+    return _MENTAL_MODELS_CACHE
 
 
 _PERSPECTIVE_TOOLS_HEADER_RE = re.compile(

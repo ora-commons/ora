@@ -12,25 +12,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: boundary-critique
-canonical_name: Boundary Critique
-suffix_rule: analysis
+mode_id: "boundary-critique"
+canonical_name: "Boundary Critique"
+suffix_rule: "analysis"
 educational_name: "boundary critique (Ulrich CSH: critical systems heuristics)"
 
 # 1. TERRITORY AND POSITION
-territory: T2-interest-and-power
+territory: "T2-interest-and-power"
 gradation_position:
-  axis: stance
-  value: critical
+  axis: "stance"
+  value: "critical"
 adjacent_modes_in_territory:
-  - mode_id: cui-bono
-    relationship: stance-counterpart (descriptive who-benefits within the artifact's own frame)
-  - mode_id: stakeholder-mapping
-    relationship: complexity-counterpart (multi-party-descriptive — lives in T8)
-  - mode_id: wicked-problems
-    relationship: complexity-molecular sibling
-  - mode_id: decision-clarity
-    relationship: depth-molecular sibling
+  - mode_id: "cui-bono"
+    relationship: "stance-counterpart (descriptive who-benefits within the artifact's own frame)"
+  - mode_id: "stakeholder-mapping"
+    relationship: "complexity-counterpart (multi-party-descriptive — lives in T8)"
+  - mode_id: "wicked-problems"
+    relationship: "complexity-molecular sibling"
+  - mode_id: "decision-clarity"
+    relationship: "depth-molecular sibling"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -55,20 +55,34 @@ disambiguation_routing:
     - "user suspects the framing has naturalized exclusions that should be surfaced and questioned"
     - "user wants to apply Ulrich's twelve boundary categories (sources of motivation, control, knowledge, legitimacy)"
   routes_away_when:
-    - "user wants descriptive who-benefits within the artifact's frame" → cui-bono
-    - "user wants multi-party stakeholder landscape without critical stance" → stakeholder-mapping
-    - "user wants integrated multi-perspective analysis of a wicked problem" → wicked-problems
-    - "user wants to negotiate boundary across affected parties" → T13 modes
+    - condition: "user wants descriptive who-benefits within the artifact's frame"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono"
+    - condition: "user wants multi-party stakeholder landscape without critical stance"
+      targets: [{"kind": "active", "id": "stakeholder-mapping"}]
+      qualification: "stakeholder-mapping"
+    - condition: "user wants integrated multi-perspective analysis of a wicked problem"
+      targets: [{"kind": "active", "id": "wicked-problems"}]
+      qualification: "wicked-problems"
+    - condition: "user wants to negotiate boundary across affected parties"
+      targets: [{"kind": "territory", "id": "T13"}]
+      qualification: "T13 modes"
 when_not_to_invoke:
-  - "User wants neutral or descriptive analysis without critical-stance framing" → cui-bono or stakeholder-mapping
-  - "Boundary in question is technical and uncontested (e.g., a defined system spec)" → T17 process modes
-  - "Affected parties are clearly identified and not in dispute" → cui-bono or T13 modes
+  - condition: "User wants neutral or descriptive analysis without critical-stance framing"
+    targets: [{"kind": "active", "id": "cui-bono"}, {"kind": "active", "id": "stakeholder-mapping"}]
+    qualification: "cui-bono or stakeholder-mapping"
+  - condition: "Boundary in question is technical and uncontested (e.g., a defined system spec)"
+    targets: [{"kind": "territory", "id": "T17"}]
+    qualification: "T17 process modes"
+  - condition: "Affected parties are clearly identified and not in dispute"
+    targets: [{"kind": "active", "id": "cui-bono"}, {"kind": "territory", "id": "T13"}]
+    qualification: "cui-bono or T13 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: critical
+  posture: "critical"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -83,67 +97,107 @@ input_contract:
   detection:
     expert_signals: ["Ulrich", "CSH", "boundary judgments", "critical systems heuristics", "sources of motivation", "sources of control", "sources of knowledge", "sources of legitimacy"]
     accessible_signals: ["who is excluded", "who isn't asked", "the framing leaves out", "what's outside"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the system, decision, or design we're examining, and what about its boundary feels off?'"
     on_underspecified: "Ask: 'Whose voice or interest do you suspect is being treated as outside the scope of this analysis?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have boundary judgments been surfaced as judgments (contestable, made by someone for some purpose), or are they treated as natural givens of the system?"
-    failure_mode_if_unmet: boundary-naturalization
-  - cq_id: CQ2
+    failure_mode_if_unmet: "boundary-naturalization"
+  - cq_id: "CQ2"
     question: "Has the analysis distinguished those involved in the system's design and benefit from those affected by but not involved in the system, per Ulrich's core asymmetry?"
-    failure_mode_if_unmet: involved-affected-collapse
-  - cq_id: CQ3
+    failure_mode_if_unmet: "involved-affected-collapse"
+  - cq_id: "CQ3"
     question: "Have all four of Ulrich's category-clusters (motivation, control, knowledge, legitimacy) been audited, or has the analysis selected only the categories that confirm an initial suspicion?"
-    failure_mode_if_unmet: selective-categories
-  - cq_id: CQ4
+    failure_mode_if_unmet: "selective-categories"
+  - cq_id: "CQ4"
     question: "Has the *is* vs. *ought* boundary comparison been performed — i.e., what the boundary currently is vs. what it would be if affected-but-not-involved parties were included — rather than only diagnosing the current boundary?"
-    failure_mode_if_unmet: ought-omission
+    failure_mode_if_unmet: "ought-omission"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: boundary-naturalization
+  - name: "boundary-naturalization"
     detection_signal: "Boundary judgments described in system-spec language (definitional, technical) rather than as contestable choices made by someone for some purpose."
-    correction_protocol: re-dispatch
-  - name: involved-affected-collapse
+    correction_protocol: "re-dispatch"
+  - name: "involved-affected-collapse"
     detection_signal: "Affected-but-not-involved parties section is absent or merged into the involved-stakeholder list."
-    correction_protocol: re-dispatch
-  - name: selective-categories
+    correction_protocol: "re-dispatch"
+  - name: "selective-categories"
     detection_signal: "Only one or two of Ulrich's four category-clusters are audited; others are skipped or noted as 'not applicable' without justification."
-    correction_protocol: re-dispatch
-  - name: ought-omission
+    correction_protocol: "re-dispatch"
+  - name: "ought-omission"
     detection_signal: "Output diagnoses the current boundary without articulating what an inclusive-of-affected-parties boundary would look like."
-    correction_protocol: flag
-  - name: critique-without-purpose
+    correction_protocol: "flag"
+  - name: "critique-without-purpose"
     detection_signal: "Boundary critique surfaced without articulating what the user could do with the surfaced judgments (no implication for the system, decision, or design)."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - ulrich-csh-boundary-categories
+  - ulrich-csh-boundary-categories
   optional:
-    - habermas-discourse-ethics (when legitimacy category is foregrounded)
-    - midgley-systemic-intervention (when intervention is in scope)
+  - lens_id: habermas-discourse-ethics
+    qualification: when legitimacy category is foregrounded
+  - lens_id: midgley-systemic-intervention
+    qualification: when intervention is in scope
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: wicked-problems
+    target: {"kind": "active", "id": "wicked-problems"}
     when: "Boundary critique surfaces a problem with multiple interacting stakeholder conflicts and feedback loops that exceed atomic critique."
   sideways:
-    target_mode_id: cui-bono
+    target: {"kind": "active", "id": "cui-bono"}
     when: "On reflection user wanted descriptive who-benefits within the existing frame rather than critical surfacing of the frame's boundary."
   downward:
-    target_mode_id: cui-bono
+    target: {"kind": "active", "id": "cui-bono"}
     when: "User wants lighter descriptive read; critical-stance was not the right pitch."
 ```
+
+## Display Description
+
+Applies Critical Systems Heuristics' twelve boundary questions to surface whose interests are excluded from the framing.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll surface whose voices this {artifact} leaves out"
+  phrase_aliases: {"competitive analysis": "boundary critique"}
+  signals:
+    - {"signal": "boundary critique", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Ulrich", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "CSH", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "critical systems heuristics", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "boundary judgments", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "whose voices are missing", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "whose voice is missing", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "who's left out", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "who is excluded", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "who isn't being asked", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: stance? → critical", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "is/ought boundary", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "sources of motivation", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "Ulrich category vocabulary"}
+    - {"signal": "sources of legitimacy", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "Ulrich category vocabulary"}
+    - {"signal": "affected but not involved", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "what's outside the system being analyzed", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (boundary)"}
+    - {"signal": "tragedy of the commons", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "ulrich csh boundary categories", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "arrow's impossibility", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "arrow's impossibility theorem", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "arrows impossibility theorem", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "bounded rationality", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

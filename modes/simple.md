@@ -11,22 +11,22 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: simple
-canonical_name: Simple
-suffix_rule: none
-educational_name: direct response (no analytical pipeline)
+mode_id: "simple"
+canonical_name: "Simple"
+suffix_rule: "none"
+educational_name: "direct response (no analytical pipeline)"
 
 # 1. TERRITORY AND POSITION
-territory: T-bypass
-gradation: bypass
+territory: "T-bypass"
+gradation: "bypass"
 neighbors_by_gradation: []
 neighbors_by_territory: []
 expert_aliases: []
 
 # 2. PIPELINE CONTRACT
-pipeline_step: bypass-direct-response
-expected_runtime: under-5s
-context_budget: low
+pipeline_step: "bypass-direct-response"
+expected_runtime: "under-5s"
+context_budget: "low"
 gear: 1
 
 # 3. CONDITIONS
@@ -54,6 +54,27 @@ output_contract:
   shape: "direct conversational response"
   required_sections: []
 ```
+
+## Display Description
+
+Direct bypass response for greetings, system-meta requests, and other non-analytical prompts.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  analytical_hint_tokens: ["analyze", "analyse", "evaluate", "audit", "steelman", "argument", "decision", "tradeoff", "tradeoffs", "trade off", "compare", "examine", "investigate", "explain why", "explain how", "why does", "why did", "how does", "how did", "cui bono", "pre mortem", "premortem", "root cause", "consequences", "what would happen", "stress test", "stress-test"]
+  weak_bypass_triggers: ["hello", "hi ", "hi!", "hi.", "hey ", "hey!", "hey.", "good morning", "good afternoon", "good evening", "thanks", "thank you", "yes, go ahead", "yes go ahead"]
+  strong_bypass_triggers: ["what time", "what's the date", "what's the time", "what time is it", "what's today", "what day is it", "what's today's date", "what year is it", "what's the year", "what did you just say", "what did i just say", "what did you say earlier", "what did i ask", "repeat that", "say that again", "say it again", "how many tokens", "how many tokens does", "what did you say", "earlier you said", "show me the previous", "repeat what you", "what was your previous", "/help", "/?", "save this conversation", "convert this pdf", "translate this", "spell-check", "spell check", "fix the spelling", "fix the grammar", "fix the typo"]
+  analysis_opt_out_triggers: ["don't analyze", "do not analyze", "no analysis", "skip the analysis", "no need to analyze", "without analysis"]
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  catch_all: true
+  signals: []
+```
+
 
 ## TRIGGER CONDITIONS
 

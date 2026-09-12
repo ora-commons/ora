@@ -13,23 +13,23 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: decision-clarity
-canonical_name: Decision Clarity
-suffix_rule: analysis
-educational_name: decision clarity document (for decision-maker; cui-bono + stakeholder + scenario + red-team-assessment composition)
+mode_id: "decision-clarity"
+canonical_name: "Decision Clarity"
+suffix_rule: "analysis"
+educational_name: "decision clarity document (for decision-maker; cui-bono + stakeholder + scenario + red-team-assessment composition)"
 
 # 1. TERRITORY AND POSITION
-territory: T2-interest-and-power
+territory: "T2-interest-and-power"
 gradation_position:
-  axis: depth
-  value: molecular
+  axis: "depth"
+  value: "molecular"
 adjacent_modes_in_territory:
-  - mode_id: cui-bono
-    relationship: complexity-lighter sibling (simple)
-  - mode_id: boundary-critique
-    relationship: stance counterpart (critical/Ulrich CSH)
-  - mode_id: wicked-problems
-    relationship: depth-molecular sibling (integrated multi-perspective analysis operation)
+  - mode_id: "cui-bono"
+    relationship: "complexity-lighter sibling (simple)"
+  - mode_id: "boundary-critique"
+    relationship: "stance counterpart (critical/Ulrich CSH)"
+  - mode_id: "wicked-problems"
+    relationship: "depth-molecular sibling (integrated multi-perspective analysis operation)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -49,51 +49,65 @@ disambiguation_routing:
     - "user wants integrated cui-bono + stakeholder + scenario + adversarial-stress in a decision-shaped output"
     - "user willing to spend 10+ minutes for full molecular pass"
   routes_away_when:
-    - "user is making the decision themselves with full alternatives + constraints + uncertainty" → decision-architecture
-    - "user wants integrated wicked-problems analysis without decision-shape constraint" → wicked-problems
-    - "want quick read on who benefits" → cui-bono
-    - "want critical surfacing of marginalized voices" → boundary-critique
+    - condition: "user is making the decision themselves with full alternatives + constraints + uncertainty"
+      targets: [{"kind": "active", "id": "decision-architecture"}]
+      qualification: "decision-architecture"
+    - condition: "user wants integrated wicked-problems analysis without decision-shape constraint"
+      targets: [{"kind": "active", "id": "wicked-problems"}]
+      qualification: "wicked-problems"
+    - condition: "want quick read on who benefits"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono"
+    - condition: "want critical surfacing of marginalized voices"
+      targets: [{"kind": "active", "id": "boundary-critique"}]
+      qualification: "boundary-critique"
 when_not_to_invoke:
-  - "User has time pressure" → cui-bono or stakeholder-mapping
-  - "There is no identified decision-maker; the deliverable is exploratory" → wicked-problems
+  - condition: "User has time pressure"
+    targets: [{"kind": "active", "id": "cui-bono"}, {"kind": "active", "id": "stakeholder-mapping"}]
+    qualification: "cui-bono or stakeholder-mapping"
+  - condition: "There is no identified decision-maker; the deliverable is exploratory"
+    targets: [{"kind": "active", "id": "wicked-problems"}]
+    qualification: "wicked-problems"
 
 # 3. EXECUTION STRUCTURE
-composition: molecular
+composition: "molecular"
 # NOTE: Decision H parse — Wicked Problems framework parsed into wicked-problems mode
 # (integrated multi-perspective analysis) plus decision-clarity mode (decision-maker-output).
 # Paired with restructured Framework — Decision Clarity Analysis.md (Phase 2).
 molecular_spec:
+  companion_source: "frameworks/book/decision-clarity-analysis.md"
   components:
-    - mode_id: cui-bono
-      runs: full
-    - mode_id: stakeholder-mapping
-      runs: full
-    - mode_id: scenario-planning
-      runs: fragment
+    - mode_id: "cui-bono"
+      runs: "full"
+    - mode_id: "stakeholder-mapping"
+      runs: "full"
+    - mode_id: "scenario-planning"
+      runs: "fragment"
       fragment_spec: "two-scenario-only — produce two contrasting scenarios (most-likely + most-adverse) sufficient for decision-maker context; do not produce full scenario-planning narrative set"
-    - mode_id: red-team-assessment
-      runs: fragment
+    - mode_id: "red-team-assessment"
+      reference_id: "red-team-fragment"
+      runs: "fragment"
       fragment_spec: "adversarial-stress-test of leading intervention only — adversarial-actor stress test against the leading recommended intervention candidate (assessment stance for the decision-maker's own benefit; advocate stance is not used in this composition because the synthesised document is decision-maker-facing, not external-audience-facing), not full red-team-assessment battery"
   synthesis_stages:
-    - name: interest-and-stakeholder-merge
-      type: parallel-merge
+    - name: "interest-and-stakeholder-merge"
+      type: "parallel-merge"
       input: [cui-bono, stakeholder-mapping]
       output: "merged interest-and-stakeholder picture: who benefits, who pays, who has power, who is absent, with per-stakeholder positions and concerns"
-    - name: scenario-overlay
-      type: sequenced-build
+    - name: "scenario-overlay"
+      type: "sequenced-build"
       input: [interest-and-stakeholder-merge, scenario-planning-fragment]
       output: "interest-and-stakeholder picture overlaid on the two scenarios: how does each scenario shift who benefits, who pays, and where power flows"
-    - name: intervention-stress-test
-      type: contradiction-surfacing
+    - name: "intervention-stress-test"
+      type: "contradiction-surfacing"
       input: [scenario-overlay, red-team-fragment]
       output: "leading intervention candidate stress-tested by red-team-fragment; surfaced adversarial dynamics that the cui-bono and scenario passes did not see"
-    - name: decision-clarity-document
-      type: dialectical-resolution
+    - name: "decision-clarity-document"
+      type: "dialectical-resolution"
       input: [interest-and-stakeholder-merge, scenario-overlay, intervention-stress-test]
       output: "Decision Clarity Document for the decision-maker: situation framing, stakeholder map, scenario range, recommended intervention with stress-test findings, residual risks, and decision-maker-actionable recommendations"
   partial_composition_handling:
-    on_component_failure: proceed-with-gap
-    on_low_confidence: flag affected synthesis stage; do not aggregate over low-confidence stakeholder or red-team findings; if scenario fragment cannot produce contrasting scenarios, document as one-scenario assumption
+    on_component_failure: "proceed-with-gap"
+    on_low_confidence: "flag affected synthesis stage; do not aggregate over low-confidence stakeholder or red-team findings; if scenario fragment cannot produce contrasting scenarios, document as one-scenario assumption"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -108,69 +122,102 @@ input_contract:
   detection:
     expert_signals: ["brief the", "decision-maker is", "stakeholders include", "intervention options"]
     accessible_signals: ["decision document", "give them clarity", "for the executive"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Who is the decision-maker, and what's the decision they need clarity on?'"
     on_underspecified: "Ask the user whether they want the full Decision Clarity molecular pass or a lighter Cui Bono / Stakeholder Mapping read."
+    lighter_targets: [{"kind": "active", "id": "cui-bono"}, {"kind": "active", "id": "stakeholder-mapping"}]
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Does the document address the actual decision-maker's context (what they can do, what they cannot), or does it present generic analysis?"
-    failure_mode_if_unmet: decision-maker-disconnection
-  - cq_id: CQ2
+    failure_mode_if_unmet: "decision-maker-disconnection"
+  - cq_id: "CQ2"
     question: "Are stakeholder positions surfaced with concrete interests and concerns, or have they been collapsed into generic categories?"
-    failure_mode_if_unmet: stakeholder-collapse
-  - cq_id: CQ3
+    failure_mode_if_unmet: "stakeholder-collapse"
+  - cq_id: "CQ3"
     question: "Has the leading intervention been stress-tested by the red-team fragment, or has the recommendation been presented without adversarial pressure?"
-    failure_mode_if_unmet: stress-test-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "stress-test-omission"
+  - cq_id: "CQ4"
     question: "Are the recommendations actionable by the named decision-maker, or do they exceed the decision-maker's authority or scope?"
-    failure_mode_if_unmet: out-of-scope-recommendation
-  - cq_id: CQ5
+    failure_mode_if_unmet: "out-of-scope-recommendation"
+  - cq_id: "CQ5"
     question: "Are the two scenarios genuinely contrasting (most-likely + most-adverse), or are they variations of the same trajectory?"
-    failure_mode_if_unmet: scenario-flattening
+    failure_mode_if_unmet: "scenario-flattening"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: decision-maker-disconnection
+  - name: "decision-maker-disconnection"
     detection_signal: "Document is generic; no reference to the decision-maker's role, authority, or constraints."
-    correction_protocol: re-dispatch (with explicit decision-maker-context prompt)
-  - name: stakeholder-collapse
+    correction_protocol: "re-dispatch (with explicit decision-maker-context prompt)"
+  - name: "stakeholder-collapse"
     detection_signal: "Stakeholders are listed in generic categories (e.g., 'employees', 'customers') without concrete interests or positions."
-    correction_protocol: re-dispatch
-  - name: stress-test-omission
+    correction_protocol: "re-dispatch"
+  - name: "stress-test-omission"
     detection_signal: "red-team-fragment did not run against the leading intervention."
-    correction_protocol: flag and re-dispatch
-  - name: out-of-scope-recommendation
+    correction_protocol: "flag and re-dispatch"
+  - name: "out-of-scope-recommendation"
     detection_signal: "Recommendations require authority or scope the named decision-maker does not have."
-    correction_protocol: flag and re-dispatch
-  - name: scenario-flattening
+    correction_protocol: "flag and re-dispatch"
+  - name: "scenario-flattening"
     detection_signal: "Two scenarios differ only in degree, not in kind; both privilege the dominant trajectory."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - rumelt-strategy-kernel (when intervention is strategic)
-    - ulrich-csh-boundary-categories (when boundary critique cross-cuts)
+  - lens_id: rumelt-strategy-kernel
+    qualification: when intervention is strategic
+  - lens_id: ulrich-csh-boundary-categories
+    qualification: when boundary critique cross-cuts
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 3
-expected_runtime: ~10+min
+expected_runtime: "~10+min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Decision Clarity is the heaviest mode in T2's depth ladder."
   sideways:
-    target_mode_id: wicked-problems
+    target: {"kind": "active", "id": "wicked-problems"}
     when: "Output should be integrated multi-perspective analysis rather than decision-clarity document."
   downward:
-    target_mode_id: cui-bono
+    target: {"kind": "active", "id": "cui-bono"}
     when: "User has time pressure or scope is narrower than initially estimated."
 ```
+
+## Display Description
+
+Produces a Decision Clarity Document for a third-party decision-maker, paired with the restructured `Framework — Decision Clarity Analysis.md` (renamed from the retired Wicked Problems Framework, 2026-05-01).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll prepare a decision-maker brief on this {artifact}"
+  signals:
+    - {"signal": "decision clarity", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "decision clarity document", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "mode-name + output reference"}
+    - {"signal": "produce a decision document", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "decision-maker brief", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "wicked decision document", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "produce a brief for the decision-maker", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "stakeholder-and-scenario document", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "third-party decision support document", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "decision clarity analysis", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "help a decision-maker see clearly", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "weak", "evidence": "tonal cue (decision-document)"}
+    - {"signal": "comprehensive decision brief", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: output? → decision-document", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "cui-bono with stakeholders and scenarios", "territory": "T2-interest-and-power", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "decision clarity document", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "decision clarity", "territory": "T2-interest-and-power", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

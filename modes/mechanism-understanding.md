@@ -12,16 +12,16 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: mechanism-understanding
-canonical_name: Mechanism Understanding
-suffix_rule: analysis
-educational_name: mechanism understanding (how parts produce the whole's behavior)
+mode_id: "mechanism-understanding"
+canonical_name: "Mechanism Understanding"
+suffix_rule: "analysis"
+educational_name: "mechanism understanding (how parts produce the whole's behavior)"
 
 # 1. TERRITORY AND POSITION
-territory: T16-mechanism-understanding
+territory: "T16-mechanism-understanding"
 gradation_position:
-  axis: depth
-  value: thorough
+  axis: "depth"
+  value: "thorough"
 adjacent_modes_in_territory: []
 
 # 2. TRIGGER CONDITIONS AND ROUTING
@@ -46,21 +46,37 @@ disambiguation_routing:
     - "user wants the gears, not the timeline (process flow) or the cause (causal chain)"
     - "user wants structural explanation rather than narrative description"
   routes_away_when:
-    - "user wants to know why a particular outcome occurred (backward to causes)" → T4 causal modes
-    - "user wants step-by-step process flow over time" → process-mapping (T17)
-    - "user wants to know who has what role and authority" → organizational-structure (gap-deferred, T17)
-    - "user wants relationships between entities in a representation" → relationship-mapping (T11)
-    - "user wants to evaluate the mechanism as a proposal" → T15 stance modes
+    - condition: "user wants to know why a particular outcome occurred (backward to causes)"
+      targets: [{"kind": "territory", "id": "T4"}]
+      qualification: "T4 causal modes"
+    - condition: "user wants step-by-step process flow over time"
+      targets: [{"kind": "active", "id": "process-mapping"}]
+      qualification: "process-mapping (T17)"
+    - condition: "user wants to know who has what role and authority"
+      targets: [{"kind": "deferred", "id": "organizational-structure"}]
+      qualification: "organizational-structure (gap-deferred, T17)"
+    - condition: "user wants relationships between entities in a representation"
+      targets: [{"kind": "active", "id": "relationship-mapping"}]
+      qualification: "relationship-mapping (T11)"
+    - condition: "user wants to evaluate the mechanism as a proposal"
+      targets: [{"kind": "territory", "id": "T15"}]
+      qualification: "T15 stance modes"
 when_not_to_invoke:
-  - "User wants forward-looking projection rather than current-mechanism explanation" → T6 modes
-  - "User wants to find the cause of a problem to fix" → T4 modes
-  - "User wants to map a process step by step" → T17 process-mapping
+  - condition: "User wants forward-looking projection rather than current-mechanism explanation"
+    targets: [{"kind": "territory", "id": "T6"}]
+    qualification: "T6 modes"
+  - condition: "User wants to find the cause of a problem to fix"
+    targets: [{"kind": "territory", "id": "T4"}]
+    qualification: "T4 modes"
+  - condition: "User wants to map a process step by step"
+    targets: [{"kind": "active", "id": "process-mapping"}]
+    qualification: "T17 process-mapping"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -75,72 +91,102 @@ input_contract:
   detection:
     expert_signals: ["mechanism", "structural explanation", "components and interactions", "principle-level"]
     accessible_signals: ["how does this work", "explain the gears", "what makes this happen", "under the hood"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What phenomenon are you trying to understand, and what specifically about its behavior do you want explained?'"
     on_underspecified: "Ask: 'Are you asking how it works at the principle level (the mechanism), or how it works step-by-step over time (the process)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the level of analysis been locked (e.g., molecular, organizational, system-wide), or has the explanation jumped between levels without acknowledgment?"
-    failure_mode_if_unmet: level-confusion
-  - cq_id: CQ2
+    failure_mode_if_unmet: "level-confusion"
+  - cq_id: "CQ2"
     question: "Have the components been inventoried with each component's function stated, rather than merely named?"
-    failure_mode_if_unmet: component-inventory-without-function
-  - cq_id: CQ3
+    failure_mode_if_unmet: "component-inventory-without-function"
+  - cq_id: "CQ3"
     question: "Has the interaction pattern among components been described as the source of the whole's behavior, rather than treating the whole's behavior as a separate fact alongside the components?"
-    failure_mode_if_unmet: emergence-elision
-  - cq_id: CQ4
+    failure_mode_if_unmet: "emergence-elision"
+  - cq_id: "CQ4"
     question: "Are the boundary conditions of the mechanism named — under what circumstances it applies, when it breaks down, what it does not explain?"
-    failure_mode_if_unmet: scope-overreach
-  - cq_id: CQ5
+    failure_mode_if_unmet: "scope-overreach"
+  - cq_id: "CQ5"
     question: "Has the explanation been distinguished from a process map (temporal flow) and a causal chain (backward-to-causes), or have these been conflated?"
-    failure_mode_if_unmet: territory-conflation
+    failure_mode_if_unmet: "territory-conflation"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: level-confusion
+  - name: "level-confusion"
     detection_signal: "Explanation moves between molecular, organizational, and system-wide accounts without explicit acknowledgment of level shift."
-    correction_protocol: re-dispatch
-  - name: component-inventory-without-function
+    correction_protocol: "re-dispatch"
+  - name: "component-inventory-without-function"
     detection_signal: "Components named but their functional role in producing the whole's behavior not stated."
-    correction_protocol: re-dispatch
-  - name: emergence-elision
+    correction_protocol: "re-dispatch"
+  - name: "emergence-elision"
     detection_signal: "Whole's behavior described separately from components without an explicit account of how the interaction pattern produces it."
-    correction_protocol: re-dispatch
-  - name: scope-overreach
+    correction_protocol: "re-dispatch"
+  - name: "scope-overreach"
     detection_signal: "Mechanism explanation extended to phenomena outside the boundary conditions; over-generalization."
-    correction_protocol: flag
-  - name: territory-conflation
+    correction_protocol: "flag"
+  - name: "territory-conflation"
     detection_signal: "Output blends process-flow narration (T17) or causal-chain investigation (T4) with mechanism explanation; not parsed."
-    correction_protocol: re-dispatch
-  - name: just-so-explanation
+    correction_protocol: "re-dispatch"
+  - name: "just-so-explanation"
     detection_signal: "Explanation appears to fit the observed behavior but makes no predictions about behavior under altered conditions."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - meadows-twelve-leverage-points (when leverage-points framework illuminates which components do most of the work)
-    - senge-system-archetypes (when archetype-pattern signatures help identify mechanism class)
+  - lens_id: meadows-twelve-leverage-points
+    qualification: when leverage-points framework illuminates which components do most of the work
+  - lens_id: senge-system-archetypes
+    qualification: when archetype-pattern signatures help identify mechanism class
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Mechanism Understanding is the territory founder mode in T16; expansion deferred per Wave 3 plan."
   sideways:
-    target_mode_id: null
+    target: null
     when: "T16 has no current sibling modes; cross-territory routing handled by adjacency map."
   downward:
-    target_mode_id: null
+    target: null
     when: "Mechanism Understanding is the only mode in T16 at current population."
 ```
+
+## Display Description
+
+Explains how parts of a phenomenon produce its observed behaviour at the principle level.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll explain how this {artifact} works"
+  signals:
+    - {"signal": "mechanism understanding", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "mechanism", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name shorthand"}
+    - {"signal": "how does this work", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "how do the parts produce", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "mechanistic explanation", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "under the hood", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "explain the gears", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "structural explanation", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "internal workings", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "principle-level", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "components and interactions", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "what makes this happen", "territory": "T16-mechanism-understanding", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (mechanism framing)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

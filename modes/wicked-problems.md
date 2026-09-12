@@ -13,26 +13,26 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: wicked-problems
-canonical_name: Wicked Problems
-suffix_rule: analysis
-educational_name: integrated multi-perspective analysis of tangled problems (wicked problems analysis, Rittel-Webber lineage)
+mode_id: "wicked-problems"
+canonical_name: "Wicked Problems"
+suffix_rule: "analysis"
+educational_name: "integrated multi-perspective analysis of tangled problems (wicked problems analysis, Rittel-Webber lineage)"
 
 # 1. TERRITORY AND POSITION
-territory: T2-interest-and-power
+territory: "T2-interest-and-power"
 gradation_position:
-  axis: complexity
-  value: systemic
-  depth_axis_value: molecular
+  axis: "complexity"
+  value: "systemic"
+  depth_axis_value: "molecular"
 adjacent_modes_in_territory:
-  - mode_id: cui-bono
-    relationship: complexity-lighter sibling (simple)
-  - mode_id: stakeholder-mapping
-    relationship: complexity-mid sibling (multi-party-descriptive — note: lives in T8)
-  - mode_id: decision-clarity
-    relationship: depth-molecular sibling (decision-maker-output operation; built Wave 4)
-  - mode_id: boundary-critique
-    relationship: stance counterpart (critical/Ulrich CSH)
+  - mode_id: "cui-bono"
+    relationship: "complexity-lighter sibling (simple)"
+  - mode_id: "stakeholder-mapping"
+    relationship: "complexity-mid sibling (multi-party-descriptive — note: lives in T8)"
+  - mode_id: "decision-clarity"
+    relationship: "depth-molecular sibling (decision-maker-output operation; built Wave 4)"
+  - mode_id: "boundary-critique"
+    relationship: "stance counterpart (critical/Ulrich CSH)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -51,49 +51,63 @@ disambiguation_routing:
     - "tangled / wicked, want full integrated analysis with stakeholder + systems + scenario + adversarial views"
     - "willing to spend 10+ minutes for the deep version"
   routes_away_when:
-    - "this one situation, who benefits" → cui-bono
-    - "landscape of parties, descriptive" → stakeholder-mapping
-    - "produce a decision document for a decision-maker" → decision-clarity
-    - "want feedback dynamics analysis specifically" → systems-dynamics-causal
+    - condition: "this one situation, who benefits"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono"
+    - condition: "landscape of parties, descriptive"
+      targets: [{"kind": "active", "id": "stakeholder-mapping"}]
+      qualification: "stakeholder-mapping"
+    - condition: "produce a decision document for a decision-maker"
+      targets: [{"kind": "active", "id": "decision-clarity"}]
+      qualification: "decision-clarity"
+    - condition: "want feedback dynamics analysis specifically"
+      targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+      qualification: "systems-dynamics-causal"
 when_not_to_invoke:
-  - "User has time pressure (Wicked Problems is Tier-3 ~10+ min)" → cui-bono or wicked-future light variant
-  - "Problem is decision-shaped (single decision-maker, defined options)" → decision-clarity or decision-architecture
+  - condition: "User has time pressure (Wicked Problems is Tier-3 ~10+ min)"
+    targets: [{"kind": "active", "id": "cui-bono"}, {"kind": "active", "id": "wicked-future"}]
+    qualification: "cui-bono or wicked-future light variant"
+  - condition: "Problem is decision-shaped (single decision-maker, defined options)"
+    targets: [{"kind": "active", "id": "decision-clarity"}, {"kind": "active", "id": "decision-architecture"}]
+    qualification: "decision-clarity or decision-architecture"
 
 # 3. EXECUTION STRUCTURE
-composition: molecular
+composition: "molecular"
 molecular_spec:
+  companion_source: "frameworks/book/decision-clarity-analysis.md"
   components:
-    - mode_id: competing-hypotheses
-      runs: fragment
+    - mode_id: "competing-hypotheses"
+      runs: "fragment"
       fragment_spec: "hypothesis-list-with-diagnosticity-only (matrix output, no full ACH report)"
-    - mode_id: cui-bono
-      runs: full
-    - mode_id: steelman-construction
-      runs: fragment
+    - mode_id: "cui-bono"
+      runs: "full"
+    - mode_id: "steelman-construction"
+      runs: "fragment"
       fragment_spec: "steelman of two leading framings of the problem"
-    - mode_id: systems-dynamics-causal
-      runs: full
-    - mode_id: scenario-planning
-      runs: full
-    - mode_id: red-team-assessment
-      runs: fragment
+    - mode_id: "systems-dynamics-causal"
+      runs: "full"
+    - mode_id: "scenario-planning"
+      runs: "full"
+    - mode_id: "red-team-assessment"
+      reference_id: "red-team-fragment"
+      runs: "fragment"
       fragment_spec: "adversarial-stress-test of the leading intervention candidate (assessment stance — vulnerabilities ranked by severity for the user's own intervention-design fix-prioritisation)"
   synthesis_stages:
-    - name: framing-reconciliation
-      type: dialectical-resolution
+    - name: "framing-reconciliation"
+      type: "dialectical-resolution"
       input: [competing-hypotheses-fragment, steelman-construction-fragment, cui-bono]
       output: "reconciled framing with named tensions and dominant-frame note"
-    - name: dynamic-projection
-      type: sequenced-build
+    - name: "dynamic-projection"
+      type: "sequenced-build"
       input: [framing-reconciliation, systems-dynamics-causal, scenario-planning]
       output: "dynamic projection of the problem under multiple framings and scenarios"
-    - name: intervention-stress-test
-      type: contradiction-surfacing
+    - name: "intervention-stress-test"
+      type: "contradiction-surfacing"
       input: [dynamic-projection, red-team-fragment]
       output: "candidate-intervention catalog with stress-test findings"
   partial_composition_handling:
-    on_component_failure: proceed-with-gap
-    on_low_confidence: flag affected synthesis stage; do not aggregate over low-confidence findings
+    on_component_failure: "proceed-with-gap"
+    on_low_confidence: "flag affected synthesis stage; do not aggregate over low-confidence findings"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -108,67 +122,91 @@ input_contract:
   detection:
     expert_signals: ["stakeholder inventory", "prior interventions", "intervention history"]
     accessible_signals: ["this is wicked", "everything is connected", "solutions keep failing"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe the problem and any history of attempts to address it?'"
     on_underspecified: "Ask the user whether they want to spend the time on a full Wicked Problems pass, or a lighter Cui Bono / Stakeholder Mapping read."
+    lighter_targets: [{"kind": "active", "id": "cui-bono"}, {"kind": "active", "id": "stakeholder-mapping"}]
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have all major framings been steelmanned, or has the analysis privileged one frame?"
-    failure_mode_if_unmet: frame-privileging
-  - cq_id: CQ2
+    failure_mode_if_unmet: "frame-privileging"
+  - cq_id: "CQ2"
     question: "Do the systems-dynamics findings actually integrate with the cui-bono findings, or do they sit in separate silos?"
-    failure_mode_if_unmet: silo-aggregation
-  - cq_id: CQ3
+    failure_mode_if_unmet: "silo-aggregation"
+  - cq_id: "CQ3"
     question: "Have candidate interventions been stress-tested against the leading adversarial scenarios, or only against neutral projections?"
-    failure_mode_if_unmet: stress-test-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "stress-test-omission"
+  - cq_id: "CQ4"
     question: "Are the residual tensions named explicitly, or has the synthesis collapsed them prematurely?"
-    failure_mode_if_unmet: premature-resolution
+    failure_mode_if_unmet: "premature-resolution"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: frame-privileging
+  - name: "frame-privileging"
     detection_signal: "Steelman-construction-fragment surfaces only one framing."
-    correction_protocol: re-dispatch (to second steelman pass)
-  - name: silo-aggregation
+    correction_protocol: "re-dispatch (to second steelman pass)"
+  - name: "silo-aggregation"
     detection_signal: "Synthesis stage outputs concatenate component outputs without integration."
-    correction_protocol: re-dispatch (synthesis stage with explicit integration prompt)
-  - name: stress-test-omission
+    correction_protocol: "re-dispatch (synthesis stage with explicit integration prompt)"
+  - name: "stress-test-omission"
     detection_signal: "red-team-fragment did not run against the leading intervention."
-    correction_protocol: flag and re-dispatch
-  - name: premature-resolution
+    correction_protocol: "flag and re-dispatch"
+  - name: "premature-resolution"
     detection_signal: "Output presents a single recommended intervention without residual tensions."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - rittel-webber-wicked-characteristics
-    - meadows-twelve-leverage-points
-    - senge-system-archetypes
+  - rittel-webber-wicked-characteristics
+  - meadows-twelve-leverage-points
+  - senge-system-archetypes
   optional:
-    - ulrich-csh-boundary-categories
-    - tetlock-superforecasting (when scenarios extend beyond ~5 years)
+  - ulrich-csh-boundary-categories
+  - lens_id: tetlock-superforecasting
+    qualification: when scenarios extend beyond ~5 years
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
-
+  - kahneman-tversky-bias-catalog
+  - knightian-risk-uncertainty-ambiguity
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 3
-expected_runtime: ~10+min
+expected_runtime: "~10+min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Wicked Problems is the heaviest mode in T2's complexity ladder."
   sideways:
-    target_mode_id: decision-clarity
+    target: {"kind": "active", "id": "decision-clarity"}
     when: "Output should be a decision-clarity document for a decision-maker rather than an integrated analysis."
   downward:
-    target_mode_id: cui-bono
+    target: {"kind": "active", "id": "cui-bono"}
     when: "User has time pressure or scope is narrower than initially estimated."
 ```
+
+## Display Description
+
+Produces wicked-problems analysis composed around the Decision Clarity framework (created Phase 2 from `Framework — Decision Clarity Analysis.md`).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work through the tangled structure of this {artifact}"
+  signals:
+    - {"signal": "wicked problem", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "framework name reference"}
+    - {"signal": "WPF", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "framework abbreviation"}
+    - {"signal": "irreducible value conflict", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "wicked-problem indicator"}
+    - {"signal": "no good answer", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (wickedness)"}
+    - {"signal": "every option harms someone", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (incompatible benefit structures)"}
+    - {"signal": "stakeholders fundamentally disagree", "territory": "T2-interest-and-power", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (value conflict)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

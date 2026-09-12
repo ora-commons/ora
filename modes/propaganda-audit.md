@@ -12,26 +12,26 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: propaganda-audit
-canonical_name: Propaganda Audit
-suffix_rule: analysis
-educational_name: propaganda audit (Stanley supporting/undermining + flawed-ideology test)
+mode_id: "propaganda-audit"
+canonical_name: "Propaganda Audit"
+suffix_rule: "analysis"
+educational_name: "propaganda audit (Stanley supporting/undermining + flawed-ideology test)"
 
 # 1. TERRITORY AND POSITION
-territory: T1-argumentative-artifact-examination
+territory: "T1-argumentative-artifact-examination"
 gradation_position:
-  axis: specificity
-  value: specialized-propaganda
-  stance_axis_value: adversarial
+  axis: "specificity"
+  value: "specialized-propaganda"
+  stance_axis_value: "adversarial"
 adjacent_modes_in_territory:
-  - mode_id: coherence-audit
-    relationship: depth-light + neutral-stance sibling (built Wave 2)
-  - mode_id: frame-audit
-    relationship: depth-light + stance-suspending sibling (built Wave 2)
-  - mode_id: argument-audit
-    relationship: depth-molecular sibling (composes coherence + frame + propaganda; Wave 4)
-  - mode_id: position-genealogy
-    relationship: specificity-sibling (stance-historical; gap-deferred per CR-6)
+  - mode_id: "coherence-audit"
+    relationship: "depth-light + neutral-stance sibling (built Wave 2)"
+  - mode_id: "frame-audit"
+    relationship: "depth-light + stance-suspending sibling (built Wave 2)"
+  - mode_id: "argument-audit"
+    relationship: "depth-molecular sibling (composes coherence + frame + propaganda; Wave 4)"
+  - mode_id: "position-genealogy"
+    relationship: "specificity-sibling (stance-historical; gap-deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -56,21 +56,37 @@ disambiguation_routing:
     - "user wants the supporting / undermining distinction applied with flawed-ideology test"
     - "user is willing to accept the adversarial-stance posture (this is the T1 mode that adopts adversarial reading)"
   routes_away_when:
-    - "user wants neutral inferential-structure assessment without adversarial framing" → coherence-audit
-    - "user wants frame-surfacing without endorsing or attacking the frame" → frame-audit
-    - "user wants integrated coherence + frame + propaganda synthesis" → argument-audit (Wave 4)
-    - "user wants to attack the artifact as a proposal rather than as a propaganda artifact" → red-team-assessment / red-team-advocate (T15)
-    - "user wants to surface whose interests the artifact serves" → cui-bono (T2)
+    - condition: "user wants neutral inferential-structure assessment without adversarial framing"
+      targets: [{"kind": "active", "id": "coherence-audit"}]
+      qualification: "coherence-audit"
+    - condition: "user wants frame-surfacing without endorsing or attacking the frame"
+      targets: [{"kind": "active", "id": "frame-audit"}]
+      qualification: "frame-audit"
+    - condition: "user wants integrated coherence + frame + propaganda synthesis"
+      targets: [{"kind": "active", "id": "argument-audit"}]
+      qualification: "argument-audit (Wave 4)"
+    - condition: "user wants to attack the artifact as a proposal rather than as a propaganda artifact"
+      targets: [{"kind": "active", "id": "red-team-assessment"}, {"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-assessment / red-team-advocate (T15)"
+    - condition: "user wants to surface whose interests the artifact serves"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono (T2)"
 when_not_to_invoke:
-  - "Artifact is an ordinary argumentative text without persuasive-campaign characteristics" → coherence-audit or frame-audit
-  - "User wants to evaluate the artifact's interest-pattern (who benefits)" → cui-bono (T2)
-  - "User wants to model the artifact as part of an adversarial actor's strategy" → red-team-assessment / red-team-advocate (T15)
+  - condition: "Artifact is an ordinary argumentative text without persuasive-campaign characteristics"
+    targets: [{"kind": "active", "id": "coherence-audit"}, {"kind": "active", "id": "frame-audit"}]
+    qualification: "coherence-audit or frame-audit"
+  - condition: "User wants to evaluate the artifact's interest-pattern (who benefits)"
+    targets: [{"kind": "active", "id": "cui-bono"}]
+    qualification: "cui-bono (T2)"
+  - condition: "User wants to model the artifact as part of an adversarial actor's strategy"
+    targets: [{"kind": "active", "id": "red-team-assessment"}, {"kind": "active", "id": "red-team-advocate"}]
+    qualification: "red-team-assessment / red-team-advocate (T15)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: adversarial
+  posture: "adversarial"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -85,78 +101,121 @@ input_contract:
   detection:
     expert_signals: ["Stanley", "How Propaganda Works", "supporting propaganda", "undermining propaganda", "demagoguery", "flawed ideology", "not-at-issue content", "presupposed content", "Bernays", "Ellul", "Manufacturing Consent", "Herman", "Chomsky", "propaganda model"]
     accessible_signals: ["this looks like propaganda", "feels manipulative", "the ideals don't match the effect", "engineered to manipulate"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you paste the artifact (article, ad, manifesto, broadcast transcript) and tell me what ideal it claims to serve and what you suspect it actually does?'"
     on_underspecified: "Ask: 'What about this artifact triggered the propaganda suspicion — the gap between professed and actual, the staging of consent, the not-at-issue content, or something else?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the audit named the professed ideal of the artifact (the freedom / fairness / security / truth it claims to embody) explicitly, before assessing whether the artifact's function aligns with or erodes that ideal?"
-    failure_mode_if_unmet: ideal-omission
-  - cq_id: CQ2
+    failure_mode_if_unmet: "ideal-omission"
+  - cq_id: "CQ2"
     question: "Has the supporting / undermining distinction been applied with evidence — does the artifact use non-rational means to advance the professed ideal (supporting), or does it present itself as embodying the ideal while actually eroding it (undermining)?"
-    failure_mode_if_unmet: classification-collapse
-  - cq_id: CQ3
+    failure_mode_if_unmet: "classification-collapse"
+  - cq_id: "CQ3"
     question: "If the artifact is classified as undermining, has the audit identified the specific flawed-ideology premise(s) the audience must hold for the contradiction between professed and actual to remain invisible to them?"
-    failure_mode_if_unmet: flawed-ideology-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "flawed-ideology-omission"
+  - cq_id: "CQ4"
     question: "Has the audit catalogued the not-at-issue content (presuppositions, conventional implicatures, lexical activations) doing the persuasive work, given that propaganda often operates through what is assumed rather than asserted?"
-    failure_mode_if_unmet: at-issue-only-reading
-  - cq_id: CQ5
+    failure_mode_if_unmet: "at-issue-only-reading"
+  - cq_id: "CQ5"
     question: "Has the audit distinguished 'this artifact is propaganda' from 'I disagree with this artifact's conclusion' — and avoided treating the audit as a refutation of the artifact's claims (the propaganda-charge fallacy)?"
-    failure_mode_if_unmet: propaganda-charge-as-refutation
+    failure_mode_if_unmet: "propaganda-charge-as-refutation"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: ideal-omission
+  - name: "ideal-omission"
     detection_signal: "Audit assesses propaganda function without naming the specific ideal the artifact professes; supporting/undermining classification is therefore unevaluable."
-    correction_protocol: re-dispatch
-  - name: classification-collapse
+    correction_protocol: "re-dispatch"
+  - name: "classification-collapse"
     detection_signal: "Audit names 'propaganda' without distinguishing supporting (non-rational means for worthy ideal) from undermining (presents-as-embodying-ideal-while-eroding-it)."
-    correction_protocol: re-dispatch
-  - name: flawed-ideology-omission
+    correction_protocol: "re-dispatch"
+  - name: "flawed-ideology-omission"
     detection_signal: "Audit classifies as undermining without identifying the prior flawed beliefs the audience must hold for the contradiction to remain invisible."
-    correction_protocol: re-dispatch
-  - name: at-issue-only-reading
+    correction_protocol: "re-dispatch"
+  - name: "at-issue-only-reading"
     detection_signal: "Audit examines only what the artifact asserts; presupposed and conventionally-implicated content is not catalogued."
-    correction_protocol: re-dispatch
-  - name: propaganda-charge-as-refutation
+    correction_protocol: "re-dispatch"
+  - name: "propaganda-charge-as-refutation"
     detection_signal: "Audit treats the propaganda diagnosis as evidence the artifact's conclusion is false (a meta-level fallacy of fallacy)."
-    correction_protocol: flag
-  - name: motive-attribution-without-evidence
+    correction_protocol: "flag"
+  - name: "motive-attribution-without-evidence"
     detection_signal: "Audit imputes deliberate manipulative intent to the author/sponsor without textual or contextual evidence; the diagnostic should focus on the artifact's structure and effect, not the author's psychology."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - stanley-propaganda
-    - walton-schemes-and-critical-questions
+  - stanley-propaganda
+  - walton-schemes-and-critical-questions
   optional:
-    - bernays-engineering-of-consent (when artifact is a PR/advertising campaign)
-    - ellul-integration-vs-agitation (when artifact is part of ambient media-environment conditioning)
-    - herman-chomsky-five-filter-propaganda-model (when structural-institutional situating is in scope)
-    - lakoff-conceptual-metaphor (when lexical-metaphor frame activation is central)
-    - cda-fairclough-presupposition-and-nominalization (when grammatical mechanisms carry the not-at-issue content)
-    - iyengar-episodic-thematic (when attribution-of-responsibility manipulation is a technique)
+  - lens_id: bernays-engineering-of-consent
+    qualification: when artifact is a PR/advertising campaign
+  - lens_id: ellul-integration-vs-agitation
+    qualification: when artifact is part of ambient media-environment conditioning
+  - lens_id: herman-chomsky-five-filter-propaganda-model
+    qualification: when structural-institutional situating is in scope
+  - lens_id: lakoff-conceptual-metaphor
+    qualification: when lexical-metaphor frame activation is central
+  - lens_id: cda-fairclough-presupposition-and-nominalization
+    qualification: when grammatical mechanisms carry the not-at-issue content
+  - lens_id: iyengar-episodic-thematic
+    qualification: when attribution-of-responsibility manipulation is a technique
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: argument-audit
+    target: {"kind": "active", "id": "argument-audit"}
     when: "Audit reveals coherence problems and frame-manipulation alongside propaganda diagnosis; molecular synthesis is needed (Wave 4)."
   sideways:
-    target_mode_id: red-team-assessment
+    target: {"kind": "active", "id": "red-team-assessment"}
     when: "User wants to model the artifact as an adversarial actor's strategic move and stress-test against it (T15). Default to red-team-assessment for own-decision use; route to red-team-advocate when the user is preparing a brief against the artifact for an external audience."
   downward:
-    target_mode_id: frame-audit
+    target: {"kind": "active", "id": "frame-audit"}
     when: "On reflection the artifact is doing frame work but not propaganda specifically; stance-suspending frame analysis is the right operation."
 ```
+
+## Display Description
+
+Detects propagandistic structure (in the Jason Stanley sense) within a stated position.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll look at this {artifact} as rhetoric"
+  signals:
+    - {"signal": "propaganda audit", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → adversarial", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "propaganda", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → adversarial", "confidence_weight": "strong", "evidence": "mode-name shorthand"}
+    - {"signal": "is this propaganda", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → adversarial", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "manipulation", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "manufacturing consent", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "Manufacturing Consent", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "book reference"}
+    - {"signal": "Stanley", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Stanley test", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "supporting vs undermining propaganda", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "flawed ideology", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "concept-substitution", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "not-at-issue content", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "engineering of consent", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "manufactured doubt", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (propaganda)"}
+    - {"signal": "availability heuristic", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "affect heuristic", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "commitment and consistency bias", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "commitment consistency", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "social proof", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "anchoring bias", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "the anchoring effect", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

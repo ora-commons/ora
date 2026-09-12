@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: differential-diagnosis
-canonical_name: Differential Diagnosis
-suffix_rule: analysis
-educational_name: light differential diagnosis (medical-tradition lighter sibling of ACH)
+mode_id: "differential-diagnosis"
+canonical_name: "Differential Diagnosis"
+suffix_rule: "analysis"
+educational_name: "light differential diagnosis (medical-tradition lighter sibling of ACH)"
 
 # 1. TERRITORY AND POSITION
-territory: T5-hypothesis-evaluation
+territory: "T5-hypothesis-evaluation"
 gradation_position:
-  axis: depth
-  value: light
+  axis: "depth"
+  value: "light"
 adjacent_modes_in_territory:
-  - mode_id: competing-hypotheses
-    relationship: depth-heavier sibling (full Heuer ACH)
-  - mode_id: bayesian-hypothesis-network
-    relationship: depth-molecular sibling (built Wave 4)
+  - mode_id: "competing-hypotheses"
+    relationship: "depth-heavier sibling (full Heuer ACH)"
+  - mode_id: "bayesian-hypothesis-network"
+    relationship: "depth-molecular sibling (built Wave 4)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -49,19 +49,31 @@ disambiguation_routing:
     - "user has limited time and prefers a quick narrowing over a full ACH matrix"
     - "evidence-set is small enough to weigh informally"
   routes_away_when:
-    - "user wants full evidence-by-hypothesis matrix with disconfirming-evidence focus" → competing-hypotheses
-    - "user wants probability network with conditional dependencies" → bayesian-hypothesis-network
-    - "competing explanations are really inter-frame disagreement (paradigm clash)" → frame-comparison or worldview-cartography (T9)
+    - condition: "user wants full evidence-by-hypothesis matrix with disconfirming-evidence focus"
+      targets: [{"kind": "active", "id": "competing-hypotheses"}]
+      qualification: "competing-hypotheses"
+    - condition: "user wants probability network with conditional dependencies"
+      targets: [{"kind": "active", "id": "bayesian-hypothesis-network"}]
+      qualification: "bayesian-hypothesis-network"
+    - condition: "competing explanations are really inter-frame disagreement (paradigm clash)"
+      targets: [{"kind": "active", "id": "frame-comparison"}, {"kind": "active", "id": "worldview-cartography"}]
+      qualification: "frame-comparison or worldview-cartography (T9)"
 when_not_to_invoke:
-  - "Only one hypothesis on the table — no differential to make" → use a single-hypothesis-test mode in T1 or T4
-  - "Hypotheses are themselves complete arguments needing soundness audit" → T1
-  - "User wants to know who benefits, not which explanation fits" → cui-bono (T2)
+  - condition: "Only one hypothesis on the table — no differential to make"
+    targets: [{"kind": "territory", "id": "T1"}, {"kind": "territory", "id": "T4"}]
+    qualification: "use a single-hypothesis-test mode in T1 or T4"
+  - condition: "Hypotheses are themselves complete arguments needing soundness audit"
+    targets: [{"kind": "territory", "id": "T1"}]
+    qualification: "T1"
+  - condition: "User wants to know who benefits, not which explanation fits"
+    targets: [{"kind": "active", "id": "cui-bono"}]
+    qualification: "cui-bono (T2)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: neutral
+  posture: "neutral"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -76,67 +88,101 @@ input_contract:
   detection:
     expert_signals: ["candidate hypotheses", "prior probability", "diagnosticity", "base rate", "evidence inventory"]
     accessible_signals: ["differential", "what else could this be", "rule out", "most likely cause"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you tell me what you've observed and which explanations are on the table?'"
     on_underspecified: "Ask: 'What's the symptom or pattern, and what explanations have you considered so far?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are the candidate hypotheses genuinely different explanations of the evidence, or are some of them re-descriptions of the same underlying explanation?"
-    failure_mode_if_unmet: hypothesis-collapse
-  - cq_id: CQ2
+    failure_mode_if_unmet: "hypothesis-collapse"
+  - cq_id: "CQ2"
     question: "Does the diagnosticity assessment distinguish evidence that *rules out* hypotheses from evidence that is merely *consistent with* them, given that consistent evidence is weak diagnostic?"
-    failure_mode_if_unmet: confirmation-anchoring
-  - cq_id: CQ3
+    failure_mode_if_unmet: "confirmation-anchoring"
+  - cq_id: "CQ3"
     question: "Has the analysis identified at least one disconfirming test for each of the top two candidates, so the user can act to narrow further?"
-    failure_mode_if_unmet: no-actionable-disconfirmer
-  - cq_id: CQ4
+    failure_mode_if_unmet: "no-actionable-disconfirmer"
+  - cq_id: "CQ4"
     question: "Has the analysis flagged when the evidence base is too small for a confident ranking, rather than producing a ranking it cannot support?"
-    failure_mode_if_unmet: false-confidence
+    failure_mode_if_unmet: "false-confidence"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: hypothesis-collapse
+  - name: "hypothesis-collapse"
     detection_signal: "Two or more named hypotheses make identical predictions about the evidence; the differential is artificial."
-    correction_protocol: re-dispatch
-  - name: confirmation-anchoring
+    correction_protocol: "re-dispatch"
+  - name: "confirmation-anchoring"
     detection_signal: "Diagnosticity is assessed via consistency only (this evidence is consistent with H1) rather than via disconfirming power (this evidence rules out H2)."
-    correction_protocol: re-dispatch
-  - name: no-actionable-disconfirmer
+    correction_protocol: "re-dispatch"
+  - name: "no-actionable-disconfirmer"
     detection_signal: "Top-ranked hypotheses are returned without naming a test that would distinguish them."
-    correction_protocol: flag
-  - name: false-confidence
+    correction_protocol: "flag"
+  - name: "false-confidence"
     detection_signal: "A ranking is produced when evidence is too sparse to support it; confidence per ranking is inflated."
-    correction_protocol: flag
-  - name: missing-zebra
+    correction_protocol: "flag"
+  - name: "missing-zebra"
     detection_signal: "Common-case explanations dominate; rare-but-serious explanations are not present even as low-rank candidates."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - differential-diagnosis-schema
+  - differential-diagnosis-schema
   optional:
-    - heuer-ach-methodology (when escalating to full ACH)
-    - bayesian-reasoning (when prior probabilities are available)
+  - lens_id: heuer-ach-methodology
+    qualification: when escalating to full ACH
+  - lens_id: bayesian-reasoning
+    qualification: when prior probabilities are available
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~1min
+expected_runtime: "~1min"
 escalation_signals:
   upward:
-    target_mode_id: competing-hypotheses
+    target: {"kind": "active", "id": "competing-hypotheses"}
     when: "Hypothesis count exceeds five, evidence inventory is large, or user wants disconfirming-evidence focus across the matrix."
   sideways:
-    target_mode_id: frame-comparison
+    target: {"kind": "active", "id": "frame-comparison"}
     when: "On reflection the candidates are inter-frame disagreements (paradigm clashes) rather than within-frame hypotheses; route to T9."
   downward:
-    target_mode_id: null
+    target: null
     when: "Differential Diagnosis is the lightest mode in T5."
 ```
+
+## Display Description
+
+Generates and ranks competing explanations for an ambiguous presentation; suitable when a quick discriminating-evidence pass is enough.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll do a quick read on which explanation fits this {artifact} best"
+  data_shapes: [{"predicate": "enum_hypotheses", "territory": "T5-hypothesis-evaluation", "priority": 1, "confidence_weight": "strong"}]
+  signals:
+    - {"signal": "differential diagnosis", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "differential", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "mode-name shorthand"}
+    - {"signal": "candidate explanations", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what are the possibilities", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "rule out", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "rule things out quickly", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "most likely cause", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "narrow down the candidates", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what else could this be", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "quick weigh-in", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → light", "confidence_weight": "weak", "evidence": "tonal cue (depth-light selector)"}
+    - {"signal": "zebra", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "medical-tradition vocabulary (rare-but-serious)"}
+    - {"signal": "which of these explanations", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "quick read on which", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "differential diagnosis schema", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "representativeness heuristic", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

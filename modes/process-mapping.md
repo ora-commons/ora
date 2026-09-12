@@ -12,23 +12,23 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: process-mapping
-canonical_name: Process Mapping
-suffix_rule: analysis
-educational_name: process mapping (workflow / dependency / bottleneck identification)
+mode_id: "process-mapping"
+canonical_name: "Process Mapping"
+suffix_rule: "analysis"
+educational_name: "process mapping (workflow / dependency / bottleneck identification)"
 
 # 1. TERRITORY AND POSITION
-territory: T17-process-and-system-analysis
+territory: "T17-process-and-system-analysis"
 gradation_position:
-  axis: specificity
-  value: process-flow
-  secondary_axis: complexity
-  secondary_value: single-process
+  axis: "specificity"
+  value: "process-flow"
+  secondary_axis: "complexity"
+  secondary_value: "single-process"
 adjacent_modes_in_territory:
-  - mode_id: systems-dynamics-structural
-    relationship: complexity-counterpart (feedback structure rather than linear-process flow)
-  - mode_id: organizational-structure
-    relationship: specificity-counterpart (organizational rather than process-flow; gap-deferred)
+  - mode_id: "systems-dynamics-structural"
+    relationship: "complexity-counterpart (feedback structure rather than linear-process flow)"
+  - mode_id: "organizational-structure"
+    relationship: "specificity-counterpart (organizational rather than process-flow; gap-deferred)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -56,20 +56,34 @@ disambiguation_routing:
     - "user wants current-state ('as-is') mapping rather than future-state design"
     - "process is largely linear or branching but not characterized by feedback loops"
   routes_away_when:
-    - "system has feedback loops where outputs influence inputs cyclically" → systems-dynamics-structural
-    - "question is why a particular outcome happened" → T4 causal modes
-    - "question is how the parts produce the whole's behavior at the principle level" → mechanism-understanding (T16)
-    - "question is about who has what role and authority" → organizational-structure (gap-deferred)
+    - condition: "system has feedback loops where outputs influence inputs cyclically"
+      targets: [{"kind": "active", "id": "systems-dynamics-structural"}]
+      qualification: "systems-dynamics-structural"
+    - condition: "question is why a particular outcome happened"
+      targets: [{"kind": "territory", "id": "T4"}]
+      qualification: "T4 causal modes"
+    - condition: "question is how the parts produce the whole's behavior at the principle level"
+      targets: [{"kind": "active", "id": "mechanism-understanding"}]
+      qualification: "mechanism-understanding (T16)"
+    - condition: "question is about who has what role and authority"
+      targets: [{"kind": "deferred", "id": "organizational-structure"}]
+      qualification: "organizational-structure (gap-deferred)"
 when_not_to_invoke:
-  - "User wants to design a future state rather than document the current state" → execution-tier (T21) or future-mode (T6)
-  - "User wants to evaluate the process as a proposal" → T15 stance modes
-  - "User wants causal-chain analysis of an outcome" → T4 modes
+  - condition: "User wants to design a future state rather than document the current state"
+    targets: [{"kind": "territory", "id": "T21"}, {"kind": "territory", "id": "T6"}]
+    qualification: "execution-tier (T21) or future-mode (T6)"
+  - condition: "User wants to evaluate the process as a proposal"
+    targets: [{"kind": "territory", "id": "T15"}]
+    qualification: "T15 stance modes"
+  - condition: "User wants causal-chain analysis of an outcome"
+    targets: [{"kind": "territory", "id": "T4"}]
+    qualification: "T4 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -84,72 +98,105 @@ input_contract:
   detection:
     expert_signals: ["swim lane", "value stream", "as-is process", "RACI", "process boundaries"]
     accessible_signals: ["how does this work", "step by step", "where does it slow down", "map out the workflow"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What process are you mapping, where does it start, and where does it end?'"
     on_underspecified: "Ask: 'What triggers the process to begin, and how do you know when it's complete?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have the process boundaries been locked (clear start trigger and end condition), or is the scope ambiguous?"
-    failure_mode_if_unmet: scope-creep
-  - cq_id: CQ2
+    failure_mode_if_unmet: "scope-creep"
+  - cq_id: "CQ2"
     question: "Has the analysis distinguished between the documented (official) process and the actual (lived) process, or has it described only one as if it were both?"
-    failure_mode_if_unmet: official-vs-actual-elision
-  - cq_id: CQ3
+    failure_mode_if_unmet: "official-vs-actual-elision"
+  - cq_id: "CQ3"
     question: "Have decision points and branching paths been identified with explicit decision criteria, or has the process been flattened into a single happy path?"
-    failure_mode_if_unmet: happy-path-flattening
-  - cq_id: CQ4
+    failure_mode_if_unmet: "happy-path-flattening"
+  - cq_id: "CQ4"
     question: "Have bottlenecks been identified with the constraint that creates them named, rather than just the symptom?"
-    failure_mode_if_unmet: bottleneck-symptom-only
-  - cq_id: CQ5
+    failure_mode_if_unmet: "bottleneck-symptom-only"
+  - cq_id: "CQ5"
     question: "Have handoffs between actors been examined for friction and information loss, or treated as frictionless?"
-    failure_mode_if_unmet: handoff-blindness
+    failure_mode_if_unmet: "handoff-blindness"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: scope-creep
+  - name: "scope-creep"
     detection_signal: "Process boundaries shifted during execution; map covers more than the locked scope."
-    correction_protocol: re-dispatch
-  - name: official-vs-actual-elision
+    correction_protocol: "re-dispatch"
+  - name: "official-vs-actual-elision"
     detection_signal: "Map describes the process as documented in policy without acknowledging known deviations or workarounds."
-    correction_protocol: flag
-  - name: happy-path-flattening
+    correction_protocol: "flag"
+  - name: "happy-path-flattening"
     detection_signal: "All branching paths collapsed to one main flow; exception paths absent."
-    correction_protocol: re-dispatch
-  - name: bottleneck-symptom-only
+    correction_protocol: "re-dispatch"
+  - name: "bottleneck-symptom-only"
     detection_signal: "Bottleneck named (e.g., 'approval takes too long') without the underlying constraint identified (e.g., 'single approver, no delegation')."
-    correction_protocol: flag
-  - name: handoff-blindness
+    correction_protocol: "flag"
+  - name: "handoff-blindness"
     detection_signal: "Handoffs between actors presented without examining where information is lost, transformed, or queued."
-    correction_protocol: flag
-  - name: causal-overreach
+    correction_protocol: "flag"
+  - name: "causal-overreach"
     detection_signal: "Process map presented as causal explanation of why outcomes occur; mode boundary violation into T4."
-    correction_protocol: escalate
+    correction_protocol: "escalate"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - meadows-twelve-leverage-points (when bottleneck-as-leverage-point analysis is central)
-    - senge-system-archetypes (when process exhibits archetype-pattern signatures)
+  - lens_id: meadows-twelve-leverage-points
+    qualification: when bottleneck-as-leverage-point analysis is central
+  - lens_id: senge-system-archetypes
+    qualification: when process exhibits archetype-pattern signatures
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: systems-dynamics-structural
+    target: {"kind": "active", "id": "systems-dynamics-structural"}
     when: "Process exhibits feedback loops where outputs cyclically influence inputs; linear-flow mapping insufficient."
   sideways:
-    target_mode_id: null
+    target: null
     when: "Sibling specificity-organizational mode (organizational-structure) gap-deferred per CR-6."
   downward:
-    target_mode_id: null
+    target: null
     when: "Process Mapping is the lightest specificity-process-flow mode in T17 at current population."
 ```
+
+## Display Description
+
+Maps a workflow or process as it currently is — components, flows, bottlenecks, dependencies.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll map the process behind this {artifact}"
+  signals:
+    - {"signal": "process map", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "process mapping", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "workflow map", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "workflow analysis", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "value stream map", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "swimlane diagram", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "swim lane", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "bottleneck identification", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "bottleneck", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "as-is process", "territory": "T17-process-and-system", "disambiguation_answer": "within-territory: specificity? → process-flow", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "current state", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "flow chart", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "dependency map", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "step by step how does this work", "territory": "T17-process-and-system", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "practical drift", "territory": "T17-process-and-system-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

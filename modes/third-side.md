@@ -12,22 +12,22 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: third-side
-canonical_name: Third Side
-suffix_rule: analysis
-educational_name: third-side mediation (Ury ten roles)
+mode_id: "third-side"
+canonical_name: "Third Side"
+suffix_rule: "analysis"
+educational_name: "third-side mediation (Ury ten roles)"
 
 # 1. TERRITORY AND POSITION
-territory: T13-negotiation-and-conflict-resolution
+territory: "T13-negotiation-and-conflict-resolution"
 gradation_position:
-  axis: stance
-  value: mediator
-  complexity_axis_value: multi-party
+  axis: "stance"
+  value: "mediator"
+  complexity_axis_value: "multi-party"
 adjacent_modes_in_territory:
-  - mode_id: interest-mapping
-    relationship: stance-counterpart (party-stance, two-party-default, depth-light; built Wave 2)
-  - mode_id: principled-negotiation
-    relationship: stance-counterpart (party-stance, two-party-default, depth-thorough; Wave 3)
+  - mode_id: "interest-mapping"
+    relationship: "stance-counterpart (party-stance, two-party-default, depth-light; built Wave 2)"
+  - mode_id: "principled-negotiation"
+    relationship: "stance-counterpart (party-stance, two-party-default, depth-thorough; Wave 3)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -57,22 +57,40 @@ disambiguation_routing:
     - "user wants to map which Ury third-side roles are needed and who could fill them"
     - "user wants a containment / prevention / resolution analysis from the surrounding community's vantage"
   routes_away_when:
-    - "user is a party to the conflict and wants party-side negotiation guidance" → principled-negotiation (or interest-mapping for lighter)
-    - "user wants only quick interest-mapping" → interest-mapping
-    - "user wants descriptive multi-party stakeholder mapping without active conflict-resolution framing" → stakeholder-mapping (T8)
-    - "user wants strategic-game analysis of multi-party interaction (equilibria, coalitions)" → strategic-interaction (T18)
-    - "user wants policy / boundary-critique analysis (whose voices are excluded)" → boundary-critique (T2)
+    - condition: "user is a party to the conflict and wants party-side negotiation guidance"
+      targets: [{"kind": "active", "id": "principled-negotiation"}, {"kind": "active", "id": "interest-mapping"}]
+      qualification: "principled-negotiation (or interest-mapping for lighter)"
+    - condition: "user wants only quick interest-mapping"
+      targets: [{"kind": "active", "id": "interest-mapping"}]
+      qualification: "interest-mapping"
+    - condition: "user wants descriptive multi-party stakeholder mapping without active conflict-resolution framing"
+      targets: [{"kind": "active", "id": "stakeholder-mapping"}]
+      qualification: "stakeholder-mapping (T8)"
+    - condition: "user wants strategic-game analysis of multi-party interaction (equilibria, coalitions)"
+      targets: [{"kind": "active", "id": "strategic-interaction"}]
+      qualification: "strategic-interaction (T18)"
+    - condition: "user wants policy / boundary-critique analysis (whose voices are excluded)"
+      targets: [{"kind": "active", "id": "boundary-critique"}]
+      qualification: "boundary-critique (T2)"
 when_not_to_invoke:
-  - "User is a direct party with their own interests at stake" → principled-negotiation or interest-mapping
-  - "Conflict is straightforwardly two-party with no community/network role" → principled-negotiation or interest-mapping
-  - "User wants stakeholder mapping without conflict-resolution framing" → stakeholder-mapping (T8)
-  - "User wants game-theoretic equilibrium analysis" → strategic-interaction (T18)
+  - condition: "User is a direct party with their own interests at stake"
+    targets: [{"kind": "active", "id": "principled-negotiation"}, {"kind": "active", "id": "interest-mapping"}]
+    qualification: "principled-negotiation or interest-mapping"
+  - condition: "Conflict is straightforwardly two-party with no community/network role"
+    targets: [{"kind": "active", "id": "principled-negotiation"}, {"kind": "active", "id": "interest-mapping"}]
+    qualification: "principled-negotiation or interest-mapping"
+  - condition: "User wants stakeholder mapping without conflict-resolution framing"
+    targets: [{"kind": "active", "id": "stakeholder-mapping"}]
+    qualification: "stakeholder-mapping (T8)"
+  - condition: "User wants game-theoretic equilibrium analysis"
+    targets: [{"kind": "active", "id": "strategic-interaction"}]
+    qualification: "strategic-interaction (T18)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: neutral
+  posture: "neutral"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -87,78 +105,111 @@ input_contract:
   detection:
     expert_signals: ["third side", "Ury", "mediator", "facilitator", "ombuds", "ten roles", "provider equalizer healer witness referee peacekeeper bridge-builder mediator arbiter teacher"]
     accessible_signals: ["mediating a conflict", "the community needs to step in", "I'm not a party but I'm involved", "facilitating between"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Who are the parties to the conflict, what is the conflict, and what is your role — are you mediating, facilitating, advising someone who is, or part of the surrounding community?'"
     on_underspecified: "Ask: 'Who else is around this conflict — colleagues, friends, neighbors, leaders, professionals — who could play a third-side role?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the analysis maintained a third-side stance — analyzing what the surrounding community can do — rather than slipping into party-side advocacy for one party's interests?"
-    failure_mode_if_unmet: party-stance-creep
-  - cq_id: CQ2
+    failure_mode_if_unmet: "party-stance-creep"
+  - cq_id: "CQ2"
     question: "Have the ten Ury roles been considered as a checklist (provider, teacher, bridge-builder, mediator, arbiter, equalizer, healer, witness, referee, peacekeeper) rather than collapsing into a generic mediator role?"
-    failure_mode_if_unmet: ten-role-collapse
-  - cq_id: CQ3
+    failure_mode_if_unmet: "ten-role-collapse"
+  - cq_id: "CQ3"
     question: "Have the three role-clusters (prevention, resolution, containment) all been considered, rather than defaulting to resolution roles only?"
-    failure_mode_if_unmet: prevention-or-containment-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "prevention-or-containment-omission"
+  - cq_id: "CQ4"
     question: "Have role assignments been linked to actual people / institutions / norms in the surrounding community, rather than asserting roles in the abstract?"
-    failure_mode_if_unmet: roles-without-bearers
-  - cq_id: CQ5
+    failure_mode_if_unmet: "roles-without-bearers"
+  - cq_id: "CQ5"
     question: "Have the limits of third-side intervention been acknowledged — situations where the parties' agency is primary, where third-side intervention would be intrusive, or where power asymmetry makes neutral mediation untenable — rather than asserting the third side as universally appropriate?"
-    failure_mode_if_unmet: third-side-overreach
+    failure_mode_if_unmet: "third-side-overreach"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: party-stance-creep
+  - name: "party-stance-creep"
     detection_signal: "Analysis recommends moves that favor one party's interests rather than analyzing what the surrounding community can do for the conflict as a whole; output reads as advocacy."
-    correction_protocol: re-dispatch
-  - name: ten-role-collapse
+    correction_protocol: "re-dispatch"
+  - name: "ten-role-collapse"
     detection_signal: "Output names only mediator (or only one or two of the ten roles); the full ten-role checklist is not surveyed."
-    correction_protocol: re-dispatch
-  - name: prevention-or-containment-omission
+    correction_protocol: "re-dispatch"
+  - name: "prevention-or-containment-omission"
     detection_signal: "Output addresses only resolution roles (mediator / arbiter / equalizer); prevention (provider / teacher / bridge-builder) and/or containment (witness / referee / peacekeeper) clusters are not addressed."
-    correction_protocol: re-dispatch
-  - name: roles-without-bearers
+    correction_protocol: "re-dispatch"
+  - name: "roles-without-bearers"
     detection_signal: "Roles are listed without naming actual people / institutions / norms in the surrounding community who could fill them."
-    correction_protocol: re-dispatch
-  - name: third-side-overreach
+    correction_protocol: "re-dispatch"
+  - name: "third-side-overreach"
     detection_signal: "Analysis asserts third-side intervention as appropriate without considering the limits — power asymmetry that makes mediation paper over coercion, parties' own agency that makes intervention intrusive, situations where the conflict's resolution requires confrontation rather than mediation."
-    correction_protocol: flag
-  - name: cultural-context-flatness
+    correction_protocol: "flag"
+  - name: "cultural-context-flatness"
     detection_signal: "Third-side roles applied without consideration of how the surrounding community's cultural norms, hierarchies, and existing institutions shape which roles are available and who can credibly fill them."
-    correction_protocol: flag
-  - name: parties-as-passive
+    correction_protocol: "flag"
+  - name: "parties-as-passive"
     detection_signal: "Output frames parties as objects of third-side intervention rather than as agents whose own moves matter; third-side roles are positioned as solving the conflict rather than as supporting the parties to do so."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - ury-third-side
+  - ury-third-side
   optional:
-    - fisher-ury-principled-negotiation (when third-side role includes coaching parties on principled-negotiation method)
-    - lederach-conflict-transformation (when conflict is deep, identity-based, or community-rooted)
-    - kriesberg-constructive-conflicts (when conflict has historical depth and trajectory analysis matters)
-    - voss-tactical-empathy (when third-side role includes coaching one party in adversarial-context dynamics)
+  - lens_id: fisher-ury-principled-negotiation
+    qualification: when third-side role includes coaching parties on principled-negotiation method
+  - lens_id: lederach-conflict-transformation
+    qualification: when conflict is deep, identity-based, or community-rooted
+  - lens_id: kriesberg-constructive-conflicts
+    qualification: when conflict has historical depth and trajectory analysis matters
+  - lens_id: voss-tactical-empathy
+    qualification: when third-side role includes coaching one party in adversarial-context dynamics
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Third Side is the deepest mediator-stance multi-party mode in T13; further depth comes from iteration with new community-mapping information."
   sideways:
-    target_mode_id: principled-negotiation
+    target: {"kind": "active", "id": "principled-negotiation"}
     when: "On reflection the user is actually a party (or the analysis would better serve as party-side guidance for a primary stakeholder) rather than a third-party role."
   downward:
-    target_mode_id: interest-mapping
+    target: {"kind": "active", "id": "interest-mapping"}
     when: "User wants only the position-to-interest descent on the parties, without the full third-side role survey."
 ```
+
+## Display Description
+
+Applies William Ury's Third Side framework: surface what the surrounding community can do to contain and resolve a conflict.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work this conflict from the third-side mediator stance"
+  signals:
+    - {"signal": "third side", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: stance? → mediator", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "third-side", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: stance? → mediator", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Ury third side", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: stance? → mediator", "confidence_weight": "strong", "evidence": "author + method reference"}
+    - {"signal": "mediator", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: stance? → mediator", "confidence_weight": "strong", "evidence": "role reference"}
+    - {"signal": "mediator perspective", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: stance? → mediator", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "third-side mediation", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "within-territory: stance? → mediator", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "ten roles of conflict resolution", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "ten roles", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "facilitating a conflict", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "containing a conflict", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "ombuds", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "role reference"}
+    - {"signal": "the community's role", "territory": "T13-negotiation-and-conflict-resolution", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (third-side framing)"}
+    - {"signal": "psychological safety", "territory": "T13-negotiation-and-conflict-resolution", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

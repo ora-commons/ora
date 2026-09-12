@@ -12,25 +12,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: information-density
-canonical_name: Information Density
-suffix_rule: analysis
-educational_name: information density and visual hierarchy (Tufte, Bertin, Cleveland-McGill)
+mode_id: "information-density"
+canonical_name: "Information Density"
+suffix_rule: "analysis"
+educational_name: "information density and visual hierarchy (Tufte, Bertin, Cleveland-McGill)"
 
 # 1. TERRITORY AND POSITION
-territory: T19-spatial-composition
+territory: "T19-spatial-composition"
 gradation_position:
-  axis: specificity
-  value: applied-evaluative
-  stance_axis_value: applied-evaluative-medium-depth
-  depth_axis_value: medium
+  axis: "specificity"
+  value: "applied-evaluative"
+  stance_axis_value: "applied-evaluative-medium-depth"
+  depth_axis_value: "medium"
 adjacent_modes_in_territory:
-  - mode_id: compositional-dynamics
-    relationship: depth-lighter sibling (universal-perceptual descriptive medium-depth; gestalt + Arnheim + Itten + Albers; built Wave 2)
-  - mode_id: ma-reading
-    relationship: stance-counterpart (contemplative-descriptive-deep, aesthetic-experiential, Japanese aesthetics; built Wave 2)
-  - mode_id: place-reading-genius-loci
-    relationship: specificity-counterpart (descriptive-evaluative-deep; affordance + inhabited-place; Wave 3)
+  - mode_id: "compositional-dynamics"
+    relationship: "depth-lighter sibling (universal-perceptual descriptive medium-depth; gestalt + Arnheim + Itten + Albers; built Wave 2)"
+  - mode_id: "ma-reading"
+    relationship: "stance-counterpart (contemplative-descriptive-deep, aesthetic-experiential, Japanese aesthetics; built Wave 2)"
+  - mode_id: "place-reading-genius-loci"
+    relationship: "specificity-counterpart (descriptive-evaluative-deep; affordance + inhabited-place; Wave 3)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -69,22 +69,40 @@ disambiguation_routing:
     - "user wants the data-encoding tradition (Tufte / Bertin / Cleveland-McGill / Bringhurst / Lupton) applied"
     - "user is designing or evaluating an info-graphic and needs encoding-fitness assessment"
   routes_away_when:
-    - "user wants the void / interval / silence read as primary content (Japanese aesthetics)" → ma-reading
-    - "user wants the universal compositional-forces / gestalt reading without info-encoding focus" → compositional-dynamics
-    - "user wants prospect-refuge / pattern-language / inhabited-place reading" → place-reading-genius-loci
-    - "user wants relation-extraction from a diagram (what does the diagram assert about A→B→C)" → relationship-mapping or spatial-reasoning (T11)
-    - "user wants statistical analysis of the underlying data rather than analysis of its encoding" → other territory
+    - condition: "user wants the void / interval / silence read as primary content (Japanese aesthetics)"
+      targets: [{"kind": "active", "id": "ma-reading"}]
+      qualification: "ma-reading"
+    - condition: "user wants the universal compositional-forces / gestalt reading without info-encoding focus"
+      targets: [{"kind": "active", "id": "compositional-dynamics"}]
+      qualification: "compositional-dynamics"
+    - condition: "user wants prospect-refuge / pattern-language / inhabited-place reading"
+      targets: [{"kind": "active", "id": "place-reading-genius-loci"}]
+      qualification: "place-reading-genius-loci"
+    - condition: "user wants relation-extraction from a diagram (what does the diagram assert about A→B→C)"
+      targets: [{"kind": "active", "id": "relationship-mapping"}, {"kind": "active", "id": "spatial-reasoning"}]
+      qualification: "relationship-mapping or spatial-reasoning (T11)"
+    - condition: "user wants statistical analysis of the underlying data rather than analysis of its encoding"
+      targets: [{"kind": "fallback", "id": "route-by-intent"}]
+      qualification: "other territory"
 when_not_to_invoke:
-  - "Input is not an information graphic (a painting, garden, room, raw data without visual encoding)" → other T19 modes or other territory
-  - "User wants the data analyzed (not its visual encoding evaluated)" → other territory
-  - "User wants pure aesthetic reading without prescriptive recommendation" → ma-reading or compositional-dynamics
-  - "User wants relation-extraction from a diagram qua notation" → T11
+  - condition: "Input is not an information graphic (a painting, garden, room, raw data without visual encoding)"
+    targets: [{"kind": "territory", "id": "T19"}]
+    qualification: "other T19 modes or other territory"
+  - condition: "User wants the data analyzed (not its visual encoding evaluated)"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "other territory"
+  - condition: "User wants pure aesthetic reading without prescriptive recommendation"
+    targets: [{"kind": "active", "id": "ma-reading"}, {"kind": "active", "id": "compositional-dynamics"}]
+    qualification: "ma-reading or compositional-dynamics"
+  - condition: "User wants relation-extraction from a diagram qua notation"
+    targets: [{"kind": "territory", "id": "T11"}]
+    qualification: "T11"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: constructive
+  posture: "constructive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -99,91 +117,136 @@ input_contract:
   detection:
     expert_signals: ["data-ink", "chartjunk", "Tufte", "Bertin", "visual variables", "Cleveland McGill", "elementary perceptual task", "Bringhurst", "Lupton", "small multiples", "sparkline"]
     accessible_signals: ["this chart isn't working", "critique this dashboard", "the typography on this page", "is this graphic clear"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you share the graphic (image or description) and tell me what message it's meant to communicate or what decision it's meant to support?'"
     on_underspecified: "Ask: 'Who is the intended audience, and what should they be able to read off the graphic at a glance vs. with sustained attention?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the analysis identified the elementary perceptual task the graphic requires (position-on-common-scale, nonaligned-position, length, angle, direction, area, volume, curvature, color/shading) and assessed whether the visual encoding supports that task at the accuracy the message demands? (Cleveland-McGill check.)"
-    failure_mode_if_unmet: elementary-task-mismatch-undiagnosed
-  - cq_id: CQ2
+    failure_mode_if_unmet: "elementary-task-mismatch-undiagnosed"
+  - cq_id: "CQ2"
     question: "Has the visual-variable-to-data-attribute mapping (Bertin: position, size, shape, value, color, orientation, texture × selective / associative / ordered / quantitative) been checked for fitness, or has the analysis assumed the encoding is appropriate without testing?"
-    failure_mode_if_unmet: bertin-mapping-unchecked
-  - cq_id: CQ3
+    failure_mode_if_unmet: "bertin-mapping-unchecked"
+  - cq_id: "CQ3"
     question: "Has data-ink ratio been audited specifically (which marks carry data; which carry decoration / structure / context; what could be removed without information loss), or has 'too much chartjunk' been asserted as a vague label?"
-    failure_mode_if_unmet: data-ink-as-slogan
-  - cq_id: CQ4
+    failure_mode_if_unmet: "data-ink-as-slogan"
+  - cq_id: "CQ4"
     question: "Has the typographic hierarchy and grid analysis (Bringhurst / Lupton: scale, weight, color, rhythm, measure, leading, grid alignment) been performed where the input includes typography, or skipped on the assumption that text is not part of the encoding?"
-    failure_mode_if_unmet: typography-as-not-encoding
-  - cq_id: CQ5
+    failure_mode_if_unmet: "typography-as-not-encoding"
+  - cq_id: "CQ5"
     question: "Are the prescriptive recommendations specific (which mark to change, which encoding to substitute, which element to remove, which hierarchy to strengthen), or are they general gestures (simplify, declutter, improve hierarchy) without specific changes?"
-    failure_mode_if_unmet: recommendations-as-gestures
-  - cq_id: CQ6
+    failure_mode_if_unmet: "recommendations-as-gestures"
+  - cq_id: "CQ6"
     question: "Have residual tradeoffs and constraints been acknowledged — situations where the prescriptive recommendation conflicts with brand / house-style / accessibility / data-honesty / audience-expectation constraints — rather than asserting recommendations as unconstrained?"
-    failure_mode_if_unmet: constraint-blindness
+    failure_mode_if_unmet: "constraint-blindness"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: elementary-task-mismatch-undiagnosed
+  - name: "elementary-task-mismatch-undiagnosed"
     detection_signal: "Analysis does not identify the elementary perceptual task the graphic requires; Cleveland-McGill ranking not applied; encoding-fitness for the task not assessed."
-    correction_protocol: re-dispatch
-  - name: bertin-mapping-unchecked
+    correction_protocol: "re-dispatch"
+  - name: "bertin-mapping-unchecked"
     detection_signal: "Visual-variable-to-data-attribute mapping not assessed for fitness (selective / associative / ordered / quantitative properties of the encoding vs. the data attribute it represents)."
-    correction_protocol: re-dispatch
-  - name: data-ink-as-slogan
+    correction_protocol: "re-dispatch"
+  - name: "data-ink-as-slogan"
     detection_signal: "Data-ink ratio invoked as a label (too much chartjunk; data-ink ratio is low) without auditing specific marks for which ones carry data vs. decoration vs. structure."
-    correction_protocol: re-dispatch
-  - name: typography-as-not-encoding
+    correction_protocol: "re-dispatch"
+  - name: "typography-as-not-encoding"
     detection_signal: "Input includes typography (chart labels, dashboard text, page layout) but typographic hierarchy and grid analysis not performed; text treated as carrier rather than as encoding."
-    correction_protocol: re-dispatch
-  - name: recommendations-as-gestures
+    correction_protocol: "re-dispatch"
+  - name: "recommendations-as-gestures"
     detection_signal: "Prescriptive recommendations are general (simplify, declutter, improve hierarchy) rather than specific (replace pie chart with horizontal bar; reduce gridline contrast to 30%; align number labels right; remove the 3D effect)."
-    correction_protocol: re-dispatch
-  - name: constraint-blindness
+    correction_protocol: "re-dispatch"
+  - name: "constraint-blindness"
     detection_signal: "Recommendations asserted without acknowledging brand / house-style / accessibility / data-honesty / audience-expectation constraints that may make some recommendations infeasible or undesirable."
-    correction_protocol: flag
-  - name: tufte-orthodoxy
+    correction_protocol: "flag"
+  - name: "tufte-orthodoxy"
     detection_signal: "Recommendations apply Tufte minimalism dogmatically (maximize data-ink, eliminate all decoration) without acknowledging contexts where minor redundancy / framing / annotation actively serves the audience or message."
-    correction_protocol: flag
-  - name: aesthetic-only-critique
+    correction_protocol: "flag"
+  - name: "aesthetic-only-critique"
     detection_signal: "Critique addresses aesthetic preferences (this chart looks ugly; this dashboard is busy) without grounding the critique in encoding-fitness or perceptual-task analysis."
-    correction_protocol: re-dispatch
-  - name: m5-promotion-evidence
+    correction_protocol: "re-dispatch"
+  - name: "m5-promotion-evidence"
     detection_signal: "Multiple recent invocations on info-graphic inputs encounter operations this mode handles awkwardly (specialty: dashboard-orchestration analysis; chart-type-selection deep dive; sparkline-and-small-multiples specialty); Reserved-M5 (Information-Graphic Visual-Hierarchy Analysis) promotion threshold approached per T19 reserved-M5 spec."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - tufte-data-ink-chartjunk
-    - bertin-visual-variables
-    - cleveland-mcgill-perceptual-tasks
-    - bringhurst-typographic-hierarchy
+  - tufte-data-ink-chartjunk
+  - bertin-visual-variables
+  - cleveland-mcgill-perceptual-tasks
+  - bringhurst-typographic-hierarchy
   optional:
-    - lupton-thinking-with-type (when typography is dominant in the input)
-    - few-information-dashboard-design (when input is a dashboard with multiple coordinated views)
-    - munzner-visualization-analysis-and-design (when chart-type selection requires task-data-encoding triple analysis)
-    - kosslyn-graph-design (when audience cognition / message-graphic alignment requires deeper treatment)
-    - wilkinson-grammar-of-graphics (when systematic chart-type comparison is needed)
+  - lens_id: lupton-thinking-with-type
+    qualification: when typography is dominant in the input
+  - lens_id: few-information-dashboard-design
+    qualification: when input is a dashboard with multiple coordinated views
+  - lens_id: munzner-visualization-analysis-and-design
+    qualification: when chart-type selection requires task-data-encoding triple analysis
+  - lens_id: kosslyn-graph-design
+    qualification: when audience cognition / message-graphic alignment requires deeper treatment
+  - lens_id: wilkinson-grammar-of-graphics
+    qualification: when systematic chart-type comparison is needed
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Information Density is the deepest applied-evaluative info-graphic mode in T19 at present. The Reserved-M5 mode (Information-Graphic Visual-Hierarchy Analysis specialty) is held against a promotion threshold per T19 reanalysis; promote when info-graphic critique workload exceeds ~15% of T19 invocations or when this mode visibly fails to distinguish encoding-misfit from generic compositional critique."
   sideways:
-    target_mode_id: compositional-dynamics
+    target: {"kind": "active", "id": "compositional-dynamics"}
     when: "On reflection the operative work is being done by general gestalt / Arnheim compositional forces rather than by data-encoding fitness; switch to universal-perceptual reading."
   downward:
-    target_mode_id: compositional-dynamics
+    target: {"kind": "active", "id": "compositional-dynamics"}
     when: "User wants only the universal compositional reading without prescriptive recommendation or encoding-fitness analysis."
 ```
+
+## Display Description
+
+Applies Tufte + Bertin + Cleveland-McGill + Bringhurst + Lupton to the information density and visual hierarchy of an artifact.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll audit the information density of this {artifact}"
+  signals:
+    - {"signal": "information density", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → applied-evaluative", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "visual hierarchy", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → applied-evaluative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Tufte", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → applied-evaluative", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "data-ink ratio", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "data-ink", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "chartjunk", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "small multiples", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "sparkline", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Bertin", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Bertin visual variables", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author + method reference"}
+    - {"signal": "visual variables", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "selective associative ordered quantitative", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "Cleveland-McGill perceptual tasks", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author + method reference"}
+    - {"signal": "Cleveland McGill", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "elementary perceptual tasks", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "graphical perception", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "typographic hierarchy", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Bringhurst", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Lupton", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "critique this chart", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "this dashboard isn't working", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (info-graphic critique)"}
+    - {"signal": "cleveland mcgill perceptual tasks", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "tufte data ink chartjunk", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "tufte data-ink and chartjunk", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 
