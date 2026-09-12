@@ -215,7 +215,7 @@ The graceful-degradation offer pairs the heavier mode (with its time-cost) again
 
 ### 3.5 Accept-and-resume path
 
-When the user supplies the missing input, Stage 3 re-runs the completeness check. When it passes, Stage 3 forwards to Stage 4. When the user opts for the lighter sibling, Stage 3 re-dispatches (returning to Stage 2's mode selection with the new mode_id) and re-runs Stage 3 against the new mode's contract.
+When the user supplies the missing input, Stage 3 re-runs the completeness check against the supplied text and actual answers, without counting presentation labels or inserted paragraph breaks as material. When it passes, Stage 3 forwards to Stage 4. When the user opts for the lighter sibling, Stage 3 re-dispatches (returning to Stage 2's mode selection with the new mode_id) and re-runs Stage 3 against the new mode's contract.
 
 **Output.**
 - `inputs_complete: true | false`

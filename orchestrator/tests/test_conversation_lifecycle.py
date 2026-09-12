@@ -2912,6 +2912,7 @@ class TestServerLifecycleWiring(unittest.TestCase):
         import socket
         import boot as runtime_boot
         import pipeline_health
+        from orchestrator import pipeline_trace
 
         server = self.server
         fresh_history = [{"role": "assistant", "content": "fresh history"}]
@@ -2923,8 +2924,6 @@ class TestServerLifecycleWiring(unittest.TestCase):
         }
         complete = {"inputs_complete": True, "missing_fields": [],
                     "completeness_question": None}
-        incomplete = {"inputs_complete": False, "missing_fields": ["subject"],
-                      "completeness_question": "Which subject should I examine?"}
         original_step1 = {
             "mode": "simple", "triage_tier": 2,
             "cleaned_prompt": "original", "operational_notation": "original",
@@ -2948,16 +2947,18 @@ class TestServerLifecycleWiring(unittest.TestCase):
             stack.enter_context(mock.patch.object(pipeline_health, "collect_and_clear", return_value=[]))
             stack.enter_context(mock.patch.object(pipeline_health, "format_warnings_as_chat_note", return_value=""))
 
-            def pause(panel):
+            def pause(panel, *, step1=None, user_input="original", raw_user_input=None,
+                      output_destination=""):
                 _write_envelope(root, panel, tag="private")
                 # Real /chat has already made a building placeholder before
                 # routing asks its question. Publication must complete it.
-                memory.begin_visual_outcome(panel, "original", tag="private")
+                memory.begin_visual_outcome(panel, user_input, tag="private")
                 with server._conversation_lifecycle_lock(panel):
                     pending = server._pause_clarification(
-                        panel, copy.deepcopy(original_step1), {}, [], "original",
-                        raw_user_input="original", images=None,
+                        panel, copy.deepcopy(step1 or original_step1), {}, [], user_input,
+                        raw_user_input=raw_user_input or user_input, images=None,
                         extra_context={"_framework_submission_id": "submission-" + panel,
+                                       "_clarification_output_destination": output_destination,
                                        "contributor_bundle": {"units": [{"content": "stale source"}]}},
                         config_name="paused-profile", model_id="paused-model",
                         conversation_tag="private", trace_ref=None)
@@ -2981,7 +2982,12 @@ class TestServerLifecycleWiring(unittest.TestCase):
             for skip in (False, True):
                 with self.subTest(skip=skip):
                     panel = "refresh-skip" if skip else "refresh-answer"
-                    pending = pause(panel)
+                    output_path = root / (panel + ".txt")
+                    output_destination = str(root / (panel + "-chunks"))
+                    command = "/save" if skip else "/saveboth"
+                    pending = pause(panel, raw_user_input=f"{command} {output_path} original",
+                                    output_destination=output_destination)
+                    expected_text = f"[Output written to {output_path}]" if skip else "complete"
                     lock = server._conversation_lifecycle_lock(panel)
                     payload = {"panel_id": panel, "conversation_id": panel,
                                "pending_id": pending["pending_id"]}
@@ -3016,6 +3022,8 @@ class TestServerLifecycleWiring(unittest.TestCase):
                         self.assertEqual((tag, kwargs["turn_privacy"], kwargs["model_id"]),
                                          ("private", "private", "paused-model"))
                         self.assertEqual(user_input, "[Clarification skipped]" if skip else "detail")
+                        self.assertEqual(text, expected_text)
+                        self.assertEqual(kwargs["output_destination"], output_destination)
                         writes.append("chunk")
                         return "chunk-" + panel
 
@@ -3033,6 +3041,8 @@ class TestServerLifecycleWiring(unittest.TestCase):
                         mock.patch.object(server, "_run_pipeline_from_step2", side_effect=execute),
                         mock.patch.object(server, "_save_conversation", side_effect=save),
                         mock.patch.object(server, "_persist_turn_spatial_state_unlocked", side_effect=append),
+                        mock.patch.object(runtime_boot, "PIPELINE_TRACE_AVAILABLE", True),
+                        mock.patch.object(pipeline_trace, "start_trace", side_effect=RuntimeError("trace unavailable")),
                     ):
                         client = server.app.test_client()
                         restored = client.get("/api/clarification/pending", query_string={"conversation_id": panel}).get_json()
@@ -3045,18 +3055,33 @@ class TestServerLifecycleWiring(unittest.TestCase):
                         with mock.patch.object(memory, "update_pending_clarification", return_value=None):
                             self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
                         self.assertFalse(calls, "failed claim must never begin analysis")
+                        with mock.patch.object(server, "route_output", side_effect=OSError("destination unavailable")):
+                            self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
+                        self.assertFalse(output_path.exists())
+                        self.assertFalse(writes, "file-routing failure must retain the generated result before chunk save")
                         with mock.patch.object(server, "_save_conversation", return_value=None):
                             self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
                         self.assertEqual(len(calls), 1)
+                        self.assertEqual(output_path.read_text(), "complete")
+                        # Reopening after a failed save exposes the exact claim.
+                        server._pending_clarification.clear()
+                        restored = client.get("/api/clarification/pending", query_string={"conversation_id": panel}).get_json()
+                        self.assertEqual(restored["state"], "ready")
+                        self.assertEqual(restored["action"], "skip" if skip else "answer")
+                        self.assertEqual(restored["answers"], "" if skip else "detail")
+                        self.assertTrue(restored["retryable"])
+                        self.assertEqual(events(client.post(route, json={**payload, "answers": "changed"}))[-1]["type"], "error")
+                        retry_payload = {"conversation_id": panel, "pending_id": restored["pending_id"],
+                                         "answers": restored["answers"]}
                         # A failed envelope save leaves the successful result and
                         # chunk acknowledged in the existing pending authority.
                         with mock.patch.object(server, "_persist_turn_spatial_state_unlocked", return_value=None):
-                            failed = events(client.post(route, json=payload))
+                            failed = events(client.post(route, json=retry_payload))
                         self.assertEqual([event["type"] for event in failed], ["error"])
                         self.assertEqual(len(calls), 1)
                         server._pending_clarification.clear()
                         with mock.patch.object(memory, "update_pending_clarification", wraps=memory.update_pending_clarification) as writer:
-                            result = events(client.post(route, json=payload))
+                            result = events(client.post(route, json=retry_payload))
                             self.assertIsNone(writer.call_args.args[1], "pending completion must follow envelope ack")
                         self.assertEqual([event["type"] for event in result], ["response", "done"])
                         self.assertEqual(writes, ["chunk", "envelope"])
@@ -3064,25 +3089,54 @@ class TestServerLifecycleWiring(unittest.TestCase):
                         durable = memory.load_conversation_json(panel)
                         self.assertNotIn("pending_clarification", durable)
                         self.assertEqual(len(durable["messages"]), 4)
+                        self.assertEqual(durable["messages"][-1]["content"], expected_text)
                         self.assertEqual(durable["messages"][-2]["content"], "[Clarification skipped]" if skip else "detail")
                         self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
                         self.assertEqual(len(calls), 1, "replay must not execute")
 
             panel = "still-incomplete"
-            pending = pause(panel)
-            payload = {"conversation_id": panel, "pending_id": pending["pending_id"], "answers": "unsure"}
+            original_input = "Check this argument"
+            real_check = runtime_boot.stage3_input_completeness_check
+            missing = real_check("argument-audit", original_input, {})
+            audit_step1 = {**original_step1, "mode": "argument-audit",
+                          "cleaned_prompt": original_input, "operational_notation": original_input,
+                          "pre_routing": {**original_step1["pre_routing"],
+                                          "dispatched_mode_id": "argument-audit",
+                                          "stage3_output": missing,
+                                          "pending_clarification": missing["completeness_question"],
+                                          "lighter_sibling_mode_id": missing["lighter_sibling_mode_id"]}}
+            pending = pause(panel, step1=audit_step1, user_input=original_input)
+            payload = {"conversation_id": panel, "pending_id": pending["pending_id"], "answers": "I do not have it"}
             with (mock.patch.object(server, "_authoritative_dialogue_history", return_value=(fresh_history, {})),
                   mock.patch.object(server, "build_contributor_bundle", return_value=fresh_bundle),
-                  mock.patch.object(server, "stage3_input_completeness_check", return_value=incomplete) as check,
-                  mock.patch.object(server, "_run_pipeline_from_step2") as execute):
+                  mock.patch.object(server, "stage3_input_completeness_check", wraps=real_check) as check,
+                  mock.patch.object(server, "_run_pipeline_from_step2") as execute,
+                  mock.patch.object(server, "_save_conversation", return_value="supplied-argument-chunk")):
                 result = events(server.app.test_client().post("/api/clarification", json=payload))
                 self.assertEqual(result[0]["type"], "clarification_needed")
                 self.assertNotEqual(result[0]["pending_id"], pending["pending_id"])
-                self.assertEqual(result[0]["question"], incomplete["completeness_question"])
-                self.assertIn("unsure", check.call_args.args[1])
+                self.assertIn(missing["completeness_question"], result[0]["question"])
+                self.assertEqual(check.call_args.args[1], "Check this argument\nI do not have it")
                 execute.assert_not_called()
-                self.assertEqual(memory.load_conversation_json(panel)["messages"][-2]["content"], "unsure")
+                self.assertEqual(memory.load_conversation_json(panel)["messages"][-2]["content"], "I do not have it")
                 self.assertEqual(events(server.app.test_client().post("/api/clarification", json=payload))[-1]["type"], "error")
+                # A lighter choice remains selected, but cannot fabricate its
+                # own missing artifact from the display paragraphs either.
+                payload.update(pending_id=result[0]["pending_id"], answers="Use the lighter Coherence Audit")
+                result = events(server.app.test_client().post("/api/clarification", json=payload))
+                self.assertEqual(result[0]["type"], "clarification_needed")
+                self.assertEqual(result[0]["mode"], "coherence-audit")
+                execute.assert_not_called()
+                # Real multi-paragraph source text still satisfies the same
+                # detector and resumes the chosen sibling exactly once.
+                argument = "The proposed park will provide shade and reduce summer heat.\n\nResidents need a public place to gather, so the city should fund the park."
+                payload.update(pending_id=result[0]["pending_id"], answers=argument)
+                execute.return_value = iter([server._sse("response", text="audited")])
+                result = events(server.app.test_client().post("/api/clarification", json=payload))
+                self.assertEqual(result[-1]["type"], "done", result)
+                self.assertEqual(execute.call_args.args[0]["mode"], "coherence-audit")
+                self.assertEqual(execute.call_count, 1)
+                self.assertEqual(memory.load_conversation_json(panel)["messages"][-2]["content"], argument)
 
             # A Stage-2 answer resolves the exact saved canonical question;
             # changed fresh history cannot classify it as a different inquiry.

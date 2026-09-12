@@ -2130,6 +2130,9 @@ def _public_clarification(pending):
         "mode": pending["step1"].get("mode"),
         "tier": pending["step1"].get("triage_tier"),
         "pre_routing_stage": route.get("pending_clarification_stage"),
+        "state": pending.get("state", "awaiting"),
+        "action": pending.get("action"), "answers": pending.get("answer", ""),
+        "retryable": pending.get("state") != "running",
     }
 
 
@@ -2150,6 +2153,8 @@ def _pause_clarification(panel_id, step1, config, history, user_input, *,
             "images": images, "extra_context": extra_context,
             "submission_id": (extra_context or {}).get("_framework_submission_id"),
             "trace_ref": trace_ref,
+            "output_target": effective_framework_dispatch(raw_user_input).output_target,
+            "output_destination": (extra_context or {}).get("_clarification_output_destination", ""),
             "message_count": len(envelope["messages"]) + 2,
             "runtime_snapshot": _clarification_snapshot(config_name),
             **_capture_clarification_authority(
@@ -8307,6 +8312,8 @@ def _invoke_pipeline_unlocked(user_input, history, panel_id, is_main, images=Non
     clean_input = dispatch.effective_input
     use_pipeline = dispatch.use_pipeline
     output_target = dispatch.output_target
+    extra_context = dict(extra_context or {})
+    extra_context["_clarification_output_destination"] = output_destination
     style_override = (
         {"style_id": dispatch.style_id} if dispatch.style_was_set else None
     )
@@ -20236,10 +20243,15 @@ def _refresh_clarification_dialogue_context(
 def _clarification_route(pending, answer, *, skip=False, context=None):
     """Use the saved Phase-B question/selection, then recheck actual inputs."""
     import copy
-    from boot import run_pre_routing_pipeline
+    from boot import (run_pre_routing_pipeline, _explicit_mode_matches,
+                      _signal_present, _is_negated, _dispatch_targets)
     step1 = copy.deepcopy(pending["step1"])
     prior = step1.get("pre_routing") or {}
     prompt = step1.get("operational_notation") or pending["user_input"]
+    # Presentation labels and paragraph separators are not supplied material.
+    # Retain the original user text and actual answers for input validation.
+    supplied = step1.get("clarification_input_content", pending["user_input"])
+    supplied = f"{supplied.rstrip()}\n{answer.lstrip()}"
     enriched = f"{prompt}\n\n[User clarification]\n{answer}"
     if skip:
         # Skip authorizes a plain response using what is known, never an
@@ -20251,16 +20263,41 @@ def _clarification_route(pending, answer, *, skip=False, context=None):
         }
         enriched = f"{prompt}\n\n[Clarification skipped: respond using only the available information.]"
     elif prior.get("pending_clarification_stage") == "stage3":
-        selected = prior.get("dispatched_mode_ids") or [step1["mode"]]
-        checks = {mode: stage3_input_completeness_check(mode, enriched, context or {})
+        selected = list(prior.get("dispatched_mode_ids") or [step1["mode"]])
+        offered_mode = next((mode for mode in selected
+                             if not (prior.get("stage3_outputs", {}).get(mode) or
+                                     prior.get("stage3_output") or {}).get("inputs_complete")),
+                            selected[0])
+        sources = load_routing_sources()
+        siblings = sources["modes"][offered_mode]["lighter_siblings"]
+        choices = _explicit_mode_matches(answer, [signal for signal in sources["signals"]
+            if signal["mode"] in siblings and _signal_present(answer, signal["signal"])
+            and not _is_negated(answer, signal["signal"])])
+        chosen = list(dict.fromkeys(choice["mode"] for choice in choices))
+        offered_sibling = prior.get("lighter_sibling_mode_id")
+        if (not chosen and offered_sibling in siblings
+                and _signal_present(answer, "lighter") and not _is_negated(answer, "lighter")):
+            chosen = [offered_sibling]
+        if len(chosen) == 1 and not re.search(r"\bor\b", answer, re.I):
+            selected = list(dict.fromkeys(chosen[0] if mode == offered_mode else mode
+                                          for mode in selected))
+        checks = {mode: stage3_input_completeness_check(mode, supplied, context or {})
                   for mode in selected}
         incomplete = next((item for item in checks.values() if not item["inputs_complete"]), None)
         route = dict(prior)
+        if selected != (prior.get("dispatched_mode_ids") or [step1["mode"]]):
+            dispatch = _dispatch_targets([{"kind": "active", "id": mode} for mode in selected],
+                                         supplied, context or {})
+            route.update({"stage2_output": dispatch, "territory": dispatch["territory"]})
         route.update({"stage3_outputs": checks,
+                      "dispatched_mode_id": selected[0], "dispatched_mode_ids": selected,
                       "stage3_output": incomplete or checks[selected[0]],
                       "pending_clarification": None,
                       "pending_clarification_stage": None,
                       "completeness_gaps": [],
+                      "lighter_sibling_mode_id": (incomplete or {}).get("lighter_sibling_mode_id"),
+                      "dispatch_announcement": (None if incomplete else
+                                                compose_dispatch_announcement(selected[0], supplied)),
                       "manual_clarification_answered": bool(prior.get("manual_override_applied"))})
         if incomplete:
             question = incomplete["completeness_question"]
@@ -20271,7 +20308,7 @@ def _clarification_route(pending, answer, *, skip=False, context=None):
                           "completeness_gaps": incomplete.get("missing_fields", [])})
     else:
         route = run_pre_routing_pipeline(
-            prompt, context=context or {}, disambiguation_answer=answer,
+            supplied, context=context or {}, disambiguation_answer=answer,
             prior_routing=prior,
         )
     step1["pre_routing"] = route
@@ -20279,6 +20316,7 @@ def _clarification_route(pending, answer, *, skip=False, context=None):
         "simple" if route.get("bypass_to_direct_response") else step1.get("mode"))
     step1["cleaned_prompt"] = enriched
     step1["operational_notation"] = enriched
+    step1["clarification_input_content"] = supplied
     return step1
 
 
@@ -20305,6 +20343,8 @@ def _continue_clarification(pending, answer, *, skip=False):
                            "step1": step1, "question": question,
                            "message_count": pending["message_count"] + 2,
                            "state": "awaiting"}
+            replacement.pop("action", None)
+            replacement.pop("answer", None)
             _write_pending_clarification(replacement, expected_id=identity,
                                          exchange=(answer, question))
             yield _sse("clarification_needed", **_public_clarification(replacement))
@@ -20329,6 +20369,9 @@ def _continue_clarification(pending, answer, *, skip=False):
                     ambiguity_mode="assume", stealth=(tag == "stealth"), conversation_tag=tag)
                 trace_ref = pipeline_trace.trace_ref_for_dir(trace_dir)
                 turn_state["trace_dir"] = trace_dir
+        except Exception as exc:
+            print(f"[clarification] trace initialization failed (non-fatal): {exc}", flush=True)
+        try:
             final_response = None
             with _conversation_turn_context(panel_id, tag, trace_dir=trace_dir, exact_tag=True):
                 for chunk in _run_pipeline_from_step2(
@@ -20374,12 +20417,18 @@ def _continue_clarification(pending, answer, *, skip=False):
                     print(f"[clarification] trace finalization failed: {exc}", flush=True)
     # A retry begins here when generation succeeded but a later save failed.
     _write_pending_clarification(pending, expected_id=identity)
+    output_target = pending.get("output_target", "screen")
+    if output_target != "screen" and not pending.get("output_routed"):
+        pending["result"] = route_output(pending["result"], output_target)
+        pending["output_routed"] = True
+        _write_pending_clarification(pending, expected_id=identity)
     text = pending["result"]
     user_input = pending["resumed_input"]
     chunk_id = pending.get("chunk_id")
     if not chunk_id:
         chunk_id = _save_conversation(
             user_input, text, panel_id, False, tag,
+            output_destination=pending.get("output_destination", ""),
             trace_ref=pending.get("resume_trace_ref"),
             model_id=authority["model_id"], turn_privacy=authority["turn_privacy"],
             save_id=identity)

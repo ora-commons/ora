@@ -2302,18 +2302,35 @@
       clarificationAnswer.value = '';
       return;
     }
+    const claimed = !!pending.action;
+    const interrupted = pending.state === 'running' || !pending.retryable;
     clarificationQuestion.textContent = pending.question;
-    if (renderedClarificationId !== pending.pending_id) {
+    if (claimed || renderedClarificationId !== pending.pending_id) {
       clarificationAnswer.value = pending.answer;
       renderedClarificationId = pending.pending_id;
     }
+    clarificationAnswer.readOnly = claimed || interrupted;
+    clarificationAnswer.placeholder = pending.action === 'skip' ? 'Skipped' : 'Your answer';
     clarificationAnswer.disabled = pending.busy || blocked;
-    clarificationAnswerButton.disabled = pending.busy || blocked || !pending.answer.trim();
-    clarificationSkipButton.disabled = pending.busy || blocked;
+    clarificationAnswerButton.textContent = claimed ? 'Retry' : 'Answer';
+    clarificationAnswerButton.hidden = interrupted;
+    clarificationAnswerButton.disabled = pending.busy || blocked || interrupted
+      || (pending.action !== 'skip' && !pending.answer.trim());
+    clarificationSkipButton.hidden = claimed || interrupted;
+    clarificationSkipButton.disabled = pending.busy || blocked || claimed || interrupted;
     clarificationForm.setAttribute('aria-busy', pending.busy ? 'true' : 'false');
-    clarificationStatus.textContent = pending.status || (blocked
-      ? inquiryMutationBlockMessage()
-      : 'Answer this question, or skip it and let Ora continue with the available information.');
+    const guidance = interrupted
+      ? 'The continuation was interrupted before its result was available. Retry is unavailable.'
+      : pending.action === 'skip'
+        ? 'You chose Skip. Retry will repeat that same choice.'
+        : claimed
+          ? 'Retry will continue with this same answer.'
+          : 'Answer this question, or skip it and let Ora continue with the available information.';
+    clarificationStatus.textContent = pending.busy
+      ? 'Continuing… Waiting for Ora to save the result.'
+      : blocked
+        ? inquiryMutationBlockMessage()
+        : [pending.status, guidance].filter(Boolean).join(' ');
   };
 
   const acceptClarification = (data) => {
@@ -2323,6 +2340,8 @@
       typeof item === 'string' ? item : (item && item.question) || ''
     )).filter(Boolean).join('\n\n');
     if (!question) return false;
+    const action = data.action === 'answer' || data.action === 'skip' ? data.action : '';
+    if (action && typeof data.answers !== 'string') return false;
     const previous = pendingClarifications.get(data.conversation_id);
     const sameQuestion = previous && previous.pending_id === data.pending_id;
     pendingClarifications.set(data.conversation_id, {
@@ -2330,7 +2349,10 @@
       conversation_id: data.conversation_id,
       pending_id: data.pending_id,
       question,
-      answer: sameQuestion ? previous.answer : '',
+      state: data.state || 'awaiting',
+      action,
+      retryable: data.retryable !== false,
+      answer: action ? data.answers : sameQuestion ? previous.answer : '',
       busy: sameQuestion ? previous.busy : false,
       status: sameQuestion ? previous.status : '',
     });
@@ -2365,7 +2387,7 @@
       console.warn('[clarification]', error);
       const pending = pendingClarifications.get(conversationId);
       if (pending) {
-        pending.status = error.message + ' Your answer is kept; use Answer or Skip to retry.';
+        pending.status = error.message;
         renderClarification();
       }
     }
@@ -2374,9 +2396,15 @@
   const submitClarification = async (skip) => {
     const pending = pendingClarifications.get(currentConversationId());
     if (!pending || pending.busy || inquiryMutationBlockMessage()
-        || (!skip && !pending.answer.trim())) return;
+        || pending.state === 'running' || !pending.retryable) return;
+    const action = pending.action || (skip ? 'skip' : 'answer');
+    if (action === 'answer' && !pending.answer.trim()) return;
+    // Retain the exact submitted choice if both this request and refresh fail.
+    // A successful refresh replaces it with the server's authoritative claim.
+    if (!pending.action && action === 'skip') pending.answer = '';
+    pending.action = action;
     pending.busy = true;
-    pending.status = 'Continuing… Waiting for Ora to save the result.';
+    pending.status = '';
     clarificationRefreshRevision += 1;
     renderClarification();
     let acknowledged = false;
@@ -2386,9 +2414,9 @@
         panel_id: pending.panel_id,
         conversation_id: pending.conversation_id,
         pending_id: pending.pending_id,
+        answers: pending.answer,
       };
-      if (!skip) body.answers = pending.answer;
-      const response = await fetch(skip ? '/api/clarification/skip' : '/api/clarification', {
+      const response = await fetch(action === 'skip' ? '/api/clarification/skip' : '/api/clarification', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
@@ -2446,8 +2474,7 @@
     } catch (error) {
       const current = pendingClarifications.get(pending.conversation_id);
       if (current && current.pending_id === pending.pending_id) {
-        current.status = (error.message || String(error))
-          + ' Your answer is kept; use Answer or Skip to retry.';
+        current.status = error.message || String(error);
       }
       console.warn('[clarification]', error);
       if (currentConversationId() === pending.conversation_id) await refreshClarification();
@@ -2464,7 +2491,9 @@
 
   clarificationAnswer.addEventListener('input', () => {
     const pending = pendingClarifications.get(currentConversationId());
-    if (pending && pending.pending_id === renderedClarificationId) {
+    if (pending && pending.pending_id === renderedClarificationId
+        && !pending.action && !pending.busy && pending.retryable
+        && pending.state !== 'running') {
       pending.answer = clarificationAnswer.value;
       renderClarification();
     }
