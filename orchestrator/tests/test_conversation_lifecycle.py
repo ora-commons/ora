@@ -3212,19 +3212,56 @@ class TestServerLifecycleWiring(unittest.TestCase):
                 self.assertEqual(sorted(result[-1]["type"] for result in results), ["done", "error"])
                 self.assertEqual(len(memory.load_conversation_json(panel)["messages"]), 4)
 
-            # The real chunk writer reuses an acknowledged deterministic
-            # identity if its return value was lost, without a second pair.
+            # A failed real chunk write must not duplicate the raw exchange,
+            # including after the process caches are lost before retry.
+            from orchestrator.vault_export import _parse_raw_session_log
+            from orchestrator.historical.parser import parse_live_ora
+
             panel = "chunk-save-retry"
             _write_envelope(root, panel, tag="stealth")
             with (mock.patch.object(server, "CONVERSATIONS_DIR", str(root / "chunks")),
                   mock.patch.object(server, "CONVERSATIONS_RAW", str(root / "raw")),
                   mock.patch.object(server, "_generate_chunk_metadata", return_value=("context", []))):
                 kwargs = {"tag": "stealth", "model_id": "paused-model", "turn_privacy": "stealth", "save_id": "a" * 32}
+                server._write_pending_clarification({
+                    "conversation_id": panel, "pending_id": kwargs["save_id"],
+                    "resumed_input": "answer", "result": "result", "turn_privacy": "stealth",
+                }, expected_id=None)
+                real_atomic_write = server.rp.atomic_write_text
+
+                def fail_chunk(path, content, **write_kwargs):
+                    if Path(path).parent == root / "chunks":
+                        raise OSError("chunk disk full")
+                    return real_atomic_write(path, content, **write_kwargs)
+
+                with mock.patch.object(server.rp, "atomic_write_text", side_effect=fail_chunk):
+                    with self.assertRaisesRegex(OSError, "chunk disk full"):
+                        server._save_conversation("answer", "result", panel, False, **kwargs)
+                self.assertFalse(list((root / "chunks").glob("*.md")))
+                raw_path = next((root / "raw").glob("*.md"))
+                raw_before_retry = raw_path.read_text()
+                server._session_data.pop(panel, None)
+                server._pending_clarification.clear()
                 first_id = server._save_conversation("answer", "result", panel, False, **kwargs)
                 second_id = server._save_conversation("answer", "result", panel, False, **kwargs)
                 self.assertEqual(first_id, second_id)
                 self.assertEqual(len(list((root / "chunks").glob("*.md"))), 1)
-                self.assertEqual(next((root / "raw").glob("*.md")).read_text().count("**User:**"), 1)
+                self.assertEqual(list((root / "raw").glob("*.md")), [raw_path])
+                self.assertEqual(raw_path.read_text(), raw_before_retry)
+                expected = [("user", "answer"), ("assistant", "result")]
+                self.assertEqual([(m["role"], m["content"]) for m in _parse_raw_session_log(raw_path.read_text())], expected)
+                self.assertEqual([(t.role, t.content) for t in parse_live_ora(raw_path.read_text()).turns], expected)
+                # Ordinary identical exchanges remain separate following retry.
+                memory.update_pending_clarification(panel, None, expected_id=kwargs["save_id"])
+                server._pending_clarification.clear()
+                ordinary = {key: value for key, value in kwargs.items() if key != "save_id"}
+                for _ in range(2):
+                    server._save_conversation("ordinary", "repeat", panel, False, **ordinary)
+                expected += [("user", "ordinary"), ("assistant", "repeat")] * 2
+                exported = _parse_raw_session_log(raw_path.read_text())
+                self.assertEqual([(m["role"], m["content"]) for m in exported], expected)
+                self.assertEqual([m["pair"] for m in exported], [1, 1, 2, 2, 3, 3])
+                self.assertEqual([(t.role, t.content) for t in parse_live_ora(raw_path.read_text()).turns], expected)
             server._pending_clarification.clear()
 
     def test_zero_turn_close_blocks_late_artifact_creation(self):

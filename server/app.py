@@ -7538,6 +7538,7 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
     # envelope's independent composer tag is deliberately not copied here.
     tag = artifact_tag
     chunk_dir = _resolve_chunk_destination(output_destination)
+    raw_save = None
     if save_id is not None:
         if not re.fullmatch(r"[a-f0-9]{32}", save_id):
             raise ValueError("Invalid clarification save identity")
@@ -7551,6 +7552,13 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
                     and f"<!-- ora-turn-privacy: {json.dumps(turn_privacy)} -->" in content):
                 return saved_chunk_id
             raise ValueError("Clarification save identity conflicts with its chunk")
+        pending = _load_pending_clarification(panel_id)
+        if (not pending or pending.get("pending_id") != save_id
+                or pending.get("resumed_input") != user_input
+                or pending.get("result") != ai_response
+                or pending.get("turn_privacy") != turn_privacy):
+            raise ValueError("Clarification save identity conflicts with its pending exchange")
+        raw_save = pending.get("raw_save")
     os.makedirs(CONVERSATIONS_RAW, exist_ok=True)
     os.makedirs(chunk_dir, exist_ok=True)
 
@@ -7566,7 +7574,11 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
         model_id = endpoint.get("name") or endpoint.get("id") or "unknown"
 
     # ── Init session on first pair ────────────────────────────────────────────
-    if is_new_session or panel_id not in _session_data:
+    if raw_save:
+        # Restore the same reserved pair even after process-cache loss.
+        _session_data[panel_id] = dict(raw_save["session"])
+        ts_str = raw_save["timestamp"]
+    elif is_new_session or panel_id not in _session_data:
         session_id   = uuid.uuid4().hex
         raw_name     = (
             f"{date_str}_{time_str}_session-{session_id}_"
@@ -7597,30 +7609,51 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
         sess["first_user_input"] = user_input
     sess.setdefault("prior_topic", None)
     sess.setdefault("thread_counter", 0)
-    sess["pair_count"] += 1
+    if not raw_save:
+        sess["pair_count"] += 1
     pair_num   = sess["pair_count"]
     session_id = sess["session_id"]
 
     # ── Step 1: Append to raw session log ────────────────────────────────────
-    is_new_file = not os.path.exists(sess["raw_path"])
-    with open(sess["raw_path"], "a", encoding="utf-8") as f:
-        if is_new_file:
-            f.write(
-                f"# Session {session_id}\n\n"
-                f"session_start: {sess['start']}\n"
-                f"panel_id: {panel_id}\n"
-                f"model: {sess['model']}\n"
-                f"source_platform: local\n"
-                f"tag: {tag}\n"
-                f"tag_private: {'true' if tag == 'private' else 'false'}\n\n"
-                f"---\n"
-            )
-        f.write(
-            f"\n<!-- pair {pair_num:03d} | {ts_str} | privacy: {turn_privacy} -->\n\n"
-            f"**User:** {user_input}\n\n"
-            f"**Assistant:** {ai_response}\n\n"
+    raw_path = sess["raw_path"]
+    is_new_file = not os.path.exists(raw_path)
+    if save_id is not None:
+        raw_content = "" if is_new_file else Path(raw_path).read_text(encoding="utf-8")
+        if not raw_save:
+            raw_save = {"session": dict(sess), "timestamp": ts_str,
+                        "position": len(raw_content), "new_file": is_new_file}
+            pending["raw_save"] = raw_save
+        # Persist the target and position before any raw mutation. Retrying
+        # also acknowledges a checkpoint that previously failed to reach disk.
+        _write_pending_clarification(pending, expected_id=save_id)
+        is_new_file = raw_save["new_file"]
+    raw_entry = ""
+    if is_new_file:
+        raw_entry = (
+            f"# Session {session_id}\n\n"
+            f"session_start: {sess['start']}\n"
+            f"panel_id: {panel_id}\n"
+            f"model: {sess['model']}\n"
+            f"source_platform: local\n"
+            f"tag: {tag}\n"
+            f"tag_private: {'true' if tag == 'private' else 'false'}\n\n"
             f"---\n"
         )
+    raw_entry += (
+        f"\n<!-- pair {pair_num:03d} | {ts_str} | privacy: {turn_privacy} -->\n\n"
+        f"**User:** {user_input}\n\n"
+        f"**Assistant:** {ai_response}\n\n"
+        f"---\n"
+    )
+    if save_id is not None:
+        position = raw_save["position"]
+        if len(raw_content) == position:
+            rp.atomic_write_text(raw_path, raw_content + raw_entry)
+        elif raw_content[position:] != raw_entry:
+            raise ValueError("Clarification save identity conflicts with its raw exchange")
+    else:
+        with open(raw_path, "a", encoding="utf-8") as f:
+            f.write(raw_entry)
 
     # ── Step 2: Write processed chunk file (Schema §12 chunk template) ──────
     # Generate contextual header and topic tags via sidebar model (per spec).
