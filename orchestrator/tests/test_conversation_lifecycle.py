@@ -2910,9 +2910,10 @@ class TestServerLifecycleWiring(unittest.TestCase):
     def test_clarification_resume_and_skip_refresh_history_and_contributors_under_lock(self):
         import copy
         import socket
+        import chromadb
         import boot as runtime_boot
         import pipeline_health
-        from orchestrator import pipeline_trace
+        from orchestrator import embedding, pipeline_trace
 
         server = self.server
         fresh_history = [{"role": "assistant", "content": "fresh history"}]
@@ -2939,6 +2940,21 @@ class TestServerLifecycleWiring(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as td, contextlib.ExitStack() as stack:
             root = Path(td)
+            collection = _FakeCollection([])
+
+            def index_pair(*, ids, documents, metadatas, **_kwargs):
+                for row_id, document, metadata in zip(ids, documents, metadatas):
+                    collection.rows[row_id] = {"document": document, "metadata": dict(metadata)}
+
+            collection.add = index_pair
+            stack.enter_context(mock.patch.object(server, "CONVERSATIONS_DIR", str(root / "questions")))
+            stack.enter_context(mock.patch.object(server, "CONVERSATIONS_RAW", str(root / "question-raw")))
+            stack.enter_context(mock.patch.object(server.rp, "DATA_DIR_STR", str(root / "data")))
+            stack.enter_context(mock.patch.object(closeout._rp, "DATA_DIR_STR", str(root / "data")))
+            stack.enter_context(mock.patch.object(server, "_generate_chunk_metadata", return_value=("context", [])))
+            stack.enter_context(mock.patch.object(server, "_nomic_embed", return_value=[0.1]))
+            stack.enter_context(mock.patch.object(chromadb, "PersistentClient", return_value=object()))
+            stack.enter_context(mock.patch.object(embedding, "get_or_create_collection", return_value=collection))
             stack.enter_context(mock.patch.object(memory, "_DEFAULT_SESSIONS_ROOT", root))
             stack.enter_context(mock.patch.object(socket.socket, "connect", side_effect=AssertionError("network forbidden")))
             stack.enter_context(mock.patch.object(runtime_boot, "PIPELINE_TRACE_AVAILABLE", False))
@@ -3094,6 +3110,93 @@ class TestServerLifecycleWiring(unittest.TestCase):
                         self.assertEqual(durable["messages"][-2]["content"], "[Clarification skipped]" if skip else "detail")
                         self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
                         self.assertEqual(len(calls), 1, "replay must not execute")
+
+            # Questions and their completed answers are real owned exchanges.
+            # Forks and privacy changes must keep their exact local turn order,
+            # including a re-pause and ordinary chat after cache loss.
+            panel = "clarification-identity"
+            real_atomic_write = server.rp.atomic_write_text
+
+            def fail_question(path, content, **write_kwargs):
+                if Path(path).parent == root / "questions":
+                    raise OSError("question disk full")
+                return real_atomic_write(path, content, **write_kwargs)
+
+            with mock.patch.object(server.rp, "atomic_write_text", side_effect=fail_question):
+                with self.assertRaisesRegex(OSError, "question disk full"):
+                    pause(panel)
+            pending = memory.load_conversation_json(panel)["pending_clarification"]
+            server._session_data.pop(panel, None)
+            server._pending_clarification.clear()
+            payload = {"conversation_id": panel, "pending_id": pending["pending_id"], "answers": "more context"}
+            with (mock.patch.object(server, "_authoritative_dialogue_history", return_value=(fresh_history, {})),
+                  mock.patch.object(server, "build_contributor_bundle", return_value=fresh_bundle),
+                  mock.patch.object(server, "stage3_input_completeness_check", return_value={
+                      **complete, "inputs_complete": False, "completeness_question": "Which passage?"}) as check,
+                  mock.patch.object(server, "_run_pipeline_from_step2") as execute):
+                result = events(server.app.test_client().post("/api/clarification", json=payload))
+                self.assertEqual(result[-1]["type"], "clarification_needed", result)
+                payload.update(pending_id=result[-1]["pending_id"], answers="the actual passage")
+                # Retagging an earlier question in this chain must not let its
+                # cached text continue under stale authority after a re-pause.
+                memory.set_conversation_turn_privacy(panel, 1, "standard")
+                self.assertIn("privacy changed", events(server.app.test_client().post(
+                    "/api/clarification", json=payload))[-1]["text"])
+                execute.assert_not_called()
+                memory.set_conversation_turn_privacy(panel, 1, "private")
+                server._session_data.pop(panel, None)
+                server._pending_clarification.clear()
+                check.return_value = complete
+                execute.return_value = iter([server._sse("response", text="completed analysis")])
+                result = events(server.app.test_client().post("/api/clarification", json=payload))
+                self.assertEqual(result[-1]["type"], "done", result)
+                self.assertEqual(execute.call_count, 1)
+            server._session_data.pop(panel, None)
+            ordinary_chunk = server._save_conversation("next inquiry", "next result", panel, False,
+                                                       tag="private", model_id="paused-model")
+            memory.save_turn_spatial_state(panel, "next inquiry", "next result", tag="private", chunk_id=ordinary_chunk)
+            durable = memory.load_conversation_json(panel)
+            self.assertEqual([message["turn_index"] for message in durable["messages"]], [1, 1, 2, 2, 3, 3, 4, 4])
+            for boundary in (0, 2, 3):
+                child = panel + "-fork-" + str(boundary)
+                self.assertIsNotNone(memory.fork_conversation(panel, child, fork_point_turn_index=boundary))
+                inherited = memory.resolve_effective_conversation_history(child)
+                self.assertEqual([message["content"] for message in inherited],
+                                 [message["content"] for message in durable["messages"][:(boundary + 1) * 2]])
+            with (mock.patch.object(closeout, "_open_conversations_collections", return_value=[("conversations", collection)]),
+                  mock.patch.object(closeout, "_open_knowledge_collections", return_value=[("knowledge", _FakeCollection([]))])):
+                changed = closeout.update_conversation_turn_privacy(
+                    panel, 3, "standard", sessions_root=root,
+                    conversations_dir=root / "questions", vault_root=root / "vault")
+                # The retried initial question also keeps exactly one manifest
+                # owner and raw pair, so its privacy can propagate normally.
+                for privacy in ("standard", "private"):
+                    question_change = closeout.update_conversation_turn_privacy(
+                        panel, 1, privacy, sessions_root=root,
+                        conversations_dir=root / "questions", vault_root=root / "vault")
+                    self.assertTrue(question_change["propagation_complete"], question_change)
+            self.assertTrue(changed["propagation_complete"], changed)
+            self.assertEqual([message["turn_privacy"] for message in memory.load_conversation_json(panel)["messages"]],
+                             ["private"] * 4 + ["standard"] * 2 + ["private"] * 2)
+            rows = sorted((row["metadata"] for row in collection.rows.values()
+                           if row["metadata"]["conversation_id"] == panel), key=lambda row: row["turn_index"])
+            self.assertEqual([row["turn_index"] for row in rows], [1, 2, 3, 4])
+            self.assertEqual([row["turn_privacy"] for row in rows], ["private", "private", "standard", "private"])
+            for row in rows:
+                self.assertIn('<!-- ora-turn-privacy: ' + json.dumps(row["turn_privacy"]) + ' -->',
+                              Path(row["chunk_path"]).read_text())
+            from orchestrator.vault_export import _parse_raw_session_log
+            from orchestrator.historical.parser import parse_live_ora
+            raw_pairs = []
+            for raw_path in dict.fromkeys(row["raw_path"] for row in rows):
+                raw = Path(raw_path).read_text()
+                exported = _parse_raw_session_log(raw)
+                self.assertEqual([(turn.role, turn.content) for turn in parse_live_ora(raw).turns],
+                                 [(message["role"], message["content"]) for message in exported])
+                raw_pairs.extend(exported)
+            self.assertEqual([(message["role"], message["content"]) for message in raw_pairs],
+                             [(message["role"], message["content"]) for message in durable["messages"]])
+            self.assertEqual([message["pair"] for message in raw_pairs], [1, 1, 2, 2, 3, 3, 4, 4])
 
             panel = "still-incomplete"
             original_input = "Check this argument"
@@ -3305,6 +3408,7 @@ class TestServerLifecycleWiring(unittest.TestCase):
                 server._pending_clarification.clear()
                 first_id = server._save_conversation("answer", "result", panel, False, **kwargs)
                 second_id = server._save_conversation("answer", "result", panel, False, **kwargs)
+                memory.save_turn_spatial_state(panel, "answer", "result", tag="stealth", chunk_id=first_id)
                 self.assertEqual(first_id, second_id)
                 self.assertEqual(len(list((root / "chunks").glob("*.md"))), 1)
                 self.assertEqual(list((root / "raw").glob("*.md")), [raw_path])
@@ -3317,7 +3421,8 @@ class TestServerLifecycleWiring(unittest.TestCase):
                 server._pending_clarification.clear()
                 ordinary = {key: value for key, value in kwargs.items() if key != "save_id"}
                 for _ in range(2):
-                    server._save_conversation("ordinary", "repeat", panel, False, **ordinary)
+                    chunk_id = server._save_conversation("ordinary", "repeat", panel, False, **ordinary)
+                    memory.save_turn_spatial_state(panel, "ordinary", "repeat", tag="stealth", chunk_id=chunk_id)
                 expected += [("user", "ordinary"), ("assistant", "repeat")] * 2
                 exported = _parse_raw_session_log(raw_path.read_text())
                 self.assertEqual([(m["role"], m["content"]) for m in exported], expected)

@@ -2107,7 +2107,7 @@ def _load_pending_clarification(conversation_id):
 
 
 def _write_pending_clarification(pending, *, expected_id, exchange=None):
-    from orchestrator.conversation_memory import update_pending_clarification
+    from orchestrator.conversation_memory import load_conversation_json, update_pending_clarification
     conversation_id = pending["conversation_id"]
     if _is_conversation_deleted(conversation_id) or _is_conversation_closed(conversation_id):
         raise ValueError("Conversation was closed or permanently deleted.")
@@ -2118,6 +2118,22 @@ def _write_pending_clarification(pending, *, expected_id, exchange=None):
         conversation_id, pending, expected_id=expected_id, exchange=exchange,
     ):
         raise RuntimeError("Clarification persistence failed; retry this item.")
+    if exchange is not None and not pending.get("question_chunk_id"):
+        question = load_conversation_json(conversation_id)["messages"][-2]
+        chunk_id = _save_conversation(
+            *exchange, conversation_id, False, pending["conversation_tag"],
+            output_destination=pending.get("output_destination", ""),
+            trace_ref=pending.get("trace_ref"), model_id=pending["model_id"],
+            turn_privacy=pending["turn_privacy"], save_id=pending["pending_id"],
+            save_question=True, turn_index=question["turn_index"],
+        )
+        if not chunk_id:
+            raise RuntimeError("Clarification question persistence failed; retry this item.")
+        pending["question_chunk_id"] = chunk_id
+        if not update_pending_clarification(
+            conversation_id, pending, expected_id=pending["pending_id"], exchange=exchange,
+        ):
+            raise RuntimeError("Clarification question ownership persistence failed; retry this item.")
 
 
 def _public_clarification(pending):
@@ -7475,7 +7491,8 @@ def _resolve_chunk_destination(output_destination: str) -> str:
 def _save_conversation_unlocked(user_input, ai_response, panel_id,
                                 is_new_session, tag="",
                                 output_destination="", trace_ref=None,
-                                model_id=None, turn_privacy=None, save_id=None):
+                                model_id=None, turn_privacy=None, save_id=None,
+                                save_question=False, turn_index=None):
     """
     Three steps, all inline, immediately after every response:
 
@@ -7539,10 +7556,11 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
     tag = artifact_tag
     chunk_dir = _resolve_chunk_destination(output_destination)
     raw_save = None
+    raw_save_key = "question_raw_save" if save_question else "raw_save"
     if save_id is not None:
         if not re.fullmatch(r"[a-f0-9]{32}", save_id):
             raise ValueError("Invalid clarification save identity")
-        saved_chunk_id = f"clarification-{save_id}"
+        saved_chunk_id = f"clarification-{'question-' if save_question else ''}{save_id}"
         saved_path = os.path.join(chunk_dir, saved_chunk_id + ".md")
         if os.path.isfile(saved_path) and not os.path.islink(saved_path):
             with open(saved_path, encoding="utf-8") as saved:
@@ -7554,11 +7572,20 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
             raise ValueError("Clarification save identity conflicts with its chunk")
         pending = _load_pending_clarification(panel_id)
         if (not pending or pending.get("pending_id") != save_id
-                or pending.get("resumed_input") != user_input
-                or pending.get("result") != ai_response
                 or pending.get("turn_privacy") != turn_privacy):
             raise ValueError("Clarification save identity conflicts with its pending exchange")
-        raw_save = pending.get("raw_save")
+        if save_question:
+            from orchestrator.conversation_memory import load_conversation_json
+            pair = load_conversation_json(panel_id)["messages"][-2:]
+            if (len(pair) != 2
+                    or any(message.get("clarification_id") != save_id for message in pair)
+                    or pair[0].get("content") != user_input
+                    or pair[1].get("content") != ai_response
+                    or pair[0].get("turn_index") != turn_index):
+                raise ValueError("Clarification save identity conflicts with its question exchange")
+        elif pending.get("resumed_input") != user_input or pending.get("result") != ai_response:
+            raise ValueError("Clarification save identity conflicts with its pending exchange")
+        raw_save = pending.get(raw_save_key)
     os.makedirs(CONVERSATIONS_RAW, exist_ok=True)
     os.makedirs(chunk_dir, exist_ok=True)
 
@@ -7610,7 +7637,21 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
     sess.setdefault("prior_topic", None)
     sess.setdefault("thread_counter", 0)
     if not raw_save:
-        sess["pair_count"] += 1
+        if turn_index is None:
+            from orchestrator.conversation_memory import load_conversation_json
+            envelope = load_conversation_json(panel_id)
+            if envelope is not None:
+                messages = envelope["messages"]
+                turn_index = 1 + sum(message.get("role") == "user" for message in messages
+                                     if isinstance(message, dict))
+                if (len(messages) >= 2
+                        and messages[-2].get("role") == "user"
+                        and messages[-2].get("content") == user_input
+                        and messages[-1].get("role") == "assistant"
+                        and messages[-1].get("content") == ""
+                        and (messages[-1].get("visual_outcome") or {}).get("state") == "building"):
+                    turn_index -= 1
+        sess["pair_count"] = turn_index if turn_index is not None else sess["pair_count"] + 1
     pair_num   = sess["pair_count"]
     session_id = sess["session_id"]
 
@@ -7622,7 +7663,7 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
         if not raw_save:
             raw_save = {"session": dict(sess), "timestamp": ts_str,
                         "position": len(raw_content), "new_file": is_new_file}
-            pending["raw_save"] = raw_save
+            pending[raw_save_key] = raw_save
         # Persist the target and position before any raw mutation. Retrying
         # also acknowledges a checkpoint that previously failed to reach disk.
         _write_pending_clarification(pending, expected_id=save_id)
@@ -7726,9 +7767,7 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
         os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
         import json as _json_mf
         with rp.locked_file(manifest_path):
-            rp.append_text_no_follow(
-                manifest_path,
-                _json_mf.dumps({
+            record = {
                     "timestamp_utc": datetime.utcnow().isoformat() + "Z",
                     "conversation_id": panel_id,
                     "chunk_id": chunk_id,
@@ -7741,8 +7780,19 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
                     "turn_privacy": turn_privacy,
                     "turn_index": pair_num,
                     "trace_ref": trace_ref,
-                }) + "\n",
-            )
+            }
+            existing_record = None
+            if save_id is not None and Path(manifest_path).is_file():
+                for line in Path(manifest_path).read_text(encoding="utf-8").splitlines():
+                    prior = _json_mf.loads(line)
+                    if prior.get("conversation_id") == panel_id and prior.get("chunk_id") == chunk_id:
+                        existing_record = prior
+                        break
+            if existing_record is None:
+                rp.append_text_no_follow(manifest_path, _json_mf.dumps(record) + "\n")
+            elif any(existing_record.get(key) != value for key, value in record.items()
+                     if key != "timestamp_utc"):
+                raise ValueError("Clarification save identity conflicts with its manifest entry")
     except Exception as _mf_exc:
         # Manifest is a defensive layer — failure to write it should NOT
         # block the conversation save. Surface to stderr so a developer
@@ -7962,7 +8012,8 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
 
 def _save_conversation(user_input, ai_response, panel_id, is_new_session,
                        tag="", output_destination="", trace_ref=None,
-                       model_id=None, turn_privacy=None, save_id=None):
+                       model_id=None, turn_privacy=None, save_id=None,
+                       save_question=False, turn_index=None):
     """Lifecycle-serialized wrapper around the conversation artifact save."""
     with _conversation_lifecycle_lock(panel_id):
         if _is_conversation_deleted(panel_id):
@@ -7988,6 +8039,7 @@ def _save_conversation(user_input, ai_response, panel_id, is_new_session,
             effective_tag, output_destination=output_destination,
             trace_ref=trace_ref, model_id=model_id,
             turn_privacy=turn_privacy, save_id=save_id,
+            save_question=save_question, turn_index=turn_index,
         )
 
 
@@ -20360,12 +20412,22 @@ def _continue_clarification(pending, answer, *, skip=False):
     identity = pending["pending_id"]
     authority = _require_clarification_authority(pending)
     tag = authority["conversation_tag"]
-    history, extra_context = _refresh_clarification_dialogue_context(panel_id, pending, tag)
     action = "skip" if skip else "answer"
     if pending.get("action") and (pending["action"] != action or pending.get("answer") != answer):
         raise ValueError("This clarification was already claimed with a different answer.")
     if pending.get("state") == "running":
         raise ValueError("The prior clarification execution was interrupted; its result is unavailable.")
+    messages = load_conversation_json(panel_id)["messages"]
+    question_history = messages[pending["question_start_message_count"]:pending["message_count"]]
+    if any(message.get("turn_privacy") != authority["turn_privacy"] for message in question_history):
+        raise ValueError("Clarification question privacy changed; restore it before answering.")
+    question_pair = question_history[-2:]
+    if not question_pair[-1].get("chunk_id"):
+        _write_pending_clarification(
+            pending, expected_id=identity,
+            exchange=tuple(message["content"] for message in question_pair),
+        )
+    history, extra_context = _refresh_clarification_dialogue_context(panel_id, pending, tag)
     if "result" not in pending:
         if _clarification_snapshot(authority["config_name"]) != pending["runtime_snapshot"]:
             raise ValueError("Configuration, model or routing changed; restore the paused settings before answering.")
@@ -20383,6 +20445,8 @@ def _continue_clarification(pending, answer, *, skip=False):
                            "state": "awaiting"}
             replacement.pop("action", None)
             replacement.pop("answer", None)
+            replacement.pop("question_chunk_id", None)
+            replacement.pop("question_raw_save", None)
             _write_pending_clarification(replacement, expected_id=identity,
                                          exchange=(answer, question))
             yield _sse("clarification_needed", **_public_clarification(replacement))
