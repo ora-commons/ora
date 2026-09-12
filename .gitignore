@@ -206,6 +206,12 @@ scratch/
 data/active-project.json
 data/custom-styles.json
 
+# Machine-local runtime files generated or updated in place.
+/server/static/runtime/icon-set.json
+/config/user-settings.json
+/config/models.json.lock
+/config/routing-config.json.lock
+
 # Retention-sweeper archive of rotated runtime logs (regenerable; see
 # orchestrator/retention_sweeper.py — data/*.jsonl rotated here when oversized).
 data/archive/
