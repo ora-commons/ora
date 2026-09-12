@@ -2948,7 +2948,7 @@ class TestServerLifecycleWiring(unittest.TestCase):
             stack.enter_context(mock.patch.object(pipeline_health, "format_warnings_as_chat_note", return_value=""))
 
             def pause(panel, *, step1=None, user_input="original", raw_user_input=None,
-                      output_destination=""):
+                      output_destination="", images=None, extra_context=None):
                 _write_envelope(root, panel, tag="private")
                 # Real /chat has already made a building placeholder before
                 # routing asks its question. Publication must complete it.
@@ -2956,10 +2956,11 @@ class TestServerLifecycleWiring(unittest.TestCase):
                 with server._conversation_lifecycle_lock(panel):
                     pending = server._pause_clarification(
                         panel, copy.deepcopy(step1 or original_step1), {}, [], user_input,
-                        raw_user_input=raw_user_input or user_input, images=None,
+                        raw_user_input=raw_user_input or user_input, images=images,
                         extra_context={"_framework_submission_id": "submission-" + panel,
                                        "_clarification_output_destination": output_destination,
-                                       "contributor_bundle": {"units": [{"content": "stale source"}]}},
+                                       "contributor_bundle": {"units": [{"content": "stale source"}]},
+                                       **(extra_context or {})},
                         config_name="paused-profile", model_id="paused-model",
                         conversation_tag="private", trace_ref=None)
                 durable = memory.load_conversation_json(panel)
@@ -3138,25 +3139,85 @@ class TestServerLifecycleWiring(unittest.TestCase):
                 self.assertEqual(execute.call_count, 1)
                 self.assertEqual(memory.load_conversation_json(panel)["messages"][-2]["content"], argument)
 
+            # Automatic multi-selection must retain which analysis asked the
+            # question, including when the first selected analysis is complete.
+            original_input = "Quick Orientation then Argument Audit of urban planning"
+            with (mock.patch.object(runtime_boot, "get_slot_endpoint", return_value={}),
+                  mock.patch.object(runtime_boot, "call_model", return_value="cleanup"),
+                  mock.patch.object(runtime_boot, "parse_step1_output", return_value={
+                      "cleaned_prompt": original_input, "operational_notation": original_input})):
+                automatic_step1 = runtime_boot.run_step1_cleanup(original_input, "", {})
+            selected = ["quick-orientation", "argument-audit"]
+            self.assertEqual(automatic_step1["pre_routing"]["dispatched_mode_ids"], selected)
+            self.assertTrue(automatic_step1["pre_routing"]["stage3_outputs"][selected[0]]["inputs_complete"])
+            self.assertFalse(automatic_step1["pre_routing"]["stage3_outputs"][selected[1]]["inputs_complete"])
+            panel = "later-analysis-lighter"
+            pending = pause(panel, step1=automatic_step1, user_input=original_input,
+                            extra_context={"history": [{"role": "user", "content": "stale source"}]})
+            payload = {"conversation_id": panel, "pending_id": pending["pending_id"],
+                       "answers": "Use the lighter Coherence Audit"}
+            with (mock.patch.object(server, "_authoritative_dialogue_history", return_value=(fresh_history, {})) as refresh,
+                  mock.patch.object(server, "build_contributor_bundle", return_value=fresh_bundle),
+                  mock.patch.object(server, "stage3_input_completeness_check", wraps=real_check),
+                  mock.patch.object(server, "_run_pipeline_from_step2") as execute,
+                  mock.patch.object(server, "_save_conversation", return_value="earlier-argument-chunk")):
+                result = events(server.app.test_client().post("/api/clarification", json=payload))
+                self.assertEqual(result[0]["type"], "clarification_needed", result)
+                selected = ["quick-orientation", "coherence-audit"]
+                durable = memory.load_conversation_json(panel)["pending_clarification"]
+                self.assertEqual(durable["step1"]["pre_routing"]["dispatched_mode_ids"], selected)
+                execute.assert_not_called()
+                # Earlier material comes from the refreshed eligible history,
+                # even after the pending process cache has been discarded.
+                refreshed_history = [{"role": "user", "content": argument},
+                                     {"role": "assistant", "content": "Received."}]
+                refresh.return_value = (refreshed_history, {})
+                server._pending_clarification.clear()
+                payload.update(pending_id=result[0]["pending_id"],
+                               answers="Use the argument I shared earlier.")
+                execute.return_value = iter([server._sse("response", text="audited earlier material")])
+                result = events(server.app.test_client().post("/api/clarification", json=payload))
+                self.assertEqual(result[-1]["type"], "done", result)
+                resumed = execute.call_args.args[0]["pre_routing"]
+                self.assertEqual(resumed["dispatched_mode_ids"], selected)
+                validated = resumed["stage3_outputs"]["coherence-audit"]["validated_inputs"]
+                self.assertIn({"source": "prior_conversation", "value": argument}, validated.values())
+                self.assertEqual(execute.call_args.args[2], refreshed_history)
+                self.assertEqual(execute.call_count, 1)
+
             # A Stage-2 answer resolves the exact saved canonical question;
             # changed fresh history cannot classify it as a different inquiry.
-            stage2_pending = {"user_input": "original", "step1": {
+            stage2_step1 = {
                 **original_step1,
                 "pre_routing": {"pending_clarification_stage": "stage2",
+                                "pending_clarification": "What should I examine?",
                                 "stage1_output": {"matches": []},
                                 "stage2_output": {"question_id": "saved-question"}},
-            }}
-            dispatch = {"dispatched_mode_id": "simple", "dispatched_mode_ids": ["simple"],
+            }
+            attached_images = ["aW1hZ2U="]
+            pending = pause("stage2-image", step1=stage2_step1, images=attached_images)
+            dispatch = {"dispatched_mode_id": "argument-audit", "dispatched_mode_ids": ["argument-audit"],
                         "confidence": "high", "territory": None}
             with (mock.patch.object(runtime_boot, "stage1_pre_analysis_filter", side_effect=AssertionError("must retain Stage 1")),
                   mock.patch.object(runtime_boot, "stage2_sufficiency_analyzer", side_effect=AssertionError("must retain question")),
                   mock.patch.object(runtime_boot, "_resolve_routing_question", return_value=dispatch) as resolve,
-                  mock.patch.object(runtime_boot, "stage3_input_completeness_check", return_value=complete),
-                  mock.patch.object(runtime_boot, "compose_dispatch_announcement", return_value="Plain response")):
-                step1 = server._clarification_route(stage2_pending, "specific answer")
+                  mock.patch.object(server, "_authoritative_dialogue_history", return_value=(fresh_history, {})),
+                  mock.patch.object(server, "build_contributor_bundle", return_value=fresh_bundle),
+                  mock.patch.object(server, "_run_pipeline_from_step2", return_value=iter([
+                      server._sse("response", text="audited image")])) as execute,
+                  mock.patch.object(server, "_save_conversation", return_value="image-argument-chunk")):
+                result = events(server.app.test_client().post("/api/clarification", json={
+                    "conversation_id": "stage2-image", "pending_id": pending["pending_id"],
+                    "answers": "specific answer"}))
+                self.assertEqual(result[-1]["type"], "done", result)
                 self.assertEqual(resolve.call_args.args[0], "saved-question")
                 self.assertEqual(resolve.call_args.args[3], "specific answer")
-                self.assertEqual(step1["mode"], "simple")
+                resumed = execute.call_args.args[0]["pre_routing"]
+                self.assertEqual(resumed["dispatched_mode_id"], "argument-audit")
+                self.assertIn({"source": "attachments", "value": [{"type": "image/upload"}]},
+                              resumed["stage3_output"]["validated_inputs"].values())
+                self.assertEqual(execute.call_args.kwargs["images"], attached_images)
+                self.assertEqual(execute.call_count, 1)
 
             # A pending item is never visible as success before the same
             # atomic envelope writer acknowledges its question and authority.

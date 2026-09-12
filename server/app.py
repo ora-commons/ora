@@ -20369,7 +20369,12 @@ def _continue_clarification(pending, answer, *, skip=False):
     if "result" not in pending:
         if _clarification_snapshot(authority["config_name"]) != pending["runtime_snapshot"]:
             raise ValueError("Configuration, model or routing changed; restore the paused settings before answering.")
-        step1 = _clarification_route(pending, answer, skip=skip, context=extra_context)
+        routing_context = {**(extra_context or {}), "history": history}
+        if pending.get("images"):
+            routing_context["attachments"] = [
+                *(routing_context.get("attachments") or []), {"type": "image/upload"},
+            ]
+        step1 = _clarification_route(pending, answer, skip=skip, context=routing_context)
         question = (step1.get("pre_routing") or {}).get("pending_clarification")
         if question:
             replacement = {**pending, "pending_id": uuid.uuid4().hex,

@@ -7635,6 +7635,8 @@ AMBIGUITY_MODE: {ambiguity_mode}
     step1_result["pre_routing"] = {
         "stage1_output": routing.get("stage1_output"),
         "stage2_output": routing.get("stage2_output"),
+        "stage3_output": routing.get("stage3_output"),
+        "stage3_outputs": routing.get("stage3_outputs", {}),
         "dispatched_mode_id": routing.get("dispatched_mode_id"),
         "dispatched_mode_ids": routing.get("dispatched_mode_ids", []),
         "territory": routing.get("territory"),
