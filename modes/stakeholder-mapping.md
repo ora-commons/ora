@@ -12,27 +12,27 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: stakeholder-mapping
-canonical_name: Stakeholder Mapping
-suffix_rule: analysis
-educational_name: multi-party stakeholder mapping (Bryson, Mitchell-Agle-Wood salience)
+mode_id: "stakeholder-mapping"
+canonical_name: "Stakeholder Mapping"
+suffix_rule: "analysis"
+educational_name: "multi-party stakeholder mapping (Bryson, Mitchell-Agle-Wood salience)"
 
 # 1. TERRITORY AND POSITION
-territory: T8-stakeholder-conflict
+territory: "T8-stakeholder-conflict"
 gradation_position:
-  axis: complexity
-  value: multi-party-descriptive
+  axis: "complexity"
+  value: "multi-party-descriptive"
 adjacent_modes_in_territory:
-  - mode_id: conflict-structure
-    relationship: complexity-heavier sibling (systemic; gap-deferred per CR-6)
-  - mode_id: cui-bono
-    relationship: complexity-lighter sibling (single-situation interest; lives in T2)
-  - mode_id: interest-mapping
-    relationship: cross-territory follow-on (Fisher/Ury; lives in T13; foundational input)
-  - mode_id: principled-negotiation
-    relationship: cross-territory follow-on (lives in T13; receives stakeholder map as input)
-  - mode_id: third-side
-    relationship: cross-territory follow-on (Ury mediator-stance; lives in T13)
+  - mode_id: "conflict-structure"
+    relationship: "complexity-heavier sibling (systemic; gap-deferred per CR-6)"
+  - mode_id: "cui-bono"
+    relationship: "complexity-lighter sibling (single-situation interest; lives in T2)"
+  - mode_id: "interest-mapping"
+    relationship: "cross-territory follow-on (Fisher/Ury; lives in T13; foundational input)"
+  - mode_id: "principled-negotiation"
+    relationship: "cross-territory follow-on (lives in T13; receives stakeholder map as input)"
+  - mode_id: "third-side"
+    relationship: "cross-territory follow-on (Ury mediator-stance; lives in T13)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -55,20 +55,34 @@ disambiguation_routing:
     - "input feeds a downstream negotiation, decision, or wicked-problems analysis"
     - "user is trying to surface absent or marginalized parties before action"
   routes_away_when:
-    - "single situation, single set of beneficiaries — interest read" → cui-bono (T2)
-    - "active negotiation requiring guidance now" → interest-mapping or principled-negotiation (T13)
-    - "tangled wicked problem with feedback loops and irreducible value conflict" → wicked-problems (T2)
-    - "decision among parties where the user is the decider" → decision-clarity or decision-architecture
+    - condition: "single situation, single set of beneficiaries — interest read"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono (T2)"
+    - condition: "active negotiation requiring guidance now"
+      targets: [{"kind": "active", "id": "interest-mapping"}, {"kind": "active", "id": "principled-negotiation"}]
+      qualification: "interest-mapping or principled-negotiation (T13)"
+    - condition: "tangled wicked problem with feedback loops and irreducible value conflict"
+      targets: [{"kind": "active", "id": "wicked-problems"}]
+      qualification: "wicked-problems (T2)"
+    - condition: "decision among parties where the user is the decider"
+      targets: [{"kind": "active", "id": "decision-clarity"}, {"kind": "active", "id": "decision-architecture"}]
+      qualification: "decision-clarity or decision-architecture"
 when_not_to_invoke:
-  - "User has only one party of interest; mapping is overkill" → cui-bono
-  - "User has the parties already mapped and wants negotiation strategy" → T13
-  - "User wants to evaluate an argument's soundness rather than its sponsoring constituencies" → T1
+  - condition: "User has only one party of interest; mapping is overkill"
+    targets: [{"kind": "active", "id": "cui-bono"}]
+    qualification: "cui-bono"
+  - condition: "User has the parties already mapped and wants negotiation strategy"
+    targets: [{"kind": "territory", "id": "T13"}]
+    qualification: "T13"
+  - condition: "User wants to evaluate an argument's soundness rather than its sponsoring constituencies"
+    targets: [{"kind": "territory", "id": "T1"}]
+    qualification: "T1"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -83,67 +97,106 @@ input_contract:
   detection:
     expert_signals: ["stakeholder inventory", "salience dimensions", "power-interest grid", "Mitchell Agle Wood"]
     accessible_signals: ["who's involved", "who has a stake", "who needs to be at the table", "stakeholder map"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe the situation or decision and any parties you've already identified?'"
     on_underspecified: "Ask: 'What's the situation, and which parties have you already considered?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the inventory identified parties from outside the user's initial frame, or has the analysis stayed inside the user's pre-existing mental model of who counts?"
-    failure_mode_if_unmet: frame-bounded-inventory
-  - cq_id: CQ2
+    failure_mode_if_unmet: "frame-bounded-inventory"
+  - cq_id: "CQ2"
     question: "Are stakes named at the level of concrete interests (what the party wants and could lose), rather than at the level of role-labels alone?"
-    failure_mode_if_unmet: role-as-stake
-  - cq_id: CQ3
+    failure_mode_if_unmet: "role-as-stake"
+  - cq_id: "CQ3"
     question: "Has salience been assessed using more than one dimension (power AND legitimacy AND urgency, per Mitchell-Agle-Wood), so a high-power-low-legitimacy party isn't conflated with a high-legitimacy-low-power party?"
-    failure_mode_if_unmet: single-axis-salience
-  - cq_id: CQ4
+    failure_mode_if_unmet: "single-axis-salience"
+  - cq_id: "CQ4"
     question: "Have absent or marginalized parties been explicitly named, or has the map silently mirrored existing power asymmetries?"
-    failure_mode_if_unmet: silent-power-mirroring
+    failure_mode_if_unmet: "silent-power-mirroring"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: frame-bounded-inventory
+  - name: "frame-bounded-inventory"
     detection_signal: "Every party in the inventory shares the user's frame; no parties from outside the frame appear."
-    correction_protocol: re-dispatch
-  - name: role-as-stake
+    correction_protocol: "re-dispatch"
+  - name: "role-as-stake"
     detection_signal: "Stakes are named as role-labels (regulator, investor, end-user) without articulating what the party concretely wants and could lose."
-    correction_protocol: flag
-  - name: single-axis-salience
+    correction_protocol: "flag"
+  - name: "single-axis-salience"
     detection_signal: "Salience is plotted on one dimension (usually power) only; legitimacy and urgency are absent or collapsed."
-    correction_protocol: re-dispatch
-  - name: silent-power-mirroring
+    correction_protocol: "re-dispatch"
+  - name: "silent-power-mirroring"
     detection_signal: "The salience map ranks parties in proportion to their existing power; no marginalized-but-legitimate party appears."
-    correction_protocol: re-dispatch
-  - name: laundry-list-flatness
+    correction_protocol: "re-dispatch"
+  - name: "laundry-list-flatness"
     detection_signal: "Stakeholders are listed without relationships among them or differential stakes; the map is a list, not a map."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - stakeholder-analysis-frameworks
+  - stakeholder-analysis-frameworks
   optional:
-    - ulrich-csh-boundary-categories (when boundary critique cross-cuts to surface absent parties)
-    - public-choice-theory (when parties are organized constituencies)
+  - lens_id: ulrich-csh-boundary-categories
+    qualification: when boundary critique cross-cuts to surface absent parties
+  - lens_id: public-choice-theory
+    qualification: when parties are organized constituencies
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: conflict-structure
+    target: {"kind": "deferred", "id": "conflict-structure"}
     when: "Inventory is multi-party AND parties exhibit systemic conflict structure (when conflict-structure is built)."
   sideways:
-    target_mode_id: interest-mapping
+    target: {"kind": "active", "id": "interest-mapping"}
     when: "User is moving from descriptive mapping into active negotiation; route to T13."
   downward:
-    target_mode_id: cui-bono
+    target: {"kind": "active", "id": "cui-bono"}
     when: "Inventory collapses to a single party of interest; lighter mode is appropriate."
 ```
+
+## Display Description
+
+Enumerates parties, interests, positions, and power asymmetries; foundational input for T13 negotiation work.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll map the stakeholders in this {artifact}"
+  data_shapes: [{"predicate": "enum_parties", "territory": "T8-stakeholder-conflict", "priority": 0, "confidence_weight": "strong"}, {"predicate": "conflict_description", "territory": "T8-stakeholder-conflict", "priority": 1, "confidence_weight": "strong"}]
+  phrase_aliases: {"stake holder mapping": "stakeholder mapping"}
+  signals:
+    - {"signal": "stakeholder map", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "stakeholder mapping", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "stakeholder analysis", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name variant"}
+    - {"signal": "Bryson power-interest grid", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Mitchell Agle Wood", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Mitchell-Agle-Wood salience", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "salience", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "who needs to be at the table", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "RACI", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "who has standing", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "who's involved here", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "multiple parties with different stakes", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "we keep getting blindsided", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (missed-stakeholder pattern)"}
+    - {"signal": "absent or marginalized", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "mode vocabulary"}
+    - {"signal": "power-interest", "territory": "T8-stakeholder-conflict", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "map the stakeholders", "territory": "T8-stakeholder-conflict", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "stakeholders in this", "territory": "T8-stakeholder-conflict", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "all the stakeholders", "territory": "T8-stakeholder-conflict", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "stakeholder analysis frameworks", "territory": "T8-stakeholder-conflict", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

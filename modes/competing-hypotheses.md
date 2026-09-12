@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: competing-hypotheses
-canonical_name: Competing Hypotheses
-suffix_rule: analysis
-educational_name: analysis of competing hypotheses (ACH, Heuer-style)
+mode_id: "competing-hypotheses"
+canonical_name: "Competing Hypotheses"
+suffix_rule: "analysis"
+educational_name: "analysis of competing hypotheses (ACH, Heuer-style)"
 
 # 1. TERRITORY AND POSITION
-territory: T5-hypothesis-evaluation
+territory: "T5-hypothesis-evaluation"
 gradation_position:
-  axis: depth
-  value: thorough
+  axis: "depth"
+  value: "thorough"
 adjacent_modes_in_territory:
-  - mode_id: differential-diagnosis
-    relationship: depth-lighter sibling
-  - mode_id: bayesian-hypothesis-network
-    relationship: depth-molecular sibling
+  - mode_id: "differential-diagnosis"
+    relationship: "depth-lighter sibling"
+  - mode_id: "bayesian-hypothesis-network"
+    relationship: "depth-molecular sibling"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -49,21 +49,37 @@ disambiguation_routing:
     - "want diagnosticity-driven adjudication, not interest analysis"
     - "the question is what is true, not what to do"
   routes_away_when:
-    - "choosing between action alternatives, not explanations" → decision-under-uncertainty
-    - "questioning the foundational framework rather than testing within it" → paradigm-suspension
-    - "tracing institutional interests behind competing claims" → cui-bono
-    - "only one plausible explanation, want to strengthen it" → steelman-construction
-    - "competing hypotheses are themselves whole arguments to audit" → T1
+    - condition: "choosing between action alternatives, not explanations"
+      targets: [{"kind": "active", "id": "decision-under-uncertainty"}]
+      qualification: "decision-under-uncertainty"
+    - condition: "questioning the foundational framework rather than testing within it"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension"
+    - condition: "tracing institutional interests behind competing claims"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono"
+    - condition: "only one plausible explanation, want to strengthen it"
+      targets: [{"kind": "active", "id": "steelman-construction"}]
+      qualification: "steelman-construction"
+    - condition: "competing hypotheses are themselves whole arguments to audit"
+      targets: [{"kind": "territory", "id": "T1"}]
+      qualification: "T1"
 when_not_to_invoke:
-  - "User has only one explanation in play; ACH requires at least two competing hypotheses" → steelman-construction or differential-diagnosis
-  - "User wants a quick-read differential without full matrix construction" → differential-diagnosis (lighter T5 sibling)
-  - "Hypothesis disagreement is really inter-frame disagreement using different paradigms" → T9 paradigm modes
+  - condition: "User has only one explanation in play; ACH requires at least two competing hypotheses"
+    targets: [{"kind": "active", "id": "steelman-construction"}, {"kind": "active", "id": "differential-diagnosis"}]
+    qualification: "steelman-construction or differential-diagnosis"
+  - condition: "User wants a quick-read differential without full matrix construction"
+    targets: [{"kind": "active", "id": "differential-diagnosis"}]
+    qualification: "differential-diagnosis (lighter T5 sibling)"
+  - condition: "Hypothesis disagreement is really inter-frame disagreement using different paradigms"
+    targets: [{"kind": "territory", "id": "T9"}]
+    qualification: "T9 paradigm modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: neutral
+  posture: "neutral"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -78,75 +94,108 @@ input_contract:
   detection:
     expert_signals: ["ACH matrix", "Heuer", "diagnosticity", "hypothesis H1, H2", "evidence E1"]
     accessible_signals: ["which explanation", "competing theories", "what's most likely happening", "stress-test my theory"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe the situation, the explanations on the table, and the evidence you've seen so far?'"
     on_underspecified: "Ask: 'What are the competing explanations you'd like me to weigh against each other, and what evidence have you encountered?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has at least one hypothesis beyond the user's initial set been generated, or is the matrix limited to user-proposed explanations?"
-    failure_mode_if_unmet: missing-hypothesis
-  - cq_id: CQ2
+    failure_mode_if_unmet: "missing-hypothesis"
+  - cq_id: "CQ2"
     question: "Has each evidence item been assessed across all hypotheses (across-the-matrix), or only against the favoured one (down-the-matrix)?"
-    failure_mode_if_unmet: confirmation-framing
-  - cq_id: CQ3
+    failure_mode_if_unmet: "confirmation-framing"
+  - cq_id: "CQ3"
     question: "Is the conclusion framed as elimination of least-consistent hypotheses, or as confirmation of the favoured one?"
-    failure_mode_if_unmet: confirmation-framing
-  - cq_id: CQ4
+    failure_mode_if_unmet: "confirmation-framing"
+  - cq_id: "CQ4"
     question: "Has at least one piece of evidence been identified as high-diagnosticity, distinguishing sharply between hypotheses?"
-    failure_mode_if_unmet: false-rigour
-  - cq_id: CQ5
+    failure_mode_if_unmet: "false-rigour"
+  - cq_id: "CQ5"
     question: "If adversarial actors are plausible, has the analysis assessed whether high-diagnosticity evidence could be manufactured?"
-    failure_mode_if_unmet: deception-blindness
+    failure_mode_if_unmet: "deception-blindness"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: missing-hypothesis
+  - name: "missing-hypothesis"
     detection_signal: "All hypotheses are user-proposed; no analyst-generated alternative or null/'something else' hypothesis."
-    correction_protocol: re-dispatch
-  - name: confirmation-framing
+    correction_protocol: "re-dispatch"
+  - name: "confirmation-framing"
     detection_signal: "Conclusion phrased as 'H_x is supported by E1, E3' rather than 'H_x survives because fewer items contradict it'; or evidence assessed only against the favoured hypothesis."
-    correction_protocol: re-dispatch
-  - name: false-rigour
+    correction_protocol: "re-dispatch"
+  - name: "false-rigour"
     detection_signal: "Matrix format used but consistency ratings are uniform across rows or unjustified; all rows non-diagnostic."
-    correction_protocol: flag
-  - name: deception-blindness
+    correction_protocol: "flag"
+  - name: "deception-blindness"
     detection_signal: "Adversarial context plausible but no assessment of whether high-diagnosticity evidence could be planted or manufactured."
-    correction_protocol: flag
-  - name: wrong-tally
+    correction_protocol: "flag"
+  - name: "wrong-tally"
     detection_signal: "Endorsed surviving hypothesis has more inconsistent (I + II) cells than an alternative; conclusion contradicts cell count."
-    correction_protocol: re-dispatch
-  - name: static-snapshot
+    correction_protocol: "re-dispatch"
+  - name: "static-snapshot"
     detection_signal: "No monitoring priorities or leading indicators stated; analysis treated as final in evolving situation."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - heuer-ach-methodology
+    - "heuer-ach-methodology"
   optional:
-    - bayesian-reasoning
-    - counter-deception-frameworks
-    - falsifiability
+    - "bayesian-reasoning"
+    - "counter-deception-frameworks"
+    - "falsifiability"
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
+    - "kahneman-tversky-bias-catalog"
+    - "knightian-risk-uncertainty-ambiguity"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: bayesian-hypothesis-network
+    target: {"kind": "active", "id": "bayesian-hypothesis-network"}
     when: "Hypothesis dependencies form a network with non-trivial conditional structure; quasi-Bayesian tally insufficient."
   sideways:
-    target_mode_id: differential-diagnosis
+    target: {"kind": "active", "id": "differential-diagnosis"}
     when: "Time-pressed user wants light-weight ranking without full matrix construction."
   downward:
-    target_mode_id: differential-diagnosis
+    target: {"kind": "active", "id": "differential-diagnosis"}
     when: "User wants quick differential rather than thorough ACH; complexity does not warrant full matrix."
 ```
+
+## Display Description
+
+Applies Heuer's ACH matrix (consistent / inconsistent / N/A) with diagnosticity weighting to elimination-based conclusions.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll lay out evidence against each of these explanations"
+  data_shapes: [{"predicate": "enum_hypotheses", "territory": "T5-hypothesis-evaluation", "priority": 0, "confidence_weight": "strong"}]
+  phrase_aliases: {"ach analysis": "ach"}
+  signals:
+    - {"signal": "competing hypotheses", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "ACH", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "mode abbreviation"}
+    - {"signal": "ACH matrix", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "within-territory: depth? → thorough", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "which explanation fits best", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what rules out X", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "how would we know if we're wrong", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "strongest evidence against each theory", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Heuer", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author/method reference"}
+    - {"signal": "disconfirmation", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode posture vocabulary"}
+    - {"signal": "diagnosticity", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "deception possible", "territory": "T5-hypothesis-evaluation", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (intelligence framing)"}
+    - {"signal": "confirmation bias", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "occam's razor", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "occams razor", "territory": "T5-hypothesis-evaluation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

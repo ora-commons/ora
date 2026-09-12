@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: dialectical-analysis
-canonical_name: Dialectical Analysis
-suffix_rule: analysis
-educational_name: thesis-antithesis dialectical analysis
+mode_id: "dialectical-analysis"
+canonical_name: "Dialectical Analysis"
+suffix_rule: "analysis"
+educational_name: "thesis-antithesis dialectical analysis"
 
 # 1. TERRITORY AND POSITION
-territory: T12-cross-domain-and-knowledge-synthesis
+territory: "T12-cross-domain-and-knowledge-synthesis"
 gradation_position:
-  axis: stance
-  value: thesis-antithesis
+  axis: "stance"
+  value: "thesis-antithesis"
 adjacent_modes_in_territory:
-  - mode_id: synthesis
-    relationship: stance counterpart (neutral integrative examination, not adversarial)
-  - mode_id: cross-domain-analogical
-    relationship: specificity variant (cross-domain analogical, deferred per CR-6)
+  - mode_id: "synthesis"
+    relationship: "stance counterpart (neutral integrative examination, not adversarial)"
+  - mode_id: "cross-domain-analogical"
+    relationship: "specificity variant (cross-domain analogical, deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -46,19 +46,29 @@ disambiguation_routing:
     - "drives toward a new position via adversarial commitment to both sides"
     - "willing to hold the antithesis with genuine force, not as token objection"
   routes_away_when:
-    - "wants neutral examination of tension without adversarial commitment" → synthesis
-    - "wants to choose between alternatives" → constraint-mapping (T3)
-    - "wants the strongest version of one position" → steelman-construction (T15)
-    - "wants adversarial-actor stress test on a single artifact" → red-team-assessment / red-team-advocate (T15)
+    - condition: "wants neutral examination of tension without adversarial commitment"
+      targets: [{"kind": "active", "id": "synthesis"}]
+      qualification: "synthesis"
+    - condition: "wants to choose between alternatives"
+      targets: [{"kind": "active", "id": "constraint-mapping"}]
+      qualification: "constraint-mapping (T3)"
+    - condition: "wants the strongest version of one position"
+      targets: [{"kind": "active", "id": "steelman-construction"}]
+      qualification: "steelman-construction (T15)"
+    - condition: "wants adversarial-actor stress test on a single artifact"
+      targets: [{"kind": "active", "id": "red-team-assessment"}, {"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-assessment / red-team-advocate (T15)"
 when_not_to_invoke:
   - "Positions do not generate each other internally — antithesis would be external critique, not dialectical negation"
-  - "User wants integrative connection-mapping rather than adversarial drive" → synthesis
+  - condition: "User wants integrative connection-mapping rather than adversarial drive"
+    targets: [{"kind": "active", "id": "synthesis"}]
+    qualification: "synthesis"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: adversarial
+  posture: "adversarial"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -73,67 +83,95 @@ input_contract:
   detection:
     expert_signals: ["thesis", "antithesis", "sublation", "Aufheben", "dialectical"]
     accessible_signals: ["seems like a contradiction", "false dichotomy", "tension I can't resolve"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the position you'd start from, and what's the opposing position you sense pulling against it?'"
     on_underspecified: "Ask: 'Is this a tension between two positions each holding real merit, or are you weighing alternatives to choose between? The first invites Dialectical Analysis; the second invites Constraint Mapping.'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Does the antithesis emerge from the thesis's own internal contradictions, or is it external critique?"
-    failure_mode_if_unmet: weak-antithesis
-  - cq_id: CQ2
+    failure_mode_if_unmet: "weak-antithesis"
+  - cq_id: "CQ2"
     question: "Does the sublation transcend by mechanism, or does it average the two positions?"
-    failure_mode_if_unmet: premature-synthesis
-  - cq_id: CQ3
+    failure_mode_if_unmet: "premature-synthesis"
+  - cq_id: "CQ3"
     question: "If no genuine sublation is available, has the analysis honored the irreducibility (Adornian escape valve) rather than forcing one?"
-    failure_mode_if_unmet: forced-triad
-  - cq_id: CQ4
+    failure_mode_if_unmet: "forced-triad"
+  - cq_id: "CQ4"
     question: "Have the next-level contradictions the sublation generates been named explicitly?"
-    failure_mode_if_unmet: recursion-omission
+    failure_mode_if_unmet: "recursion-omission"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: weak-antithesis
+  - name: "weak-antithesis"
     detection_signal: "Antithesis is thesis with minor modifications, not genuine adversarial commitment."
-    correction_protocol: re-dispatch (argue antithesis as if believed, emerging from thesis's contradictions)
-  - name: premature-synthesis
+    correction_protocol: "re-dispatch (argue antithesis as if believed, emerging from thesis's contradictions)"
+  - name: "premature-synthesis"
     detection_signal: "Sublation averages positions ('do a little of both') rather than transcending."
-    correction_protocol: re-dispatch (state mechanism by which sublation cancels false aspects while preserving true ones)
-  - name: forced-triad
+    correction_protocol: "re-dispatch (state mechanism by which sublation cancels false aspects while preserving true ones)"
+  - name: "forced-triad"
     detection_signal: "Analysis forces a sublation when the contradiction is genuinely irreducible."
-    correction_protocol: flag (invoke Adornian escape valve and declare irreducibility)
-  - name: teleological-construction
+    correction_protocol: "flag (invoke Adornian escape valve and declare irreducibility)"
+  - name: "teleological-construction"
     detection_signal: "Antithesis appears constructed to arrive at a predetermined sublation."
-    correction_protocol: re-dispatch (restart antithesis derivation from thesis's contradictions)
-  - name: recursion-omission
+    correction_protocol: "re-dispatch (restart antithesis derivation from thesis's contradictions)"
+  - name: "recursion-omission"
     detection_signal: "Sublation presented as terminal without naming next-level contradictions it generates."
-    correction_protocol: flag (add recursion paragraph)
+    correction_protocol: "flag (add recursion paragraph)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - hegelian-dialectic-aufheben
+  - hegelian-dialectic-aufheben
   optional:
-    - adornian-negative-dialectics (when irreducibility is in play)
-    - marxist-historical-materialism (when material conditions structure the tension)
+  - lens_id: adornian-negative-dialectics
+    qualification: when irreducibility is in play
+  - lens_id: marxist-historical-materialism
+    qualification: when material conditions structure the tension
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Dialectical Analysis is its own depth target in T12; deeper would shift mode."
   sideways:
-    target_mode_id: synthesis
+    target: {"kind": "active", "id": "synthesis"}
     when: "Positions do not generate each other internally; integrative neutral examination is correct rather than adversarial drive."
   downward:
-    target_mode_id: null
+    target: null
     when: "T12 has no lighter sibling currently."
 ```
+
+## Display Description
+
+Argues thesis and antithesis with genuine commitment, then sublates or articulates irreducibility.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals:
+    - {"signal": "dialectical analysis", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "thesis antithesis", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "sublate", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Aufheben", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "drive through the contradiction", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Hegelian", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "Adornian", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "framework reference"}
+    - {"signal": "irreducible contradiction", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "genuine opposition", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → thesis-antithesis", "confidence_weight": "weak", "evidence": "tonal cue (dialectic)"}
+    - {"signal": "allison's three lenses", "territory": "T12-cross-domain-and-knowledge-synthesis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "allisons three lenses", "territory": "T12-cross-domain-and-knowledge-synthesis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

@@ -13,23 +13,23 @@ date modified: 2026-05-01
 
 ```yaml
 # 0. IDENTITY
-mode_id: argument-audit
-canonical_name: Argument Audit
-suffix_rule: analysis
-educational_name: argument audit (Frame Audit + Coherence Audit integrated)
+mode_id: "argument-audit"
+canonical_name: "Argument Audit"
+suffix_rule: "analysis"
+educational_name: "argument audit (Frame Audit + Coherence Audit integrated)"
 
 # 1. TERRITORY AND POSITION
-territory: T1-argumentative-artifact-examination
+territory: "T1-argumentative-artifact-examination"
 gradation_position:
-  axis: depth
-  value: molecular
+  axis: "depth"
+  value: "molecular"
 adjacent_modes_in_territory:
-  - mode_id: coherence-audit
-    relationship: depth-light sibling (internal-consistency)
-  - mode_id: frame-audit
-    relationship: depth-light sibling (frame-surfacing + suspending)
-  - mode_id: propaganda-audit
-    relationship: specificity-specialized sibling (Stanley-influenced, adversarial-stance variant)
+  - mode_id: "coherence-audit"
+    relationship: "depth-light sibling (internal-consistency)"
+  - mode_id: "frame-audit"
+    relationship: "depth-light sibling (frame-surfacing + suspending)"
+  - mode_id: "propaganda-audit"
+    relationship: "specificity-specialized sibling (Stanley-influenced, adversarial-stance variant)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -48,42 +48,57 @@ disambiguation_routing:
     - "user wants integrated audit spanning frame-audit + coherence-audit + cross-cutting synthesis"
     - "user willing to spend 10+ minutes for full molecular pass"
   routes_away_when:
-    - "want only internal-consistency check" → coherence-audit
-    - "want only frame-surfacing" → frame-audit
-    - "argument is propaganda or persuasion-engineered" → propaganda-audit
-    - "want to evaluate the argument as a proposal with stance" → T15 modes (steelman, balanced-critique, red-team-assessment / red-team-advocate)
+    - condition: "want only internal-consistency check"
+      targets: [{"kind": "active", "id": "coherence-audit"}]
+      qualification: "coherence-audit"
+    - condition: "want only frame-surfacing"
+      targets: [{"kind": "active", "id": "frame-audit"}]
+      qualification: "frame-audit"
+    - condition: "argument is propaganda or persuasion-engineered"
+      targets: [{"kind": "active", "id": "propaganda-audit"}]
+      qualification: "propaganda-audit"
+    - condition: "want to evaluate the argument as a proposal with stance"
+      targets: [{"kind": "active", "id": "steelman-construction"}, {"kind": "active", "id": "balanced-critique"}, {"kind": "active", "id": "red-team-assessment"}, {"kind": "active", "id": "red-team-advocate"}]
+      qualification: "T15 modes (steelman, balanced-critique, red-team-assessment / red-team-advocate)"
 when_not_to_invoke:
-  - "User has time pressure" → coherence-audit or frame-audit
-  - "User is asking who benefits from the argument's acceptance, not whether it holds" → cui-bono (T2)
-  - "User wants paradigm-level comparison rather than single-artifact audit" → frame-comparison or worldview-cartography (T9)
+  - condition: "User has time pressure"
+    targets: [{"kind": "active", "id": "coherence-audit"}, {"kind": "active", "id": "frame-audit"}]
+    qualification: "coherence-audit or frame-audit"
+  - condition: "User is asking who benefits from the argument's acceptance, not whether it holds"
+    targets: [{"kind": "active", "id": "cui-bono"}]
+    qualification: "cui-bono (T2)"
+  - condition: "User wants paradigm-level comparison rather than single-artifact audit"
+    targets: [{"kind": "active", "id": "frame-comparison"}, {"kind": "active", "id": "worldview-cartography"}]
+    qualification: "frame-comparison or worldview-cartography (T9)"
 
 # 3. EXECUTION STRUCTURE
-composition: molecular
+composition: "molecular"
 # NOTE: Decision N — Wave 4 build at depth-molecular position completing T1 depth ladder
 # (coherence-audit → frame-audit → argument-audit). Carries Debate D2 (motte-and-bailey:
 # fallacy or doctrine? Shackel preference vs. common usage).
 molecular_spec:
+  companion_source: "frameworks/book/argument-audit-analysis.md"
   components:
-    - mode_id: frame-audit
-      runs: full
-    - mode_id: coherence-audit
-      runs: full
+    - mode_id: "frame-audit"
+      runs: "full"
+    - mode_id: "coherence-audit"
+      runs: "full"
   synthesis_stages:
-    - name: frame-coherence-merge
-      type: parallel-merge
+    - name: "frame-coherence-merge"
+      type: "parallel-merge"
       input: [frame-audit, coherence-audit]
       output: "merged audit: per-claim coherence findings paired with frame-surfacing findings; identification of where frame-imports do analytical work coherence-audit alone would miss"
-    - name: cross-cutting-integration
-      type: contradiction-surfacing
+    - name: "cross-cutting-integration"
+      type: "contradiction-surfacing"
       input: [frame-coherence-merge]
       output: "cross-cutting issues: where the argument's coherence depends on frame-imports that are themselves contested; where coherence-failures track frame-substitutions; where motte-and-bailey-style structure (or other frame-shifting fallacies) operates across claims"
-    - name: integrated-audit-document
-      type: dialectical-resolution
+    - name: "integrated-audit-document"
+      type: "dialectical-resolution"
       input: [frame-coherence-merge, cross-cutting-integration]
       output: "integrated argument audit: per-claim findings, frame-level findings, cross-cutting issues, named fallacies (with debate notes where applicable), and overall argument-soundness assessment"
   partial_composition_handling:
-    on_component_failure: proceed-with-gap
-    on_low_confidence: flag affected synthesis stage; do not aggregate over low-confidence frame or coherence findings
+    on_component_failure: "proceed-with-gap"
+    on_low_confidence: "flag affected synthesis stage; do not aggregate over low-confidence frame or coherence findings"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -98,64 +113,97 @@ input_contract:
   detection:
     expert_signals: ["audit this argument", "frame and coherence", "thorough audit"]
     accessible_signals: ["does this hold up", "something feels off", "check this argument"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you paste or describe the argument you want audited?'"
     on_underspecified: "Ask the user whether they want the full Argument Audit molecular pass or a lighter Coherence Audit / Frame Audit read."
+    lighter_targets: [{"kind": "active", "id": "coherence-audit"}, {"kind": "active", "id": "frame-audit"}]
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Does the cross-cutting-integration stage actually surface issues that neither component pass would catch alone, or does it merely concatenate them?"
-    failure_mode_if_unmet: integration-failure
-  - cq_id: CQ2
+    failure_mode_if_unmet: "integration-failure"
+  - cq_id: "CQ2"
     question: "Are frame-imports identified concretely (which premises smuggle in which framings), or are they noted vaguely?"
-    failure_mode_if_unmet: frame-import-vagueness
-  - cq_id: CQ3
+    failure_mode_if_unmet: "frame-import-vagueness"
+  - cq_id: "CQ3"
     question: "Are coherence findings grounded in specific claim-pairs and inference steps, or are they stated as general impressions?"
-    failure_mode_if_unmet: coherence-impressionism
-  - cq_id: CQ4
+    failure_mode_if_unmet: "coherence-impressionism"
+  - cq_id: "CQ4"
     question: "Where named fallacies are invoked (motte-and-bailey, equivocation, etc.), is the invocation specific and warranted, or is it a label slapped on a contested move?"
-    failure_mode_if_unmet: fallacy-labeling-without-warrant
+    failure_mode_if_unmet: "fallacy-labeling-without-warrant"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: integration-failure
+  - name: "integration-failure"
     detection_signal: "Cross-cutting-issues section restates per-claim and frame findings without identifying interactions between them."
-    correction_protocol: re-dispatch (synthesis stage with explicit interaction prompt)
-  - name: frame-import-vagueness
+    correction_protocol: "re-dispatch (synthesis stage with explicit interaction prompt)"
+  - name: "frame-import-vagueness"
     detection_signal: "Frame findings refer to 'the frame' or 'the assumption' without naming which premise carries which import."
-    correction_protocol: re-dispatch
-  - name: coherence-impressionism
+    correction_protocol: "re-dispatch"
+  - name: "coherence-impressionism"
     detection_signal: "Coherence findings cite no specific claim-pair or inference step."
-    correction_protocol: re-dispatch
-  - name: fallacy-labeling-without-warrant
+    correction_protocol: "re-dispatch"
+  - name: "fallacy-labeling-without-warrant"
     detection_signal: "Named fallacies (motte-and-bailey, etc.) are invoked without showing the specific structural move."
-    correction_protocol: flag and re-dispatch
+    correction_protocol: "flag and re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - walton-schemes-and-critical-questions
+  - walton-schemes-and-critical-questions
   optional:
-    - lakoff-conceptual-metaphor
-    - shackel-motte-and-bailey (when motte-and-bailey is in play; carries Debate D2)
+  - lakoff-conceptual-metaphor
+  - lens_id: shackel-motte-and-bailey
+    qualification: when motte-and-bailey is in play; carries Debate D2
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 3
-expected_runtime: ~10+min
+expected_runtime: "~10+min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Argument Audit is the heaviest mode in T1's depth ladder."
   sideways:
-    target_mode_id: propaganda-audit
+    target: {"kind": "active", "id": "propaganda-audit"}
     when: "Artifact is propaganda or persuasion-engineered; Stanley-influenced specialized variant applies."
   downward:
-    target_mode_id: coherence-audit
+    target: {"kind": "active", "id": "coherence-audit"}
     when: "User has time pressure or scope is narrower (internal-consistency only)."
 ```
+
+## Display Description
+
+Composes Coherence + Frame + (optionally) Propaganda passes into a full audit deliverable.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work through this {artifact} from frame to logic"
+  phrase_aliases: {"argument analysis": "argument audit", "argument review": "argument audit"}
+  signals:
+    - {"signal": "argument audit", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "audit this argument fully", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "comprehensive argument analysis", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Frame Audit and Coherence Audit together", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "frame and coherence audit", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "argument audit molecular", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name + composition reference"}
+    - {"signal": "full argument analysis", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "analyze this argument from every angle", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "frame and inference audit", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "both frame and logic", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition trigger"}
+    - {"signal": "comprehensive argument examination", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "full argumentative artifact examination", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "deep argument review", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "weak", "evidence": "tonal cue (depth)"}
+    - {"signal": "audit fully", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

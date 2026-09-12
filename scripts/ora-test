@@ -45,10 +45,22 @@ except ImportError:
     )
     sys.exit(1)
 
-CONFIG_DIR = Path(os.path.expanduser("~/ora/config/configurations/"))
-MODE_DIR = Path(os.path.expanduser("~/ora/modes/"))
-TRACE_ROOT = Path(os.path.expanduser("~/ora/data/pipeline-traces/"))
+ORA_ROOT = Path(os.environ.get("ORA_HOME") or Path(__file__).resolve().parents[1]).expanduser().resolve()
+sys.path.insert(0, str(ORA_ROOT))
+from orchestrator.routing_sources import compile_routing_sources
+
+CONFIG_DIR = ORA_ROOT / "config" / "configurations"
+MODE_DIR = ORA_ROOT / "modes"
+TRACE_ROOT = ORA_ROOT / "data" / "pipeline-traces"
 DEFAULT_SERVER = "http://localhost:5000"
+_ROUTING_SOURCES = None
+
+
+def routing_sources() -> dict:
+    global _ROUTING_SOURCES
+    if _ROUTING_SOURCES is None:
+        _ROUTING_SOURCES = compile_routing_sources(ORA_ROOT)
+    return _ROUTING_SOURCES
 
 
 def list_configs() -> list[str]:
@@ -59,10 +71,8 @@ def list_configs() -> list[str]:
 
 
 def list_modes() -> list[str]:
-    """Return available mode names (the filename stem), sorted."""
-    if not MODE_DIR.is_dir():
-        return []
-    return sorted(p.stem for p in MODE_DIR.glob("*.md"))
+    """Return validated active modes from the compiled source closure."""
+    return sorted(routing_sources()["modes"])
 
 
 def validate_config(name: str) -> bool:
@@ -70,7 +80,7 @@ def validate_config(name: str) -> bool:
 
 
 def validate_mode(name: str) -> bool:
-    return (MODE_DIR / f"{name}.md").is_file()
+    return name in routing_sources()["modes"]
 
 
 def latest_trace_dir(conv_id: str) -> str | None:

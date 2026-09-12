@@ -12,29 +12,29 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: red-team-assessment
-canonical_name: Red Team (Assessment)
-suffix_rule: analysis
-educational_name: adversarial vulnerability assessment for own decision (red team, assessment stance)
+mode_id: "red-team-assessment"
+canonical_name: "Red Team (Assessment)"
+suffix_rule: "analysis"
+educational_name: "adversarial vulnerability assessment for own decision (red team, assessment stance)"
 
 # 1. TERRITORY AND POSITION
-territory: T15-artifact-evaluation-by-stance
+territory: "T15-artifact-evaluation-by-stance"
 gradation_position:
-  axis: stance
-  value: adversarial-actor-modeling-assessment
+  axis: "stance"
+  value: "adversarial-actor-modeling-assessment"
 adjacent_modes_in_territory:
-  - mode_id: red-team-advocate
-    relationship: stance-counterpart (operation-counterpart in same territory; assessment vs. advocate)
-  - mode_id: steelman-construction
-    relationship: stance-counterpart (constructive-strong — direct opposite)
-  - mode_id: benefits-analysis
-    relationship: stance-counterpart (constructive-balanced)
-  - mode_id: balanced-critique
-    relationship: stance-counterpart (neutral)
-  - mode_id: devils-advocate-lite
-    relationship: stance-lighter sibling (adversarial-light — gap-deferred)
+  - mode_id: "red-team-advocate"
+    relationship: "stance-counterpart (operation-counterpart in same territory; assessment vs. advocate)"
+  - mode_id: "steelman-construction"
+    relationship: "stance-counterpart (constructive-strong — direct opposite)"
+  - mode_id: "benefits-analysis"
+    relationship: "stance-counterpart (constructive-balanced)"
+  - mode_id: "balanced-critique"
+    relationship: "stance-counterpart (neutral)"
+  - mode_id: "devils-advocate-lite"
+    relationship: "stance-lighter sibling (adversarial-light — gap-deferred)"
 cross_territory_reference:
-  - territory: T7-risk-and-failure-analysis
+  - territory: "T7-risk-and-failure-analysis"
     note: "Red Team (Assessment) and T7's pre-mortem-fragility / fragility-antifragility-audit both attack artifacts adversarially, but Red Team models a hostile actor while T7 audits structural fragility regardless of attacker presence. When the user wants 'how could this fail under any pressure' rather than 'how would an adversary defeat this,' route to T7."
 
 # 2. TRIGGER CONDITIONS AND ROUTING
@@ -63,29 +63,57 @@ disambiguation_routing:
     - "blind-spot seeking before commitment or shipping"
     - "the user owns the decision being stress-tested and wants vulnerabilities ranked by severity for fix-prioritisation"
   routes_away_when:
-    - "argue against this for external use" → red-team-advocate (stance-counterpart in same territory)
-    - "want strongest case FOR the artifact" → steelman-construction (direct opposite)
-    - "want balanced evaluation (positive AND negative AND interesting)" → benefits-analysis
-    - "want neutral examination weighing both sides" → balanced-critique
-    - "want opposition driven toward synthesis" → dialectical-analysis (T12)
-    - "want to choose between alternatives" → constraint-mapping (T3)
-    - "want to question the framework the artifact rests on" → paradigm-suspension (T9)
-    - "want structural fragility audit (no specific adversary)" → pre-mortem-fragility or fragility-antifragility-audit (T7)
-    - "no specific artifact on the table — just stakes-heavy concern" → adversarial catch-all
+    - condition: "argue against this for external use"
+      targets: [{"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-advocate (stance-counterpart in same territory)"
+    - condition: "want strongest case FOR the artifact"
+      targets: [{"kind": "active", "id": "steelman-construction"}]
+      qualification: "steelman-construction (direct opposite)"
+    - condition: "want balanced evaluation (positive AND negative AND interesting)"
+      targets: [{"kind": "active", "id": "benefits-analysis"}]
+      qualification: "benefits-analysis"
+    - condition: "want neutral examination weighing both sides"
+      targets: [{"kind": "active", "id": "balanced-critique"}]
+      qualification: "balanced-critique"
+    - condition: "want opposition driven toward synthesis"
+      targets: [{"kind": "active", "id": "dialectical-analysis"}]
+      qualification: "dialectical-analysis (T12)"
+    - condition: "want to choose between alternatives"
+      targets: [{"kind": "active", "id": "constraint-mapping"}]
+      qualification: "constraint-mapping (T3)"
+    - condition: "want to question the framework the artifact rests on"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension (T9)"
+    - condition: "want structural fragility audit (no specific adversary)"
+      targets: [{"kind": "active", "id": "pre-mortem-fragility"}, {"kind": "active", "id": "fragility-antifragility-audit"}]
+      qualification: "pre-mortem-fragility or fragility-antifragility-audit (T7)"
+    - condition: "no specific artifact on the table — just stakes-heavy concern"
+      targets: [{"kind": "action", "id": "ask-for-subject"}]
+      qualification: "Ask what specific subject to examine; a lighter analysis also requires the missing subject."
 when_not_to_invoke:
-  - "User wants to build a case against the artifact for external use (debate / dissuasion / hostile-review prep)" → red-team-advocate
-  - "User wants framework-level critique rather than artifact-level attack" → paradigm-suspension
-  - "User wants structural fragility audit independent of adversary modeling" → T7 pre-mortem-fragility
-  - "User has not supplied a specific named artifact" → run Input Sufficiency Protocol; offer redirect
-  - "User wants forward planning rather than attack" → scenario-planning or consequences-and-sequel (T6)
+  - condition: "User wants to build a case against the artifact for external use (debate / dissuasion / hostile-review prep)"
+    targets: [{"kind": "active", "id": "red-team-advocate"}]
+    qualification: "red-team-advocate"
+  - condition: "User wants framework-level critique rather than artifact-level attack"
+    targets: [{"kind": "active", "id": "paradigm-suspension"}]
+    qualification: "paradigm-suspension"
+  - condition: "User wants structural fragility audit independent of adversary modeling"
+    targets: [{"kind": "active", "id": "pre-mortem-fragility"}]
+    qualification: "T7 pre-mortem-fragility"
+  - condition: "User has not supplied a specific named artifact"
+    targets: [{"kind": "action", "id": "ask-for-subject"}]
+    qualification: "run Input Sufficiency Protocol; offer redirect"
+  - condition: "User wants forward planning rather than attack"
+    targets: [{"kind": "active", "id": "scenario-planning"}, {"kind": "active", "id": "consequences-and-sequel"}]
+    qualification: "scenario-planning or consequences-and-sequel (T6)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: adversarial
+  posture: "adversarial"
   input_sufficiency_protocol:
-    runs: first stage of execution, before attack
+    runs: "first stage of execution, before attack"
     conditions:
       - identifiable_artifact: "specific named thing under attack, not a domain or area"
       - bounded_scope: "clear edges; in vs out of attack range knowable"
@@ -106,95 +134,135 @@ input_contract:
   detection:
     expert_signals: ["red team this assessment", "severity floor at Major", "stress-test against [adversary type]"]
     accessible_signals: ["attack this", "stress-test this", "what am I missing", "find the holes", "before I ship"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Emit Input Sufficiency redirect (three-part shape: What I see / What's missing / Three options with override). Do not attack thin material without flagging."
     on_underspecified: "Run Input Sufficiency Protocol; if conditions fail, emit redirect rather than attacking."
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Does each vulnerability have artifact-specific grounding (Why this is real with quotes where possible), or are findings manufactured to satisfy the prompt?"
-    failure_mode_if_unmet: nitpick-trap
-  - cq_id: CQ2
+    failure_mode_if_unmet: "nitpick-trap"
+  - cq_id: "CQ2"
     question: "Is the severity calibration honest, or has severity been inflated to feel productive (or deflated to spare the user)?"
-    failure_mode_if_unmet: severity-inflation
-  - cq_id: CQ3
+    failure_mode_if_unmet: "severity-inflation"
+  - cq_id: "CQ3"
     question: "Is each fix recommendation actionable by the user — does the user know what to do next?"
-    failure_mode_if_unmet: fix-handwaving
-  - cq_id: CQ4
+    failure_mode_if_unmet: "fix-handwaving"
+  - cq_id: "CQ4"
     question: "Has fix-feasibility been assessed per vulnerability, distinguishing fixes the user can implement from those requiring outside resources?"
-    failure_mode_if_unmet: fix-handwaving
-  - cq_id: CQ5
+    failure_mode_if_unmet: "fix-handwaving"
+  - cq_id: "CQ5"
     question: "Does the Attack-Failure Disclosure section name attack classes attempted that produced no findings, or is it empty?"
-    failure_mode_if_unmet: shallow-attack
-  - cq_id: CQ6
+    failure_mode_if_unmet: "shallow-attack"
+  - cq_id: "CQ6"
     question: "Does the attack stay within the artifact's framework, or does it drift into framework-level critique that belongs to paradigm-suspension?"
-    failure_mode_if_unmet: framework-attack-trap
-  - cq_id: CQ7
+    failure_mode_if_unmet: "framework-attack-trap"
+  - cq_id: "CQ7"
     question: "If Input Sufficiency override was invoked, is every finding flagged as low-specificity / generic so the user knows the limitation?"
-    failure_mode_if_unmet: fabricated-override-trap
+    failure_mode_if_unmet: "fabricated-override-trap"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: pulled-punches
+  - name: "pulled-punches"
     detection_signal: "Mode avoids hard truths to spare the user; vulnerabilities softened, severity deflated, real risks dressed as 'minor considerations'."
-    correction_protocol: re-dispatch
-  - name: severity-inflation
+    correction_protocol: "re-dispatch"
+  - name: "severity-inflation"
     detection_signal: "Severity profile inflated above what artifact's actual flaws warrant; severity-floor declaration skipped despite no Major/Showstopper findings to manufacture a sense of productive attack."
-    correction_protocol: re-dispatch
-  - name: fix-handwaving
+    correction_protocol: "re-dispatch"
+  - name: "fix-handwaving"
     detection_signal: "Fix recommendations are vague ('improve documentation', 'consider stakeholders') without artifact-specific actionable instructions or feasibility assessment."
-    correction_protocol: re-dispatch
-  - name: nitpick-trap
+    correction_protocol: "re-dispatch"
+  - name: "nitpick-trap"
     detection_signal: "Findings emitted without artifact-specific grounding; cosmetic-level objections promoted to vulnerability status."
-    correction_protocol: re-dispatch
-  - name: sycophantic-inverse-trap
+    correction_protocol: "re-dispatch"
+  - name: "sycophantic-inverse-trap"
     detection_signal: "Performing hostility rather than analysing; inverse of sycophantic affirmation. Findings fail the 'would a committed opponent actually use this' check."
-    correction_protocol: flag
-  - name: straw-target-trap
+    correction_protocol: "flag"
+  - name: "straw-target-trap"
     detection_signal: "Attack targets a weakened version of the artifact; doesn't apply to artifact as written."
-    correction_protocol: re-dispatch
-  - name: framework-attack-trap
+    correction_protocol: "re-dispatch"
+  - name: "framework-attack-trap"
     detection_signal: "Attack drifts into critique of the framework the artifact rests on rather than the artifact within it."
-    correction_protocol: escalate
-  - name: manufacture-on-revise-trap
+    correction_protocol: "escalate"
+  - name: "manufacture-on-revise-trap"
     detection_signal: "Reviser added findings without new evidence; sycophantic-inverse drift at revision stage."
-    correction_protocol: re-dispatch
-  - name: fabricated-override-trap
+    correction_protocol: "re-dispatch"
+  - name: "fabricated-override-trap"
     detection_signal: "Override invoked but findings not flagged as low-specificity / generic; user loses signal that attack was run on thin material."
-    correction_protocol: flag
-  - name: shallow-attack
+    correction_protocol: "flag"
+  - name: "shallow-attack"
     detection_signal: "Attack-Failure Disclosure empty or missing; mode failed to attack thoroughly."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - cia-tradecraft-red-team
+    - "cia-tradecraft-red-team"
   optional:
-    - klein-pre-mortem
-    - failure-mode-literature
-    - post-mortem-analyses
-    - adversarial-case-studies
-    - fgl-fear-greed-laziness
-    - opv-other-points-of-view
+    - "klein-pre-mortem"
+    - "failure-mode-literature"
+    - "post-mortem-analyses"
+    - "adversarial-case-studies"
+    - "fgl-fear-greed-laziness"
+    - "opv-other-points-of-view"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Red Team (Assessment) is the heaviest assessment-stance adversarial mode in T15; for richer integrated analysis escalate cross-territory to wicked-problems."
   sideways:
-    target_mode_id: red-team-advocate
+    target: {"kind": "active", "id": "red-team-advocate"}
     when: "User shifts from own-decision-stress-test framing to building a case against the artifact for external use (debate / dissuasion / hostile review)."
   downward:
-    target_mode_id: devils-advocate-lite
+    target: {"kind": "deferred", "id": "devils-advocate-lite"}
     when: "User wants light adversarial pressure rather than full red-team workup; deferred — fall back to balanced-critique with critical lean if devils-advocate-lite not built."
 ```
+
+## Display Description
+
+Models an adversarial actor attacking the artifact and ranks vulnerabilities by severity for the user's own fix-prioritisation. Default red-team mode when ambiguous. **Parsed from `red-team` per Decision D, 2026-05-01.**
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll push back hard on this {artifact}"
+  home_priority: true
+  signals:
+    - {"signal": "red team", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling, operation? → assessment (default)", "confidence_weight": "strong", "evidence": "mode-name reference (parent term; resolves to assessment when ambiguous)"}
+    - {"signal": "red-team assessment", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "stress-test this", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "attack this", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "pick this apart", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "try to break this", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "poke holes", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "find the holes", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "pre-mortem", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "weak", "evidence": "trigger phrase (also fires T6/T7 pre-mortem parses; weak in T15)"}
+    - {"signal": "what am I missing", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "where is this weak", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "how could this fail", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "before I ship", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "before I ship this", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "before I commit", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-assessment", "confidence_weight": "strong", "evidence": "trigger phrase (assessment-signal)"}
+    - {"signal": "red team this", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "push back hard", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "tear apart", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+  question: "red-team-assessment-subject"
+  question_predicate: "red_team_subject_missing"
+routing_questions:
+  - {"id": "red-team-assessment-subject", "text": "What specific plan, draft, claim, decision, design, or argument would you like me to stress-test? A lighter critique also needs that subject; you can provide it or choose a different kind of analysis.", "answers": [{"phrases": ["lighter", "balanced critique"], "targets": [{"kind": "active", "id": "balanced-critique"}], "qualification": "Still requires the missing subject; ask for it before analysis."}], "default": {"targets": [{"kind": "action", "id": "ask-for-subject"}]}, "territories": ["T15"]}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

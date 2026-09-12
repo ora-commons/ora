@@ -1042,5 +1042,366 @@ class TestRoutingCorpusOracle(unittest.TestCase):
         self.assertEqual(self.report.read_text(encoding="utf-8"), sentinel)
 
 
+
+class TestCompiledRoutingSources(unittest.TestCase):
+    # The approved preservation boundary is every analytical body and all seven
+    # companion files at the pre-cutover source base. Hashes stay in this test,
+    # never in a runtime document or reader-facing catalogue.
+    _BODY_SHA256 = {
+        "argument-audit": "9c7026d4294aac6a589a8df6493c10a89e773d1af1f0dec9a6735dd7d20b52a7",
+        "balanced-critique": "dcd5241973b6a16d63c500927da80cd247bac043bbd829cddbff9d310e8ad7be",
+        "bayesian-hypothesis-network": "6bef352912c288ce00a43946a7c9f50dddcd9cedda65825cba1c02fe116785ba",
+        "benefits-analysis": "3fd44e6df7e7aeaee0e31adf677aaa275ffc12c737c8b6b1a0bce234cd6462cb",
+        "boundary-critique": "72e2d877408fa8cf33271adddc31e873c9831788930ca6322f3507ff8bb6c674",
+        "causal-dag": "1796e8f562414635d46bf8dda50bb6e853afadc0bd8a3af665afd3e6b59cca89",
+        "coherence-audit": "3f130dc50d0da6d16c65ca585e4246c7262987486169fbb048121cfd6b855381",
+        "competing-hypotheses": "b82425462344207ac49ec6f5cd7dc56c568c2bc265e12df3ed40a5a454d8ab10",
+        "compositional-dynamics": "c7ec4a6980676e6250979babda11bd27e10f10acf4f767011eb93d83bea7107c",
+        "conceptual-engineering": "b726fd018d454d81bb2c4ab40fa2c94a1c8058998c7c6b63c21889c330158239",
+        "consequences-and-sequel": "c4c0c45d5f0df2d490fddd9330370e57ce7488eb311925a4cc8a52baf094ad50",
+        "constraint-mapping": "733fed96d6b93cd07d99f144486c4ed63b66bcd18c77035ac43f1299492e21e2",
+        "cui-bono": "96b3e1d5abb89aa1f2524d9bd149d454e7782f71b7b7eede205c951448cccba2",
+        "decision-architecture": "a15d817696fc8427c23d3fd9f092d078301ac5de7b002f2cf672ed0e17d2da62",
+        "decision-clarity": "23e73b9cab440f6b571c6a896f75f4a30b84ddd21e000d45f68eab70fb5a4d7a",
+        "decision-under-uncertainty": "f6d99c2faf7733f9c8e7f8f9150e2560a1467306c6d20f34fd7682f12a13874c",
+        "deep-clarification": "88e3d4f351473a8c7e1cafd75867f69517f7044d3be197887fe7e87f43cd838d",
+        "dialectical-analysis": "ba038329cc15427f94456b84e91ca3a5039886f96a1112b150d5a5b421552ec7",
+        "differential-diagnosis": "462dcd2101bfb04af9ae456db700918fb09dd9a28a9f10d387c215a679efb4b4",
+        "domain-induction": "f3ec39d68e90d0978b1fae09afb4cffc6455082030d45e00c00ce5e55e83d58b",
+        "factual-lookup": "9fe34460e154e0700f70408aaca1d57dbdf410ecd431ff777c6548680d77d431",
+        "fragility-antifragility-audit": "dea133e9c9907dbf4808895d41129748ff1c0651ffd1259ec8787e1bf4f3212a",
+        "frame-audit": "b92d2ebfd083a1c73d249a9c5227be3804e316d035930371dba15de388da8400",
+        "frame-comparison": "40a6382db26686ade66c2a1e3807b76eb575f128e55ae6dfd1bd135b00c6ec33",
+        "general-inquiry": "561494431eb050df9e12986ea136716a7d2c90cfc3c03bdd256b8d1ea8ee496b",
+        "information-density": "eefb4794a0cfc40038074f49c23f668eac905b2bd85af54e9b9cf79c863b8c33",
+        "interest-mapping": "e0644791cec443b4a3b219d0a2a0a53c943647cd7899abdab3c30ffa70de60c6",
+        "ma-reading": "5bda304456312007cf0a3a932fc769b9bb083a02edc68d034fc2b7c0ac855aea",
+        "market-dynamics": "e8bb7b9d11616a21090f7772a0d6e1c5f190cd80efc90dcde5b0bf483ef4a445",
+        "mechanism-design": "73a5890033e59c42cbe57ef0b32195006c4e26b14aeaa03776ac240d2daae309",
+        "mechanism-understanding": "e640570376de124beb68517ebaf1f83b79d70203d5300434cce870aae697a286",
+        "multi-criteria-decision": "473011f0093b2444cbdda28043edb9b27c0d37a3015a9156edbec86df5ed7f99",
+        "paradigm-suspension": "5535480de86d0fee3137dc1e183c832124e640edda672e8d7a4c154741ed52b3",
+        "passion-exploration": "9f1200f7612d5a12d0b720a4a0287d1f3425ce0f8e4ae2588fcb4d08d114ae83",
+        "place-reading-genius-loci": "b4b186669e34b2a44c552ad73a3e5312d79bf1d923a80adab46860b0cb0dc680",
+        "pre-mortem-action": "0a59e7396ce1825125251ddfe8ce7a0456cdaaf6e5d1fd1338f941e1f407ead8",
+        "pre-mortem-fragility": "fcd93a16b4acc49f6f49e4e8f4a6476d56b231c904e3bbfd961569fdf1269576",
+        "principled-negotiation": "46ccc277a3a1dc5371536b846cff1722b7cd587e119e8a2d1ecd0697aaceb6bf",
+        "probabilistic-forecasting": "c205b104ebca45fbd3def13a13458e098df31a972563ba36baf6865d306c7445",
+        "process-mapping": "35411b2ea983b062cb51504458fb38736d488891057f161906a28bcc8c5a0e8b",
+        "process-tracing": "b6c37f138e49fb14fafb2e406a5a68589c1dd1c4c3e0bb241fb955fa35384f00",
+        "project-mode": "6a4def1b94fcf0f50d31bf3c01e50c521e16a794af07dc689b8c10f2305b8e50",
+        "propaganda-audit": "5c2f5bbd77e2b632cf0399b0bb77f4982a2da7adbb195712757cb0ef69b37ea2",
+        "quick-orientation": "e9338cf99a1257aa7324a9e6118ffaa24e455b29a01750a312e3026e43b9eb81",
+        "red-team-advocate": "8163ae4d8fd851c1c30d63e3a109b32de625ed9f205b33ec35030f0171c8a575",
+        "red-team-assessment": "074c18c33855160960c6335bc419664fb00607574afd43cb828afed8819bfeb1",
+        "relationship-mapping": "71ab0db1b28d71181e160e00780f035e6aa40bbe8d67056c93ded6ae44d61f18",
+        "root-cause-analysis": "9a153d69a1e9752dec6670f805e45208db23472d8127b7b000f28302866407c4",
+        "scenario-planning": "f8eecb1c58fa7df53d5fb1c0d6a92ab1d41844b215a73ff604f9eb6160ec3bbd",
+        "simple": "6d7cb4ab1f53461091c1b095e430310a42de9e0c4aa4a16c0318ce1fee133fec",
+        "spatial-reasoning": "544c35faca0377a2e90fa8c47167a5a7e44c6f8689c69dd865967df744ad2bbd",
+        "stakeholder-mapping": "883b1708e316fee4e5875e55dcab3ee8a894f95251f7cbd3ea0e9cb1ec1ac82d",
+        "steelman-construction": "79c47a0088ef6b8403bb20b9a9001f38379619c09d9aa2a78a821602f9455902",
+        "strategic-interaction": "03cf150ff6a29368f5188ecc1fd918a25d049f2c0aa0ff46638175f16241cc20",
+        "structured-output": "70829ac125d12bf26f758ca7e81e549a51be79932a9319c7808be109c81c41aa",
+        "subjective-inquiry": "7e79744bd9db7687bb37b336b59ea7dcc655b3f4fb928d2348f20d046b056456",
+        "synthesis": "629119008cff95a5ad4e11dda59f40b14cbd7d94b5771334f11bc161b8b80dbf",
+        "systems-dynamics-causal": "626beb4750f52f10e991018ee1f277bb42082e4afef2ca87f0f84cef97875daa",
+        "systems-dynamics-structural": "3005fdf60ea6d2acac450a2acf161b4285d7a1049cf5c171548ec6280c285b67",
+        "terrain-mapping": "190ea3aadefa6a7da15ea02f8a6bfe9152c8c69bb71d04d67e2fa0cd8d757dec",
+        "third-side": "d9cfa76b57439117ec5e10b8330ca733013240b8ac1b5d17993f6553fb0d1f22",
+        "wicked-future": "409cab554cdc3a91417a5dbebc0b259889a8dfdf91ed95c289e4169110028774",
+        "wicked-problems": "52dce9fda5875035037468ca4059c8d233b440472822c117f17905aec654fbdb",
+        "worldview-cartography": "e300198ba224eed04ab8edaed3d425408425246b07dedc290401de743994ee02",
+    }
+    _COMPANION_SHA256 = {
+        "frameworks/book/argument-audit-analysis.md": "9e5ae33f41dca11da8c8583d00f52f131708aa1dfb43ed466eb0af195f05467b",
+        "frameworks/book/bayesian-hypothesis-network-analysis.md": "9e26b69b1e74debf2daa1159746aa3f6d235a111f5f0c19abc880e779975622c",
+        "frameworks/book/decision-architecture-analysis.md": "2adf06d31051fdc2f286075951681b58415480fc63bedf21ff3138c222e1805a",
+        "frameworks/book/decision-clarity-analysis.md": "0baddde068e27745844afee24046d0ae49d5283356182f60ce753a671fe22c7c",
+        "frameworks/book/domain-induction-analysis.md": "7030621841cf6a3cbca1530ad2ddeffc5281be23f63ddae0098db98f826bf637",
+        "frameworks/book/wicked-future-analysis.md": "d9d836dd8b6b405c889121c4bbb4c2eba0ac2e51edf000c2ddc646847e998d64",
+        "frameworks/book/worldview-cartography-analysis.md": "cac5de081fca77546f25b57f5aee60bc22f2a59767434e889652f04c88641e88",
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        from routing_sources import compile_routing_sources
+        cls.sources = compile_routing_sources(Path(WORKSPACE))
+
+    def _source_copy(self):
+        import shutil
+        temporary = tempfile.TemporaryDirectory(prefix="compiled-routing-sources-")
+        self.addCleanup(temporary.cleanup)
+        destination = Path(temporary.name)
+        for relative in self.sources["sources"]:
+            target = destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(Path(WORKSPACE) / relative, target)
+        return destination
+
+    def test_full_source_closure_and_preservation(self):
+        import hashlib
+        import re
+        from routing_sources import RoutingSourceError, compile_routing_sources
+        sources = self.sources
+        self.assertEqual(set(sources["modes"]), set(self._BODY_SHA256))
+        self.assertEqual(len(sources["lenses"]), 240)
+        self.assertEqual(set(sources["companions"]), set(self._COMPANION_SHA256))
+        self.assertEqual(len(sources["deferred"]), 14)
+        self.assertFalse(set(sources["modes"]) & sources["deferred"])
+        for mid, expected in self._BODY_SHA256.items():
+            with self.subTest(mode=mid):
+                text = sources["modes"][mid]["text"]
+                suffix = re.search(
+                    r"## Selection/Activation Guidance\n\n```yaml\n.*?\n```(.*)",
+                    text, re.S,
+                )[1].lstrip("\n")
+                self.assertEqual(hashlib.sha256(suffix.encode()).hexdigest(), expected)
+        for relative, expected in self._COMPANION_SHA256.items():
+            with self.subTest(companion=relative):
+                self.assertEqual(hashlib.sha256(sources["companions"][relative].encode()).hexdigest(), expected)
+        self.assertEqual(
+            sources["modes"]["decision-clarity"]["metadata"]["molecular_spec"]["components"][-1]["reference_id"],
+            "red-team-fragment",
+        )
+        self.assertIn(
+            "recommended intervention",
+            sources["modes"]["decision-clarity"]["metadata"]["molecular_spec"]["synthesis_stages"][-1]["output"],
+        )
+        root = self._source_copy()
+        path = root / "modes" / "red-team-assessment.md"
+        original = path.read_text()
+        mutations = [
+            ('"kind": "active", "id": "red-team-advocate"',
+             '"kind": "active", "id": "nonexistent-route"'),
+            ('"kind": "deferred", "id": "devils-advocate-lite"',
+             '"kind": "active", "id": "devils-advocate-lite"'),
+            ('question_predicate: "red_team_subject_missing"',
+             'question_predicate: "unbound-meaning"'),
+        ]
+        for before, after in mutations:
+            with self.subTest(invalid_source=after):
+                self.assertIn(before, original)
+                path.write_text(original.replace(before, after, 1))
+                with self.assertRaises(RoutingSourceError):
+                    compile_routing_sources(root)
+        path.write_text(original)
+        self.assertIn("devils-advocate-lite", compile_routing_sources(root)["deferred"])
+
+    def test_fresh_process_loads_changed_sources(self):
+        import subprocess
+        root = self._source_copy()
+        path = root / "modes" / "cui-bono.md"
+        path.write_text(path.read_text().replace(
+            "## Display Description\n\n",
+            "## Display Description\n\nChanged canonical description. ",
+            1,
+        ))
+        code = (
+            "import json,sys;sys.path.insert(0,sys.argv[1]);"
+            "from routing_sources import compile_routing_sources;"
+            "source=compile_routing_sources(sys.argv[2]);"
+            "print(json.dumps(source['modes']['cui-bono']['description']))"
+        )
+        child = subprocess.run(
+            [sys.executable, "-c", code, str(Path(WORKSPACE) / "orchestrator"), str(root)],
+            capture_output=True, text=True, check=True, timeout=30,
+            env={**os.environ, "ORA_HOME": str(root), "PYTHONDONTWRITEBYTECODE": "1",
+                 "PYTHON_KEYRING_BACKEND": "keyring.backends.null.Keyring"},
+        )
+        self.assertTrue(json.loads(child.stdout).startswith("Changed canonical description."))
+        self.assertFalse(self.sources["modes"]["cui-bono"]["description"].startswith("Changed canonical description."))
+
+    def test_canonical_questions_answers_and_defaults(self):
+        sources = self.sources
+        for territory in ("T8", "T11", "T12", "T17", "T18", "T21"):
+            qid = sources["territory_questions"][territory]
+            question = sources["questions"][qid]
+            with self.subTest(territory=territory, checkpoint="question"):
+                asked = boot._question_result(qid)
+                self.assertEqual(asked["disambiguation_questions_asked"], [question["text"]])
+                self.assertEqual(asked["offered_choices"], question["answers"])
+            for answer in question["answers"]:
+                with self.subTest(territory=territory, answer=answer["phrases"][0]):
+                    result = boot._resolve_routing_question(qid, "unspecified request", {}, answer=answer["phrases"][0])
+                    expected = [target["id"] for target in answer["targets"] if target["kind"] == "active"]
+                    deferred = [target["id"] for target in answer["targets"] if target["kind"] == "deferred"]
+                    if deferred:
+                        self.assertEqual(result.get("deferred_mode_ids"), deferred)
+                        self.assertIsNone(result["dispatched_mode_id"])
+                    else:
+                        self.assertEqual(result["dispatched_mode_ids"], expected)
+            with self.subTest(territory=territory, checkpoint="default"):
+                result = boot._resolve_routing_question(qid, "unspecified request", {}, answer="")
+                self.assertEqual(result["dispatched_mode_id"], sources["defaults"][territory]["id"])
+        for territory in ("T16", "T20"):
+            with self.subTest(bare_default=territory):
+                self.assertNotIn(territory, sources["territory_questions"])
+                mode = sources["defaults"][territory]["id"]
+                record = sources["modes"][mode]
+                result = boot.stage2_sufficiency_analyzer("unspecified request", {"matches": [{
+                    "signal": "context", "territory": record["metadata"]["territory"],
+                    "mode": mode, "confidence_weight": "weak", "evidence": "contextual cue",
+                }]}, {})
+                self.assertEqual(result["dispatched_mode_id"], mode)
+        sequence = boot._resolve_routing_question("conflict_stance", "the supplied proposal", {}, answer="both in sequence")
+        self.assertEqual(sequence["dispatched_mode_ids"], ["steelman-construction", "red-team-assessment"])
+        cross_question = self.sources["cross_territory_questions"]["|".join(sorted(("T7", "T15")))]
+        unresolved = boot._resolve_routing_question(
+            cross_question, "stress-test this", {}, answer="I'm not sure which kind")
+        self.assertEqual(unresolved["question_id"], cross_question)
+        self.assertEqual(
+            unresolved["disambiguation_questions_asked"],
+            [self.sources["questions"][cross_question]["text"]],
+        )
+        retained = boot._question_result("t7-stance")
+        with patch.object(boot, "stage2_sufficiency_analyzer", return_value=retained):
+            continued = boot.run_pre_routing_pipeline(
+                "Examine the system I described.",
+                {"selected_mode_id": "pre-mortem-fragility"},
+                disambiguation_answer="no adversary required",
+            )
+        self.assertEqual(continued["dispatched_mode_id"], "pre-mortem-fragility")
+
+    def test_explicit_plural_and_no_territory_routes(self):
+        prompts = (
+            ("Run Coherence Audit then Frame Audit.", ["coherence-audit", "frame-audit"]),
+            ("Run Systems Dynamics (Causal).", ["systems-dynamics-causal"]),
+            ("Run Systems Dynamics (Structural).", ["systems-dynamics-structural"]),
+            ("pre-mortem this plan", ["pre-mortem-action"]),
+            ("stress-test our launch plan", ["pre-mortem-action"]),
+            ("pre-mortem this system", ["pre-mortem-fragility"]),
+        )
+        for prompt, expected in prompts:
+            with self.subTest(prompt=prompt):
+                stage1 = boot.stage1_pre_analysis_filter(prompt)
+                result = boot.stage2_sufficiency_analyzer(prompt, stage1, {})
+                self.assertEqual(result["dispatched_mode_ids"], expected)
+        same_words = [signal["mode"] for signal in self.sources["signals"]
+                      if signal["signal"].casefold() == "systems dynamics"]
+        self.assertIn("systems-dynamics-causal", same_words)
+        self.assertIn("systems-dynamics-structural", same_words)
+        prompt = "systems dynamics"
+        ambiguous = boot.stage2_sufficiency_analyzer(prompt, boot.stage1_pre_analysis_filter(prompt), {})
+        self.assertEqual(ambiguous["question_id"], self.sources["cross_territory_questions"]["T17|T4"])
+        unknown = boot.stage2_sufficiency_analyzer("unclassified request", {"matches": []}, {})
+        self.assertEqual(unknown["question_id"], "generic_intent")
+        offered = {target["id"] for answer in unknown["offered_choices"]
+                   for target in answer.get("targets", []) if target["kind"] == "territory"}
+        self.assertEqual(offered, set(self.sources["territories"]))
+
+        three_way = boot.stage2_sufficiency_analyzer("mixed request", {"matches": [
+            {"signal": "argument", "territory": "T1", "mode": "argument-audit",
+             "confidence_weight": "strong", "evidence": "test fixture"},
+            {"signal": "power", "territory": "T2", "mode": "cui-bono",
+             "confidence_weight": "strong", "evidence": "test fixture"},
+            {"signal": "decision", "territory": "T3", "mode": "decision-under-uncertainty",
+             "confidence_weight": "strong", "evidence": "test fixture"},
+        ]}, {})
+        self.assertEqual(three_way["question_id"], "generic_intent")
+        three_way_offered = {
+            target["id"]
+            for answer in three_way["offered_choices"]
+            for target in answer.get("targets", [])
+            if target["kind"] == "territory"
+        }
+        self.assertEqual(three_way_offered, set(self.sources["territories"]))
+
+        mechanism_cluster = boot.stage2_sufficiency_analyzer(
+            "mixed request", {"matches": [
+                {"signal": "structure", "territory": "T11", "mode": "relationship-mapping",
+                 "confidence_weight": "strong", "evidence": "test fixture"},
+                {"signal": "mechanism", "territory": "T16", "mode": "mechanism-understanding",
+                 "confidence_weight": "strong", "evidence": "test fixture"},
+                {"signal": "process", "territory": "T17", "mode": "process-mapping",
+                 "confidence_weight": "strong", "evidence": "test fixture"},
+            ]}, {},
+        )
+        cluster_question = self.sources["cross_territory_questions"]["T11|T16"]
+        self.assertEqual(mechanism_cluster["question_id"], cluster_question)
+        self.assertEqual(
+            set(self.sources["questions"][cluster_question]["territories"]),
+            {"T11", "T16", "T17"},
+        )
+
+    def test_same_source_authority_across_consumers(self):
+        import importlib.machinery
+        from server import app as server
+        from routing_sources import compile_routing_sources, render_routing_views
+        root = self._source_copy()
+        mode_path = root / "modes" / "cui-bono.md"
+        mode_path.write_text(mode_path.read_text().replace(
+            "## Display Description\n\n", "## Display Description\n\nOne source for every consumer. ", 1))
+        changed = compile_routing_sources(root)
+        with patch.object(boot, "_COMPILED_ROUTING_CACHE", changed):
+            row = next(row for row in server.list_pickable_analysis_modes() if row["id"] == "cui-bono")
+            self.assertEqual(row["display_description"], changed["modes"]["cui-bono"]["description"])
+            self.assertEqual(boot.load_mode("cui-bono"), changed["modes"]["cui-bono"]["text"])
+            self.assertEqual(boot.load_educational_name("cui-bono"), changed["modes"]["cui-bono"]["educational_name"])
+            self.assertEqual(boot.extract_default_gear(boot.load_mode("cui-bono")), changed["modes"]["cui-bono"]["default_gear"])
+            completeness = boot.stage3_input_completeness_check("cui-bono", "", {})
+            self.assertEqual(completeness["missing_fields"], changed["modes"]["cui-bono"]["input_contract"]["accessible_mode"]["required"])
+            self.assertTrue(server._lens_available_for_mode("cui-bono", changed["modes"]["cui-bono"]["lenses"][0]))
+        article = (
+            "The Copper Street Loading-Bay Proposal\n\n"
+            "Merchants propose a timed loading bay. Residents frame the curb as shared "
+            "public space, while a wheelchair user notes that both sides overlook the blocked ramp."
+        )
+        retrieved = boot.stage3_input_completeness_check(
+            "frame-audit",
+            "Frame audit on the article I shared earlier in this thread.",
+            {"history": [
+                {"role": "user", "content": article},
+                {"role": "assistant", "content": "I have it."},
+                {"role": "user", "content": "Thanks"},
+            ]},
+        )
+        self.assertTrue(retrieved["inputs_complete"])
+        self.assertEqual(
+            retrieved["validated_inputs"]["argumentative_artifact"],
+            {"source": "prior_conversation", "value": article},
+        )
+        for name, relative in (("compiled_source_listing", "scripts/ora-test"),
+                               ("compiled_source_verifier", "scripts/verify-implementation.py")):
+            with self.subTest(consumer=relative):
+                loader = importlib.machinery.SourceFileLoader(name, str(Path(WORKSPACE) / relative))
+                spec = importlib.util.spec_from_loader(name, loader)
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[name] = module
+                self.addCleanup(sys.modules.pop, name, None)
+                loader.exec_module(module)
+                module.ORA_ROOT = root
+                if relative.endswith("ora-test"):
+                    self.assertEqual(set(module.list_modes()), set(changed["modes"]))
+                    self.assertFalse(module.validate_mode("conflict-structure"))
+                    self.assertEqual(module.routing_sources()["modes"]["cui-bono"]["description"], changed["modes"]["cui-bono"]["description"])
+                else:
+                    self.assertEqual({p.stem for p in module.list_mode_files()}, set(changed["modes"]))
+                    self.assertEqual(module._compiled_routing_sources()["modes"]["cui-bono"]["description"], changed["modes"]["cui-bono"]["description"])
+        views = render_routing_views(self.sources)
+        self.assertIn(views["modes/INDEX.md"], (Path(WORKSPACE) / "modes" / "INDEX.md").read_text())
+        self.assertEqual(views["architecture/signal-vocabulary-registry.md"],
+                         (Path(WORKSPACE) / "architecture" / "signal-vocabulary-registry.md").read_text())
+
+    def test_red_team_requires_examined_subject(self):
+        for name, expected_mode in (("Red Team", "red-team-assessment"),
+                                    ("Red Team (Advocate)", "red-team-advocate")):
+            with self.subTest(selection=name):
+                asked = boot.stage2_sufficiency_analyzer(name, boot.stage1_pre_analysis_filter(name), {})
+                expected_qid = self.sources["modes"][expected_mode]["selection"]["question"]
+                self.assertEqual(asked["question_id"], expected_qid)
+                self.assertIsNone(asked["dispatched_mode_id"])
+                self.assertEqual(asked["disambiguation_questions_asked"], [self.sources["questions"][expected_qid]["text"]])
+                lighter = boot._resolve_routing_question(expected_qid, name, {}, answer="lighter")
+                self.assertEqual(lighter["dispatched_mode_id"], "balanced-critique")
+                self.assertIn("requires", lighter["qualification"])
+                missing = boot.stage3_input_completeness_check("balanced-critique", name, {})
+                self.assertFalse(missing["inputs_complete"])
+        prompt = ("Red Team this launch plan: disable the legacy service on Monday, migrate all customer records overnight, "
+                  "and accept signups Tuesday without a rollback window or restore rehearsal.")
+        result = boot.stage2_sufficiency_analyzer(prompt, boot.stage1_pre_analysis_filter(prompt), {})
+        self.assertEqual(result["dispatched_mode_id"], "red-team-assessment")
+
+
 if __name__ == "__main__":
     unittest.main()

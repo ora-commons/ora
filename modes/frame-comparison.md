@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: frame-comparison
-canonical_name: Frame Comparison
-suffix_rule: analysis
-educational_name: frame comparison (Lakoff strict-father vs. nurturant-parent and other frames)
+mode_id: "frame-comparison"
+canonical_name: "Frame Comparison"
+suffix_rule: "analysis"
+educational_name: "frame comparison (Lakoff strict-father vs. nurturant-parent and other frames)"
 
 # 1. TERRITORY AND POSITION
-territory: T9-paradigm-and-assumption-examination
+territory: "T9-paradigm-and-assumption-examination"
 gradation_position:
-  axis: stance
-  value: comparing
+  axis: "stance"
+  value: "comparing"
 adjacent_modes_in_territory:
-  - mode_id: paradigm-suspension
-    relationship: stance-counterpart (suspending — single-frame surfacing without comparison)
-  - mode_id: worldview-cartography
-    relationship: depth-molecular sibling (built Wave 4)
+  - mode_id: "paradigm-suspension"
+    relationship: "stance-counterpart (suspending — single-frame surfacing without comparison)"
+  - mode_id: "worldview-cartography"
+    relationship: "depth-molecular sibling (built Wave 4)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -49,20 +49,34 @@ disambiguation_routing:
     - "user wants each frame articulated on its own terms before any cross-frame evaluation"
     - "the analytical object is the frames themselves, not which frame is correct"
   routes_away_when:
-    - "user wants to surface the implicit frame of a single artifact" → paradigm-suspension or T1 frame-audit
-    - "user wants integrated cartography across many worldviews" → worldview-cartography
-    - "user wants to evaluate which frame is more sound" → T1 modes (frame as embedded in argument)
-    - "user wants synthesis across the frames" → T12 synthesis
+    - condition: "user wants to surface the implicit frame of a single artifact"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}, {"kind": "territory", "id": "T1"}, {"kind": "active", "id": "frame-audit"}]
+      qualification: "paradigm-suspension or T1 frame-audit"
+    - condition: "user wants integrated cartography across many worldviews"
+      targets: [{"kind": "active", "id": "worldview-cartography"}]
+      qualification: "worldview-cartography"
+    - condition: "user wants to evaluate which frame is more sound"
+      targets: [{"kind": "territory", "id": "T1"}]
+      qualification: "T1 modes (frame as embedded in argument)"
+    - condition: "user wants synthesis across the frames"
+      targets: [{"kind": "active", "id": "synthesis"}]
+      qualification: "T12 synthesis"
 when_not_to_invoke:
-  - "Disagreement is about empirical facts within a shared frame — frames are not in dispute" → T5 hypothesis evaluation
-  - "Only one frame is in play (no comparison object)" → paradigm-suspension
-  - "User wants to negotiate between parties holding the frames" → T13 negotiation modes
+  - condition: "Disagreement is about empirical facts within a shared frame — frames are not in dispute"
+    targets: [{"kind": "territory", "id": "T5"}]
+    qualification: "T5 hypothesis evaluation"
+  - condition: "Only one frame is in play (no comparison object)"
+    targets: [{"kind": "active", "id": "paradigm-suspension"}]
+    qualification: "paradigm-suspension"
+  - condition: "User wants to negotiate between parties holding the frames"
+    targets: [{"kind": "territory", "id": "T13"}]
+    qualification: "T13 negotiation modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -77,68 +91,115 @@ input_contract:
   detection:
     expert_signals: ["frame typology", "Lakoff", "conceptual metaphor", "strict-father", "nurturant-parent", "narrative frames"]
     accessible_signals: ["how each side sees", "compare the framings", "two camps", "talking past each other"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the issue, and what are the perspectives or camps you want to compare?'"
     on_underspecified: "Ask: 'Could you describe how each camp talks about the issue, in their own words if possible?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has each frame been articulated on its own terms (steelman-mode within the frame), or has the analyst's preferred frame received fuller articulation than the others?"
-    failure_mode_if_unmet: asymmetric-articulation
-  - cq_id: CQ2
+    failure_mode_if_unmet: "asymmetric-articulation"
+  - cq_id: "CQ2"
     question: "Have the core conceptual metaphors of each frame been surfaced (Lakoff-style), or has the analysis stayed at the level of stated positions without descending to the metaphors that structure the positions?"
-    failure_mode_if_unmet: surface-position-only
-  - cq_id: CQ3
+    failure_mode_if_unmet: "surface-position-only"
+  - cq_id: "CQ3"
     question: "Has the analysis surfaced what each frame *obscures* as well as what it makes visible, or has it presented each frame as if the frame had no blind spots?"
-    failure_mode_if_unmet: blind-spot-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "blind-spot-omission"
+  - cq_id: "CQ4"
     question: "Has irreducibility been honored — i.e., has the analysis resisted the temptation to translate one frame into the other's vocabulary, when such translation distorts?"
-    failure_mode_if_unmet: false-translation
+    failure_mode_if_unmet: "false-translation"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: asymmetric-articulation
+  - name: "asymmetric-articulation"
     detection_signal: "One frame's section is substantially longer, more nuanced, or more sympathetic than the others'."
-    correction_protocol: re-dispatch
-  - name: surface-position-only
+    correction_protocol: "re-dispatch"
+  - name: "surface-position-only"
     detection_signal: "Frames are described in terms of stated positions and policy preferences without surfacing the underlying conceptual metaphors that structure them."
-    correction_protocol: re-dispatch
-  - name: blind-spot-omission
+    correction_protocol: "re-dispatch"
+  - name: "blind-spot-omission"
     detection_signal: "What-each-frame-obscures section is empty, thin, or applied only to the analyst's non-preferred frame."
-    correction_protocol: flag
-  - name: false-translation
+    correction_protocol: "flag"
+  - name: "false-translation"
     detection_signal: "Cross-frame translation is presented as smooth when residual-irreducibility is more honest; or one frame's vocabulary is used to describe the other's commitments."
-    correction_protocol: flag
-  - name: typology-imposition
+    correction_protocol: "flag"
+  - name: "typology-imposition"
     detection_signal: "Lakoff's strict-father / nurturant-parent (or other named typology) is applied to a domain where it does not naturally fit, distorting the actual frames in play."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - lakoff-conceptual-metaphor
+  - lakoff-conceptual-metaphor
   optional:
-    - lakoff-strict-father-nurturant-parent (when political-moral framings are in play)
-    - schon-rein-frame-reflection (when policy frames are in play)
-    - benford-snow-collective-action-frames (when movement frames are in play)
+  - lens_id: lakoff-strict-father-nurturant-parent
+    qualification: when political-moral framings are in play
+  - lens_id: schon-rein-frame-reflection
+    qualification: when policy frames are in play
+  - lens_id: benford-snow-collective-action-frames
+    qualification: when movement frames are in play
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: worldview-cartography
+    target: {"kind": "active", "id": "worldview-cartography"}
     when: "More than three frames are in play, or frames need to be situated in a larger cartography of worldviews."
   sideways:
-    target_mode_id: paradigm-suspension
+    target: {"kind": "active", "id": "paradigm-suspension"}
     when: "On reflection only one frame is the analytical object; comparison was not the right move."
   downward:
-    target_mode_id: paradigm-suspension
+    target: {"kind": "active", "id": "paradigm-suspension"}
     when: "User wants single-frame surfacing rather than cross-frame comparison."
 ```
+
+## Display Description
+
+Compares two or more frames a problem can be cast in, surfacing what each frame includes and excludes.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll compare the frames at play in this {artifact}"
+  data_shapes: [{"predicate": "enum_frames", "territory": "T9-paradigm-and-assumption-examination", "priority": 0, "confidence_weight": "strong"}]
+  signals:
+    - {"signal": "frame comparison", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "compare frames", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "compare the framings", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "different framings", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Lakoff strict-father vs nurturant-parent", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "strict father vs nurturant parent", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "two ways of seeing", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "alternative frames", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "competing frames", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: stance? → comparing", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "how each side sees", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "two camps", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "talking past each other", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (frame-clash)"}
+    - {"signal": "conceptual metaphor", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "compare these frames", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "compare how", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "frame this issue", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "frame this issue differently", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "compare these two frames", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "compare these frames on", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "conceptual metaphor", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "conceptual metaphors", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "entman framing functions", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "framing functions", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "framing effect", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "lakoff conceptual metaphor", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "narrative instinct", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "six thinking hats", "territory": "T9-paradigm-and-assumption-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

@@ -12,27 +12,27 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: balanced-critique
-canonical_name: Balanced Critique
-suffix_rule: analysis
-educational_name: balanced critique (neutral stance, multi-perspective)
+mode_id: "balanced-critique"
+canonical_name: "Balanced Critique"
+suffix_rule: "analysis"
+educational_name: "balanced critique (neutral stance, multi-perspective)"
 
 # 1. TERRITORY AND POSITION
-territory: T15-artifact-evaluation-by-stance
+territory: "T15-artifact-evaluation-by-stance"
 gradation_position:
-  axis: stance
-  value: neutral
+  axis: "stance"
+  value: "neutral"
 adjacent_modes_in_territory:
-  - mode_id: steelman-construction
-    relationship: stance-counterpart (constructive-strong; lives primarily in T15 with cross-reference to T1)
-  - mode_id: benefits-analysis
-    relationship: stance-counterpart (constructive-balanced)
-  - mode_id: red-team-assessment
-    relationship: stance-counterpart (adversarial-actor-modeling, assessment)
-  - mode_id: red-team-advocate
-    relationship: stance-counterpart (adversarial-actor-modeling, advocate)
-  - mode_id: devils-advocate-lite
-    relationship: stance-counterpart (adversarial-light; gap-deferred per CR-6)
+  - mode_id: "steelman-construction"
+    relationship: "stance-counterpart (constructive-strong; lives primarily in T15 with cross-reference to T1)"
+  - mode_id: "benefits-analysis"
+    relationship: "stance-counterpart (constructive-balanced)"
+  - mode_id: "red-team-assessment"
+    relationship: "stance-counterpart (adversarial-actor-modeling, assessment)"
+  - mode_id: "red-team-advocate"
+    relationship: "stance-counterpart (adversarial-actor-modeling, advocate)"
+  - mode_id: "devils-advocate-lite"
+    relationship: "stance-counterpart (adversarial-light; gap-deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -57,21 +57,37 @@ disambiguation_routing:
     - "user explicitly rejects advocacy framing in either direction"
     - "user wants strengths AND weaknesses surfaced with comparable rigor"
   routes_away_when:
-    - "user wants the strongest possible case for the artifact" → steelman-construction
-    - "user wants advantages and minor risks but not adversarial teardown" → benefits-analysis
-    - "user wants adversarial-actor stress test for own decision" → red-team-assessment
-    - "user wants adversarial argument brief for external use" → red-team-advocate
-    - "user wants light contrarian sanity check" → devils-advocate-lite (when built)
+    - condition: "user wants the strongest possible case for the artifact"
+      targets: [{"kind": "active", "id": "steelman-construction"}]
+      qualification: "steelman-construction"
+    - condition: "user wants advantages and minor risks but not adversarial teardown"
+      targets: [{"kind": "active", "id": "benefits-analysis"}]
+      qualification: "benefits-analysis"
+    - condition: "user wants adversarial-actor stress test for own decision"
+      targets: [{"kind": "active", "id": "red-team-assessment"}]
+      qualification: "red-team-assessment"
+    - condition: "user wants adversarial argument brief for external use"
+      targets: [{"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-advocate"
+    - condition: "user wants light contrarian sanity check"
+      targets: [{"kind": "deferred", "id": "devils-advocate-lite"}]
+      qualification: "devils-advocate-lite (when built)"
 when_not_to_invoke:
-  - "User wants soundness audit of an argument-as-argument" → T1 modes (Coherence Audit, Frame Audit, Argument Audit)
-  - "User wants structural fragility analysis of a system" → pre-mortem-fragility (T7)
-  - "User has not provided an artifact to evaluate" → degrade to elicitation
+  - condition: "User wants soundness audit of an argument-as-argument"
+    targets: [{"kind": "active", "id": "coherence-audit"}, {"kind": "active", "id": "frame-audit"}, {"kind": "active", "id": "argument-audit"}]
+    qualification: "T1 modes (Coherence Audit, Frame Audit, Argument Audit)"
+  - condition: "User wants structural fragility analysis of a system"
+    targets: [{"kind": "active", "id": "pre-mortem-fragility"}]
+    qualification: "pre-mortem-fragility (T7)"
+  - condition: "User has not provided an artifact to evaluate"
+    targets: [{"kind": "action", "id": "ask-for-subject"}]
+    qualification: "degrade to elicitation"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: neutral
+  posture: "neutral"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -86,67 +102,103 @@ input_contract:
   detection:
     expert_signals: ["evaluation criteria", "intended audience", "compare against alternatives", "prior evaluations"]
     accessible_signals: ["balanced read", "fair evaluation", "strengths and weaknesses", "what holds up"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you share the proposal or plan you want evaluated, and what matters to you about it?'"
     on_underspecified: "Ask: 'Roughly what should this proposal accomplish, so I can weigh strengths and weaknesses against that purpose?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have strengths and weaknesses been surfaced with comparable rigor, or has one side been treated more thoroughly than the other?"
-    failure_mode_if_unmet: stance-tilt
-  - cq_id: CQ2
+    failure_mode_if_unmet: "stance-tilt"
+  - cq_id: "CQ2"
     question: "Have findings that are perspective-dependent (true from one stakeholder vantage, false from another) been flagged as such, rather than asserted as universal?"
-    failure_mode_if_unmet: false-universality
-  - cq_id: CQ3
+    failure_mode_if_unmet: "false-universality"
+  - cq_id: "CQ3"
     question: "Have residual tensions been named in the net assessment, or has the synthesis collapsed them into a tidy verdict?"
-    failure_mode_if_unmet: premature-resolution
-  - cq_id: CQ4
+    failure_mode_if_unmet: "premature-resolution"
+  - cq_id: "CQ4"
     question: "Are claims of strength and weakness backed by specific evidence from the artifact (or absence thereof), rather than asserted by analyst preference?"
-    failure_mode_if_unmet: opinion-as-evaluation
+    failure_mode_if_unmet: "opinion-as-evaluation"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: stance-tilt
+  - name: "stance-tilt"
     detection_signal: "Strengths and weaknesses sections are asymmetric in length, specificity, or evidence depth; the analysis has slipped into advocacy or critique."
-    correction_protocol: re-dispatch
-  - name: false-universality
+    correction_protocol: "re-dispatch"
+  - name: "false-universality"
     detection_signal: "Findings that depend on stakeholder perspective are stated as universal; perspective-dependent section is empty or trivial."
-    correction_protocol: re-dispatch
-  - name: premature-resolution
+    correction_protocol: "re-dispatch"
+  - name: "premature-resolution"
     detection_signal: "Net assessment delivers a verdict without naming the residual tensions; the strengths and weaknesses are silently overridden by the synthesis."
-    correction_protocol: flag
-  - name: opinion-as-evaluation
+    correction_protocol: "flag"
+  - name: "opinion-as-evaluation"
     detection_signal: "Claims of strength or weakness are unbacked by specific evidence; the analysis reads as the analyst's preferences."
-    correction_protocol: re-dispatch
-  - name: bothsidesism
+    correction_protocol: "re-dispatch"
+  - name: "bothsidesism"
     detection_signal: "Strengths and weaknesses are forced into balance even when the artifact is genuinely strong (or weak); the mode's neutrality has become artificial symmetry."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - rumelt-strategy-kernel (when artifact is a strategy document)
-    - debono-pmi (Plus-Minus-Interesting as light scaffolding)
-    - ulrich-csh-boundary-categories (when boundary-critique surfaces in the perspective-dependent section)
+  - lens_id: rumelt-strategy-kernel
+    qualification: when artifact is a strategy document
+  - lens_id: debono-pmi
+    qualification: Plus-Minus-Interesting as light scaffolding
+  - lens_id: ulrich-csh-boundary-categories
+    qualification: when boundary-critique surfaces in the perspective-dependent section
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Balanced Critique is the heaviest neutral-stance mode in T15; deeper evaluation routes sideways to molecular composites in adjacent territories."
   sideways:
-    target_mode_id: steelman-construction
+    target: {"kind": "active", "id": "steelman-construction"}
     when: "User shifts to wanting the strongest case for the artifact rather than balanced read."
   downward:
-    target_mode_id: benefits-analysis
+    target: {"kind": "active", "id": "benefits-analysis"}
     when: "User wants lighter constructive-balanced read rather than full strengths-and-weaknesses synthesis."
 ```
+
+## Display Description
+
+Produces a neutral evaluation that explicitly weighs both supporting and undermining considerations.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll weigh both sides of this {artifact}"
+  home_priority: true
+  phrase_aliases: {"swot analysis": "swot", "swat analysis": "swot"}
+  signals:
+    - {"signal": "balanced critique", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "balanced assessment", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "balanced evaluation", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "fair evaluation", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "balanced read", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "neutral read", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "neutral assessment", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "strengths and weaknesses", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what holds up and what doesn't", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "not a steelman or a teardown", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "strong", "evidence": "trigger phrase (negative selector ruling out advocacy and teardown)"}
+    - {"signal": "both sides", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "weak", "evidence": "tonal cue (symmetric evaluation)"}
+    - {"signal": "weigh this fairly", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → neutral", "confidence_weight": "weak", "evidence": "tonal cue (neutrality)"}
+    - {"signal": "swot", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "swot analysis", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "strengths weaknesses opportunities threats", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

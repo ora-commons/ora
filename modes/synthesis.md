@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: synthesis
-canonical_name: Synthesis
-suffix_rule: analysis
-educational_name: cross-domain integrative synthesis
+mode_id: "synthesis"
+canonical_name: "Synthesis"
+suffix_rule: "analysis"
+educational_name: "cross-domain integrative synthesis"
 
 # 1. TERRITORY AND POSITION
-territory: T12-cross-domain-and-knowledge-synthesis
+territory: "T12-cross-domain-and-knowledge-synthesis"
 gradation_position:
-  axis: stance
-  value: integrative
+  axis: "stance"
+  value: "integrative"
 adjacent_modes_in_territory:
-  - mode_id: dialectical-analysis
-    relationship: stance counterpart (thesis-antithesis-sublation, adversarial commitment)
-  - mode_id: cross-domain-analogical
-    relationship: specificity variant (cross-domain analogical, deferred per CR-6)
+  - mode_id: "dialectical-analysis"
+    relationship: "stance counterpart (thesis-antithesis-sublation, adversarial commitment)"
+  - mode_id: "cross-domain-analogical"
+    relationship: "specificity variant (cross-domain analogical, deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -46,18 +46,26 @@ disambiguation_routing:
     - "neutral examination of connection between two developed positions"
     - "wants to identify productive tension and structural correspondence without choosing sides"
   routes_away_when:
-    - "wants to drive thesis through antithesis to produce something genuinely new" → dialectical-analysis
-    - "wants to choose between the positions" → constraint-mapping (T3)
-    - "wants the strongest version of one position" → steelman-construction (T15)
+    - condition: "wants to drive thesis through antithesis to produce something genuinely new"
+      targets: [{"kind": "active", "id": "dialectical-analysis"}]
+      qualification: "dialectical-analysis"
+    - condition: "wants to choose between the positions"
+      targets: [{"kind": "active", "id": "constraint-mapping"}]
+      qualification: "constraint-mapping (T3)"
+    - condition: "wants the strongest version of one position"
+      targets: [{"kind": "active", "id": "steelman-construction"}]
+      qualification: "steelman-construction (T15)"
 when_not_to_invoke:
   - "User is operating within one domain — synthesis requires two-or-more bodies of knowledge"
-  - "User is comparing paradigms (frame vs frame) rather than integrating knowledge bodies" → T9 frame-comparison
+  - condition: "User is comparing paradigms (frame vs frame) rather than integrating knowledge bodies"
+    targets: [{"kind": "active", "id": "frame-comparison"}]
+    qualification: "T9 frame-comparison"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: neutral
+  posture: "neutral"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -72,63 +80,89 @@ input_contract:
   detection:
     expert_signals: ["framework", "lineage", "tradition", "school of thought"]
     accessible_signals: ["how does X relate to Y", "wondering about the connection between"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What are the two (or more) bodies of knowledge or frameworks you want me to synthesise?'"
     on_underspecified: "Ask: 'Which two areas should I work between, and what's the question that's drawing you to the connection?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are the proposed connections structural correspondences at the mechanism level, or surface analogies?"
-    failure_mode_if_unmet: false-synthesis
-  - cq_id: CQ2
+    failure_mode_if_unmet: "false-synthesis"
+  - cq_id: "CQ2"
     question: "Do both frameworks survive the synthesis as peer roots, or has one been reduced to a special case of the other?"
-    failure_mode_if_unmet: reduction-trap
-  - cq_id: CQ3
+    failure_mode_if_unmet: "reduction-trap"
+  - cq_id: "CQ3"
     question: "Have productive tensions been named explicitly, or smoothed over to produce apparent harmony?"
-    failure_mode_if_unmet: harmony-trap
-  - cq_id: CQ4
+    failure_mode_if_unmet: "harmony-trap"
+  - cq_id: "CQ4"
     question: "Does the synthesis produce an emergent insight unavailable from either framework alone?"
-    failure_mode_if_unmet: restatement-only
+    failure_mode_if_unmet: "restatement-only"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: false-synthesis
+  - name: "false-synthesis"
     detection_signal: "Cross-link rests on shared vocabulary or evocative similarity rather than mechanism-level correspondence."
-    correction_protocol: re-dispatch (apply mechanism test before declaring cross-link)
-  - name: reduction-trap
+    correction_protocol: "re-dispatch (apply mechanism test before declaring cross-link)"
+  - name: "reduction-trap"
     detection_signal: "One framework appears as a special case of the other rather than as a peer root."
-    correction_protocol: re-dispatch (preserve both frameworks as peer roots)
-  - name: harmony-trap
+    correction_protocol: "re-dispatch (preserve both frameworks as peer roots)"
+  - name: "harmony-trap"
     detection_signal: "No productive tensions named; frameworks rendered as fully compatible."
-    correction_protocol: flag (add tension paragraph and tension cross-link)
-  - name: no-cross-link
+    correction_protocol: "flag (add tension paragraph and tension cross-link)"
+  - name: "no-cross-link"
     detection_signal: "Two separate trees presented with no inter-framework connection."
-    correction_protocol: re-dispatch (add at least one cross-framework link)
+    correction_protocol: "re-dispatch (add at least one cross-framework link)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - cross-domain-analogical-mapping (when frameworks come from distant domains)
-    - structural-isomorphism-detection
+  - lens_id: cross-domain-analogical-mapping
+    qualification: when frameworks come from distant domains
+  - structural-isomorphism-detection
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Synthesis is its own depth target in T12; deeper integration would shift mode."
   sideways:
-    target_mode_id: dialectical-analysis
+    target: {"kind": "active", "id": "dialectical-analysis"}
     when: "The synthesis reveals deep opposition requiring adversarial commitment rather than neutral integration."
   downward:
-    target_mode_id: null
+    target: null
     when: "T12 has no lighter integrative sibling currently."
 ```
+
+## Display Description
+
+Holds two or more frameworks in productive tension and extracts emergent insight where structural parallels are genuine.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals:
+    - {"signal": "synthesis", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "synthesise", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "synthesize", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "strong", "evidence": "trigger phrase (US spelling)"}
+    - {"signal": "connect these frameworks", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "structural parallel", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "map the intersection", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "how does X relate to Y", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "isomorphism", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "weak", "evidence": "mode vocabulary"}
+    - {"signal": "productive tension", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "weak", "evidence": "mode vocabulary"}
+    - {"signal": "cross-domain", "territory": "T12-cross-domain-synthesis", "disambiguation_answer": "within-territory: stance? → integrative", "confidence_weight": "weak", "evidence": "tonal cue (synthesis)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

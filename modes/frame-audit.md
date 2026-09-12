@@ -12,26 +12,26 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: frame-audit
-canonical_name: Frame Audit
-suffix_rule: analysis
-educational_name: frame audit (Lakoff + Goffman + Entman)
+mode_id: "frame-audit"
+canonical_name: "Frame Audit"
+suffix_rule: "analysis"
+educational_name: "frame audit (Lakoff + Goffman + Entman)"
 
 # 1. TERRITORY AND POSITION
-territory: T1-argumentative-artifact-examination
+territory: "T1-argumentative-artifact-examination"
 gradation_position:
-  axis: depth
-  value: light
-  stance_axis_value: suspending
+  axis: "depth"
+  value: "light"
+  stance_axis_value: "suspending"
 adjacent_modes_in_territory:
-  - mode_id: coherence-audit
-    relationship: depth-light + neutral-stance sibling (built Wave 2)
-  - mode_id: propaganda-audit
-    relationship: specificity-specialized + adversarial-stance sibling (built Wave 2)
-  - mode_id: argument-audit
-    relationship: depth-molecular sibling (composes coherence + frame + propaganda; Wave 4)
-  - mode_id: position-genealogy
-    relationship: specificity-sibling (stance-historical; gap-deferred per CR-6)
+  - mode_id: "coherence-audit"
+    relationship: "depth-light + neutral-stance sibling (built Wave 2)"
+  - mode_id: "propaganda-audit"
+    relationship: "specificity-specialized + adversarial-stance sibling (built Wave 2)"
+  - mode_id: "argument-audit"
+    relationship: "depth-molecular sibling (composes coherence + frame + propaganda; Wave 4)"
+  - mode_id: "position-genealogy"
+    relationship: "specificity-sibling (stance-historical; gap-deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -57,21 +57,37 @@ disambiguation_routing:
     - "user wants stance-suspending analysis: surface the frame without endorsing or attacking it"
     - "user wants Lakoff/Goffman/Entman taxonomies applied (metaphor, primary frame and keying, four frame functions)"
   routes_away_when:
-    - "user wants neutral inferential-structure assessment" → coherence-audit
-    - "user suspects propaganda specifically and wants Stanley diagnostic" → propaganda-audit
-    - "user wants integrated coherence + frame + propaganda synthesis" → argument-audit (Wave 4)
-    - "user wants comparison of multiple frames or paradigms" → frame-comparison (T9)
-    - "user wants to step outside the artifact's frame to examine the assumptions generating it" → paradigm-suspension (T9)
+    - condition: "user wants neutral inferential-structure assessment"
+      targets: [{"kind": "active", "id": "coherence-audit"}]
+      qualification: "coherence-audit"
+    - condition: "user suspects propaganda specifically and wants Stanley diagnostic"
+      targets: [{"kind": "active", "id": "propaganda-audit"}]
+      qualification: "propaganda-audit"
+    - condition: "user wants integrated coherence + frame + propaganda synthesis"
+      targets: [{"kind": "active", "id": "argument-audit"}]
+      qualification: "argument-audit (Wave 4)"
+    - condition: "user wants comparison of multiple frames or paradigms"
+      targets: [{"kind": "active", "id": "frame-comparison"}]
+      qualification: "frame-comparison (T9)"
+    - condition: "user wants to step outside the artifact's frame to examine the assumptions generating it"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension (T9)"
 when_not_to_invoke:
-  - "Artifact has no detectable framing structure (raw data, neutral exposition without selection-and-salience choices)" → other territory
-  - "User wants comparison across two-or-more paradigms" → frame-comparison (T9)
-  - "User wants to evaluate the artifact as a proposal with a defined stance" → T15 modes
+  - condition: "Artifact has no detectable framing structure (raw data, neutral exposition without selection-and-salience choices)"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "other territory"
+  - condition: "User wants comparison across two-or-more paradigms"
+    targets: [{"kind": "active", "id": "frame-comparison"}]
+    qualification: "frame-comparison (T9)"
+  - condition: "User wants to evaluate the artifact as a proposal with a defined stance"
+    targets: [{"kind": "territory", "id": "T15"}]
+    qualification: "T15 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: suspending
+  posture: "suspending"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -86,77 +102,114 @@ input_contract:
   detection:
     expert_signals: ["Lakoff", "Goffman", "Entman", "frame analysis", "primary framework", "keying", "fabrication", "selection and salience", "problem definition", "causal interpretation", "moral evaluation", "treatment recommendation", "presupposition", "nominalization"]
     accessible_signals: ["how does this frame", "what's selected in", "the framing here", "the metaphors are doing work"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you paste the article, ad, op-ed, or document, and tell me roughly what topic or question you want the framing audit to focus on?'"
     on_underspecified: "Ask: 'Are you noticing something specific about how the issue is being set up, or do you want me to surface whatever frames are operative?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the audit named the operative frame(s) explicitly, in vocabulary that allows comparison with alternative frames, rather than treating the artifact's framing as the natural way to see the issue?"
-    failure_mode_if_unmet: frame-naturalization
-  - cq_id: CQ2
+    failure_mode_if_unmet: "frame-naturalization"
+  - cq_id: "CQ2"
     question: "Has the analysis applied the four Entman functions (problem definition / causal interpretation / moral evaluation / treatment recommendation) per frame, or has it surfaced the frame without showing what each function is doing?"
-    failure_mode_if_unmet: function-collapse
-  - cq_id: CQ3
+    failure_mode_if_unmet: "function-collapse"
+  - cq_id: "CQ3"
     question: "Has the audit surfaced selection and salience explicitly — what the artifact includes and excludes, what it emphasizes and downplays — given that frames work as much by what they leave silent as by what they assert?"
-    failure_mode_if_unmet: silence-blindness
-  - cq_id: CQ4
+    failure_mode_if_unmet: "silence-blindness"
+  - cq_id: "CQ4"
     question: "Has the audit catalogued the linguistic mechanisms (metaphor activation per Lakoff; presupposition, nominalization, passivization, lexicalization choices per CDA) by which the frame travels at the word and grammar level?"
-    failure_mode_if_unmet: macro-frame-only-reading
-  - cq_id: CQ5
+    failure_mode_if_unmet: "macro-frame-only-reading"
+  - cq_id: "CQ5"
     question: "Has the audit constructed at least one counterframe (what would the issue look like under an alternative frame), to test whether the operative frame is doing analytical work or just describing the topic?"
-    failure_mode_if_unmet: counterframe-omission
+    failure_mode_if_unmet: "counterframe-omission"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: frame-naturalization
+  - name: "frame-naturalization"
     detection_signal: "Audit reads the artifact's framing as 'the way the issue is' rather than naming it as one frame among possible alternatives."
-    correction_protocol: re-dispatch
-  - name: function-collapse
+    correction_protocol: "re-dispatch"
+  - name: "function-collapse"
     detection_signal: "Audit names the operative frame but does not break it into Entman's four functions (problem / cause / moral / treatment)."
-    correction_protocol: re-dispatch
-  - name: silence-blindness
+    correction_protocol: "re-dispatch"
+  - name: "silence-blindness"
     detection_signal: "Selection-and-salience inventory is empty or focuses only on what is included; what is excluded or downplayed is not catalogued."
-    correction_protocol: re-dispatch
-  - name: macro-frame-only-reading
+    correction_protocol: "re-dispatch"
+  - name: "macro-frame-only-reading"
     detection_signal: "Audit identifies a frame at the macro level but does not show the lexical and grammatical mechanisms (metaphors, presuppositions, nominalizations, passivizations) by which the frame travels."
-    correction_protocol: re-dispatch
-  - name: counterframe-omission
+    correction_protocol: "re-dispatch"
+  - name: "counterframe-omission"
     detection_signal: "Counterframe section is empty or asserts that no alternative frame is available."
-    correction_protocol: re-dispatch
-  - name: stance-slippage-into-attack
+    correction_protocol: "re-dispatch"
+  - name: "stance-slippage-into-attack"
     detection_signal: "Audit slides from frame-surfacing into frame-rejection, asserting the operative frame is wrong rather than naming what it does and what it costs."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - lakoff-conceptual-metaphor
-    - goffman-frame-analysis
-    - entman-framing-functions
+  - lakoff-conceptual-metaphor
+  - goffman-frame-analysis
+  - entman-framing-functions
   optional:
-    - cda-fairclough-presupposition-and-nominalization (when grammatical-syntactic mechanisms are central)
-    - iyengar-episodic-thematic (when policy framing and attribution-of-responsibility are in scope)
-    - chong-druckman-emphasis-equivalence (when frame strength, frequency, competition are at stake)
-    - snow-benford-frame-alignment (when the artifact is a contribution to a campaign-level alignment process)
+  - lens_id: cda-fairclough-presupposition-and-nominalization
+    qualification: when grammatical-syntactic mechanisms are central
+  - lens_id: iyengar-episodic-thematic
+    qualification: when policy framing and attribution-of-responsibility are in scope
+  - lens_id: chong-druckman-emphasis-equivalence
+    qualification: when frame strength, frequency, competition are at stake
+  - lens_id: snow-benford-frame-alignment
+    qualification: when the artifact is a contribution to a campaign-level alignment process
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: argument-audit
+    target: {"kind": "active", "id": "argument-audit"}
     when: "Audit reveals coherence problems and propaganda mechanisms beyond frame-surfacing; molecular synthesis is needed (Wave 4)."
   sideways:
-    target_mode_id: frame-comparison
+    target: {"kind": "active", "id": "frame-comparison"}
     when: "On reflection there are two-or-more frames in play across multiple artifacts; comparison across frames is the right operation (T9)."
   downward:
-    target_mode_id: null
+    target: null
     when: "Frame Audit is already the lightest atomic mode in T1 for frame-surfacing."
 ```
+
+## Display Description
+
+Surfaces the frame an argument relies on without yet comparing it to other frames.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll surface the frame this {artifact} is using"
+  phrase_aliases: {"frame audit": "frame audit"}
+  signals:
+    - {"signal": "frame audit", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → suspending", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "framing analysis", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → suspending", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what frame", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → suspending", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "framing", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → suspending", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what's the lens", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → suspending", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what's foregrounded", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what's backgrounded", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what is selected in and selected out", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Lakoff", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author/method reference"}
+    - {"signal": "Lakoff frame", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Goffman frame analysis", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Entman framing functions", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "tacit assumptions in this frame", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "within-territory: stance? → suspending", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "naturalization", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "presupposition smuggling", "territory": "T1-argumentative-artifact-examination", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "choice architecture", "territory": "T1-argumentative-artifact-examination", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

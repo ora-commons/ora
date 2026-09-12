@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: fragility-antifragility-audit
-canonical_name: Fragility Antifragility Audit
-suffix_rule: analysis
-educational_name: fragility / antifragility audit (Taleb convex-response-to-stressor)
+mode_id: "fragility-antifragility-audit"
+canonical_name: "Fragility Antifragility Audit"
+suffix_rule: "analysis"
+educational_name: "fragility / antifragility audit (Taleb convex-response-to-stressor)"
 
 # 1. TERRITORY AND POSITION
-territory: T7-risk-and-failure-analysis
+territory: "T7-risk-and-failure-analysis"
 gradation_position:
-  axis: stance
-  value: Talebian-asymmetry-focused
-  secondary_axis: depth
-  secondary_value: thorough
+  axis: "stance"
+  value: "Talebian-asymmetry-focused"
+  secondary_axis: "depth"
+  secondary_value: "thorough"
 adjacent_modes_in_territory:
-  - mode_id: pre-mortem-fragility
-    relationship: stance-counterpart (adversarial-future on system; shares concern with structural fragility but uses pre-mortem heuristic rather than convex-response framework)
+  - mode_id: "pre-mortem-fragility"
+    relationship: "stance-counterpart (adversarial-future on system; shares concern with structural fragility but uses pre-mortem heuristic rather than convex-response framework)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -55,20 +55,34 @@ disambiguation_routing:
     - "user wants tail-risk and asymmetric-payoff analysis"
     - "user wants Talebian heuristics (barbell, via negativa, skin in the game) applied"
   routes_away_when:
-    - "user wants general adversarial walk-through of an action plan" → pre-mortem-action (T6)
-    - "user wants pre-mortem-style failure imagination on a system without Talebian framework" → pre-mortem-fragility
-    - "user wants adversarial-actor red team" → red-team-assessment / red-team-advocate (T15)
-    - "user wants formal failure-mode-and-effects (FMEA-style) decomposition" → failure-mode-scan (gap-deferred)
+    - condition: "user wants general adversarial walk-through of an action plan"
+      targets: [{"kind": "active", "id": "pre-mortem-action"}]
+      qualification: "pre-mortem-action (T6)"
+    - condition: "user wants pre-mortem-style failure imagination on a system without Talebian framework"
+      targets: [{"kind": "active", "id": "pre-mortem-fragility"}]
+      qualification: "pre-mortem-fragility"
+    - condition: "user wants adversarial-actor red team"
+      targets: [{"kind": "active", "id": "red-team-assessment"}, {"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-assessment / red-team-advocate (T15)"
+    - condition: "user wants formal failure-mode-and-effects (FMEA-style) decomposition"
+      targets: [{"kind": "deferred", "id": "failure-mode-scan"}]
+      qualification: "failure-mode-scan (gap-deferred)"
 when_not_to_invoke:
-  - "User wants forward exploration without failure focus" → T6 modes
-  - "User wants to choose among options where risk is one input among several" → T3 modes
-  - "User wants causal investigation of a past failure" → T4 modes
+  - condition: "User wants forward exploration without failure focus"
+    targets: [{"kind": "territory", "id": "T6"}]
+    qualification: "T6 modes"
+  - condition: "User wants to choose among options where risk is one input among several"
+    targets: [{"kind": "territory", "id": "T3"}]
+    qualification: "T3 modes"
+  - condition: "User wants causal investigation of a past failure"
+    targets: [{"kind": "territory", "id": "T4"}]
+    qualification: "T4 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: adversarial
+  posture: "adversarial"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -83,73 +97,115 @@ input_contract:
   detection:
     expert_signals: ["fragility", "antifragile", "convex", "concave", "tail risk", "Taleb", "barbell", "via negativa"]
     accessible_signals: ["how could this break", "what makes this brittle", "where are the hidden risks", "stress test"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What system, plan, or strategy do you want audited, and what kinds of stress or volatility are you worried about?'"
     on_underspecified: "Ask: 'Are you most worried about how this responds to small frequent shocks, or to rare large shocks (tail events)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the analysis classified the system per fragility / robustness / antifragility, or has it collapsed antifragility into mere robustness?"
-    failure_mode_if_unmet: antifragility-collapse
-  - cq_id: CQ2
+    failure_mode_if_unmet: "antifragility-collapse"
+  - cq_id: "CQ2"
     question: "Have concave exposures (where small frequent gains hide rare catastrophic losses) been surfaced explicitly, or has the analysis focused only on visible volatility?"
-    failure_mode_if_unmet: hidden-concavity
-  - cq_id: CQ3
+    failure_mode_if_unmet: "hidden-concavity"
+  - cq_id: "CQ3"
     question: "Has the analysis distinguished between (a) variance under normal conditions and (b) tail-event response, or has it conflated them?"
-    failure_mode_if_unmet: variance-tail-conflation
-  - cq_id: CQ4
+    failure_mode_if_unmet: "variance-tail-conflation"
+  - cq_id: "CQ4"
     question: "Has via negativa been considered (subtraction of fragility-creating elements rather than addition of robustness-creating elements)?"
-    failure_mode_if_unmet: addition-bias
-  - cq_id: CQ5
+    failure_mode_if_unmet: "addition-bias"
+  - cq_id: "CQ5"
     question: "Have the analyst's own Talebian assumptions (markets-are-fat-tailed, expert-prediction-is-poor, optionality-is-undervalued) been held lightly rather than mechanically applied?"
-    failure_mode_if_unmet: Talebian-orthodoxy
+    failure_mode_if_unmet: "Talebian-orthodoxy"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: antifragility-collapse
+  - name: "antifragility-collapse"
     detection_signal: "Output uses 'robust' and 'antifragile' interchangeably; antifragile system not distinguished from one that merely survives stress."
-    correction_protocol: re-dispatch
-  - name: hidden-concavity
+    correction_protocol: "re-dispatch"
+  - name: "hidden-concavity"
     detection_signal: "Analysis identifies only visible volatility exposures; no hidden concave exposure (small frequent gains masking rare large losses) surfaced."
-    correction_protocol: flag
-  - name: variance-tail-conflation
+    correction_protocol: "flag"
+  - name: "variance-tail-conflation"
     detection_signal: "Analysis treats high variance and high tail risk as the same property."
-    correction_protocol: flag
-  - name: addition-bias
+    correction_protocol: "flag"
+  - name: "addition-bias"
     detection_signal: "All recommendations involve adding elements (controls, hedges, redundancy); no subtraction-of-fragility-source recommendations."
-    correction_protocol: flag
-  - name: Talebian-orthodoxy
+    correction_protocol: "flag"
+  - name: "Talebian-orthodoxy"
     detection_signal: "Conclusions drawn from Talebian aphorisms without case-specific reasoning; barbell-strategy recommended without checking whether barbell suits the actual exposure profile."
-    correction_protocol: flag
-  - name: false-antifragility
+    correction_protocol: "flag"
+  - name: "false-antifragility"
     detection_signal: "System claimed antifragile based on past benefit from volatility, without checking whether the same mechanism applies to the volatility ahead."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - taleb-fragility-antifragility
+  - taleb-fragility-antifragility
   optional:
-    - knightian-risk-uncertainty-ambiguity (when distinction between risk and deep uncertainty matters)
-    - klein-pre-mortem (when adversarial-imagination heuristic complements convex-response framing)
+  - lens_id: knightian-risk-uncertainty-ambiguity
+    qualification: when distinction between risk and deep uncertainty matters
+  - lens_id: klein-pre-mortem
+    qualification: when adversarial-imagination heuristic complements convex-response framing
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Fragility Antifragility Audit is the heaviest stance-Talebian mode in T7 at thorough tier; molecular escalation deferred."
   sideways:
-    target_mode_id: pre-mortem-fragility
+    target: {"kind": "active", "id": "pre-mortem-fragility"}
     when: "User wants pre-mortem-style failure imagination without Talebian convex-response framework."
   downward:
-    target_mode_id: null
+    target: null
     when: "Lighter T7 mode (failure-mode-scan) deferred per CR-6; no current downward sibling."
 ```
+
+## Display Description
+
+Applies Talebian asymmetry-of-payoff reasoning to identify fragile, robust, and antifragile structural features.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll audit this {artifact} for what helps and hurts under stress"
+  signals:
+    - {"signal": "fragility audit", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: stance? → Talebian", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "antifragility audit", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: stance? → Talebian", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "fragility antifragility", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: stance? → Talebian", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Taleb", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: stance? → Talebian", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "antifragile", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: stance? → Talebian", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "antifragility", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: stance? → Talebian", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "fragility", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: stance? → Talebian", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "convex response", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "concave exposure", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "via negativa", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "barbell strategy", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "Black Swan", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author/method reference"}
+    - {"signal": "tail risk", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "asymmetric payoff", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "Lindy effect", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "skin in the game", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (Talebian)"}
+    - {"signal": "normal accident theory", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "normalization of deviance", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "swiss cheese model", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "fragility and antifragility", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "taleb fragility and antifragility", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "taleb fragility antifragility", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "margin of safety", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "recovery window", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

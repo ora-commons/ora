@@ -14,28 +14,28 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: consequences-and-sequel
-canonical_name: Consequences and Sequel
-suffix_rule: analysis
-educational_name: forward causal-cascade tracing (de Bono C&S, second-and-third-order effects)
+mode_id: "consequences-and-sequel"
+canonical_name: "Consequences and Sequel"
+suffix_rule: "analysis"
+educational_name: "forward causal-cascade tracing (de Bono C&S, second-and-third-order effects)"
 
 # 1. TERRITORY AND POSITION
-territory: T6-future-exploration
+territory: "T6-future-exploration"
 gradation_position:
-  axis: depth
-  value: light
-  stance_axis_value: forward
+  axis: "depth"
+  value: "light"
+  stance_axis_value: "forward"
 adjacent_modes_in_territory:
-  - mode_id: probabilistic-forecasting
-    relationship: depth-thorough sibling (probability-output)
-  - mode_id: scenario-planning
-    relationship: depth-thorough sibling (narrative-output)
-  - mode_id: pre-mortem-action
-    relationship: stance-adversarial sibling (forward-on-plan)
-  - mode_id: wicked-future
-    relationship: depth-molecular sibling
-  - mode_id: backcasting
-    relationship: stance-constructive counterpart (gap-deferred)
+  - mode_id: "probabilistic-forecasting"
+    relationship: "depth-thorough sibling (probability-output)"
+  - mode_id: "scenario-planning"
+    relationship: "depth-thorough sibling (narrative-output)"
+  - mode_id: "pre-mortem-action"
+    relationship: "stance-adversarial sibling (forward-on-plan)"
+  - mode_id: "wicked-future"
+    relationship: "depth-molecular sibling"
+  - mode_id: "backcasting"
+    relationship: "stance-constructive counterpart (gap-deferred)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -57,20 +57,34 @@ disambiguation_routing:
     - "linear cascade (may fork but not loop) — want a quick look at what propagates from a decision"
     - "willing to spend ~5 minutes for a focused cascade rather than a full scenario set"
   routes_away_when:
-    - "circular feedback is the defining structure" → systems-dynamics-causal
-    - "want probability-weighted forecasts" → probabilistic-forecasting
-    - "want narrative scenario explorations" → scenario-planning
-    - "specifically asking what could go wrong with this plan" → pre-mortem-action
-    - "tracing backward from a symptom" → root-cause-analysis (T4)
+    - condition: "circular feedback is the defining structure"
+      targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+      qualification: "systems-dynamics-causal"
+    - condition: "want probability-weighted forecasts"
+      targets: [{"kind": "active", "id": "probabilistic-forecasting"}]
+      qualification: "probabilistic-forecasting"
+    - condition: "want narrative scenario explorations"
+      targets: [{"kind": "active", "id": "scenario-planning"}]
+      qualification: "scenario-planning"
+    - condition: "specifically asking what could go wrong with this plan"
+      targets: [{"kind": "active", "id": "pre-mortem-action"}]
+      qualification: "pre-mortem-action"
+    - condition: "tracing backward from a symptom"
+      targets: [{"kind": "active", "id": "root-cause-analysis"}]
+      qualification: "root-cause-analysis (T4)"
 when_not_to_invoke:
-  - "User is choosing among options with risk as one input among several" → T3 (decision-under-uncertainty)
-  - "User is evaluating a single proposal's benefit/risk envelope" → benefits-analysis (T15)
+  - condition: "User is choosing among options with risk as one input among several"
+    targets: [{"kind": "active", "id": "decision-under-uncertainty"}]
+    qualification: "T3 (decision-under-uncertainty)"
+  - condition: "User is evaluating a single proposal's benefit/risk envelope"
+    targets: [{"kind": "active", "id": "benefits-analysis"}]
+    qualification: "benefits-analysis (T15)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: generative
+  posture: "generative"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -85,74 +99,103 @@ input_contract:
   detection:
     expert_signals: ["second-order effects", "downstream cascade", "sequel analysis", "policy impact"]
     accessible_signals: ["what would happen if", "what does this lead to", "if we do X then what"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the action or event you want me to trace forward consequences for?'"
     on_underspecified: "Ask: 'How far forward do you want to look — immediate effects only, or out to second and third order?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the cascade reached at least third order on at least one branch, or has it stopped at first-order effects?"
-    failure_mode_if_unmet: first-order-stop
-  - cq_id: CQ2
+    failure_mode_if_unmet: "first-order-stop"
+  - cq_id: "CQ2"
     question: "Does every causal link state a mechanism, or are some links assertions of association without explanation?"
-    failure_mode_if_unmet: association-without-mechanism
-  - cq_id: CQ3
+    failure_mode_if_unmet: "association-without-mechanism"
+  - cq_id: "CQ3"
     question: "Are effects distributed across time horizons (immediate / short / medium / long), or are they all at one horizon?"
-    failure_mode_if_unmet: single-horizon
-  - cq_id: CQ4
+    failure_mode_if_unmet: "single-horizon"
+  - cq_id: "CQ4"
     question: "Are unintended consequences — effects outside the proposer's stated goal — surfaced and distinguished from intended effects?"
-    failure_mode_if_unmet: intended-effects-only
-  - cq_id: CQ5
+    failure_mode_if_unmet: "intended-effects-only"
+  - cq_id: "CQ5"
     question: "If any link returns influence to an earlier node, has the analysis flagged the feedback loop and proposed handoff to systems-dynamics-causal (T4) or systems-dynamics-structural (T17) per parse, rather than masquerading the cycle as a DAG?"
-    failure_mode_if_unmet: feedback-collapse
+    failure_mode_if_unmet: "feedback-collapse"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: first-order-stop
+  - name: "first-order-stop"
     detection_signal: "Cascade names immediate effects only; no second- or third-order branch is traced."
-    correction_protocol: re-dispatch (extend at least one branch to third order)
-  - name: association-without-mechanism
+    correction_protocol: "re-dispatch (extend at least one branch to third order)"
+  - name: "association-without-mechanism"
     detection_signal: "Causal links assert X → Y without naming the mechanism by which X produces Y."
-    correction_protocol: flag (request mechanism per link)
-  - name: single-horizon
+    correction_protocol: "flag (request mechanism per link)"
+  - name: "single-horizon"
     detection_signal: "All effects sit at one time horizon (e.g., everything is immediate or everything is long-term)."
-    correction_protocol: re-dispatch (redistribute across at least three horizons)
-  - name: intended-effects-only
+    correction_protocol: "re-dispatch (redistribute across at least three horizons)"
+  - name: "intended-effects-only"
     detection_signal: "Cascade traces only the proposer's stated goals; no effect outside the goal frame is named."
-    correction_protocol: re-dispatch (add at least one unintended consequence)
-  - name: feedback-collapse
+    correction_protocol: "re-dispatch (add at least one unintended consequence)"
+  - name: "feedback-collapse"
     detection_signal: "Cycle present in the cascade but emitted as if linear; no SD handoff proposed."
-    correction_protocol: escalate (suppress envelope, route to systems-dynamics-causal)
-  - name: reinforcing-counteracting-collapse
+    correction_protocol: "escalate (suppress envelope, route to systems-dynamics-causal)"
+  - name: "reinforcing-counteracting-collapse"
     detection_signal: "All branches are amplifying or all dampening; no distinction drawn between the two."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - de-bono-consequence-and-sequel
+  - de-bono-consequence-and-sequel
   optional:
-    - reinforcing-counteracting-distinction
-    - cross-domain-cascade-patterns (when the cascade traverses multiple domains)
-    - leading-indicators-methodology (when distant effects need near-term proxies)
+  - reinforcing-counteracting-distinction
+  - lens_id: cross-domain-cascade-patterns
+    qualification: when the cascade traverses multiple domains
+  - lens_id: leading-indicators-methodology
+    qualification: when distant effects need near-term proxies
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: probabilistic-forecasting
+    target: {"kind": "active", "id": "probabilistic-forecasting"}
     when: "Cascade reveals enough structure that probability weights would clarify which paths matter."
   sideways:
-    target_mode_id: scenario-planning
+    target: {"kind": "active", "id": "scenario-planning"}
     when: "Cascade branches diverge enough that narrative scenarios would carry the analysis better than a DAG."
   downward:
-    target_mode_id: null
+    target: null
     when: "Consequences and Sequel is already the lightest forward-exploration mode in T6."
 ```
+
+## Display Description
+
+Traces second- and third-order effects forward from a specific action.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll think through the likely consequences of this {artifact}"
+  signals:
+    - {"signal": "consequences and sequel", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "C&S", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode abbreviation"}
+    - {"signal": "second-order consequences", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what would happen if", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "downstream effects", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "if we do X then what", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "cascade forward", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what does this lead to", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "ripple effects", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (forward cascade)"}
+    - {"signal": "second order thinking", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "second-order thinking", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

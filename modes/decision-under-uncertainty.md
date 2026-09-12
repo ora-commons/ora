@@ -12,27 +12,27 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: decision-under-uncertainty
-canonical_name: Decision Under Uncertainty
-suffix_rule: analysis
-educational_name: decision analysis under uncertainty (probability and time-weighted)
+mode_id: "decision-under-uncertainty"
+canonical_name: "Decision Under Uncertainty"
+suffix_rule: "analysis"
+educational_name: "decision analysis under uncertainty (probability and time-weighted)"
 
 # 1. TERRITORY AND POSITION
-territory: T3-decision-making-under-uncertainty
+territory: "T3-decision-making-under-uncertainty"
 gradation_position:
-  axis: depth
-  value: thorough
+  axis: "depth"
+  value: "thorough"
 adjacent_modes_in_territory:
-  - mode_id: constraint-mapping
-    relationship: depth-light sibling (deterministic tradeoffs)
-  - mode_id: multi-criteria-decision
-    relationship: complexity sibling (multi-criteria weighting)
-  - mode_id: decision-architecture
-    relationship: depth-molecular sibling (full molecular orchestration)
-  - mode_id: real-options-decision
-    relationship: specificity counterpart (staged investment) — gap-deferred
-  - mode_id: ethical-tradeoff
-    relationship: stance counterpart (normative + values-laden) — gap-deferred
+  - mode_id: "constraint-mapping"
+    relationship: "depth-light sibling (deterministic tradeoffs)"
+  - mode_id: "multi-criteria-decision"
+    relationship: "complexity sibling (multi-criteria weighting)"
+  - mode_id: "decision-architecture"
+    relationship: "depth-molecular sibling (full molecular orchestration)"
+  - mode_id: "real-options-decision"
+    relationship: "specificity counterpart (staged investment) — gap-deferred"
+  - mode_id: "ethical-tradeoff"
+    relationship: "stance counterpart (normative + values-laden) — gap-deferred"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -53,21 +53,37 @@ disambiguation_routing:
     - "probabilities and time-value are central to the choice"
     - "the option to defer or buy information has value worth assessing"
   routes_away_when:
-    - "tradeoffs are deterministic; no probability arithmetic needed" → constraint-mapping
-    - "user wants to compare multiple weighted criteria" → multi-criteria-decision
-    - "decision is a molecular orchestration with stakeholders + risk + future" → decision-architecture
-    - "user wants to explore multiple possible futures rather than make one decision now" → scenario-planning (T6)
-    - "user wants to understand which explanation fits the evidence" → competing-hypotheses (T5)
+    - condition: "tradeoffs are deterministic; no probability arithmetic needed"
+      targets: [{"kind": "active", "id": "constraint-mapping"}]
+      qualification: "constraint-mapping"
+    - condition: "user wants to compare multiple weighted criteria"
+      targets: [{"kind": "active", "id": "multi-criteria-decision"}]
+      qualification: "multi-criteria-decision"
+    - condition: "decision is a molecular orchestration with stakeholders + risk + future"
+      targets: [{"kind": "active", "id": "decision-architecture"}]
+      qualification: "decision-architecture"
+    - condition: "user wants to explore multiple possible futures rather than make one decision now"
+      targets: [{"kind": "active", "id": "scenario-planning"}]
+      qualification: "scenario-planning (T6)"
+    - condition: "user wants to understand which explanation fits the evidence"
+      targets: [{"kind": "active", "id": "competing-hypotheses"}]
+      qualification: "competing-hypotheses (T5)"
 when_not_to_invoke:
-  - "User has already chosen and wants execution" → Project Mode
-  - "Decision involves active negotiation between parties" → T13 negotiation
-  - "Question is 'what could go wrong' along a causal cascade" → consequences-and-sequel (T6)
+  - condition: "User has already chosen and wants execution"
+    targets: [{"kind": "active", "id": "project-mode"}]
+    qualification: "Project Mode"
+  - condition: "Decision involves active negotiation between parties"
+    targets: [{"kind": "territory", "id": "T13"}]
+    qualification: "T13 negotiation"
+  - condition: "Question is 'what could go wrong' along a causal cascade"
+    targets: [{"kind": "active", "id": "consequences-and-sequel"}]
+    qualification: "consequences-and-sequel (T6)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -82,72 +98,104 @@ input_contract:
   detection:
     expert_signals: ["expected value", "EV", "decision tree", "real options", "minimax regret", "value of information", "VOI", "tornado chart", "influence diagram", "Bayesian"]
     accessible_signals: ["should we wait", "is it worth the risk", "what's the downside", "what if we're wrong"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the decision you're facing, what alternatives are you weighing, and what's uncertain about each one?'"
     on_underspecified: "Ask: 'Are probabilities and time-value central (route here), or are the tradeoffs deterministic (Constraint Mapping)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Is each critical variable classified as risk (assignable probability), uncertainty (estimable range), or deep uncertainty (no meaningful probability)?"
-    failure_mode_if_unmet: false-precision
-  - cq_id: CQ2
+    failure_mode_if_unmet: "false-precision"
+  - cq_id: "CQ2"
     question: "Have defer / sequence / hedge / buy-information alternatives been considered alongside direct choices?"
-    failure_mode_if_unmet: missing-defer
-  - cq_id: CQ3
+    failure_mode_if_unmet: "missing-defer"
+  - cq_id: "CQ3"
     question: "Have non-quantifiable factors (ethics, relationships, identity, reputation) been presented alongside the quantitative framework, not as footnotes?"
-    failure_mode_if_unmet: quantification-trap
-  - cq_id: CQ4
+    failure_mode_if_unmet: "quantification-trap"
+  - cq_id: "CQ4"
     question: "Does the recommendation name what would change it — the conditions under which it should be revisited?"
-    failure_mode_if_unmet: unconditional-recommendation
-  - cq_id: CQ5
+    failure_mode_if_unmet: "unconditional-recommendation"
+  - cq_id: "CQ5"
     question: "Are probabilities grounded in base rates or qualitative bands, not anchored to initial guesses presented as point estimates?"
-    failure_mode_if_unmet: anchoring-trap
+    failure_mode_if_unmet: "anchoring-trap"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: false-precision
+  - name: "false-precision"
     detection_signal: "Specific point probability (e.g. '17%') assigned without base-rate grounding."
-    correction_protocol: flag (replace with range or qualitative band)
-  - name: analysis-paralysis
+    correction_protocol: "flag (replace with range or qualitative band)"
+  - name: "analysis-paralysis"
     detection_signal: "Real options framing rationalises indefinite delay; cost of delay not assessed against value of information."
-    correction_protocol: re-dispatch (assess cost-of-delay vs VOI explicitly)
-  - name: quantification-trap
+    correction_protocol: "re-dispatch (assess cost-of-delay vs VOI explicitly)"
+  - name: "quantification-trap"
     detection_signal: "All factors reduced to utility numbers when some (ethics, identity, morale) resist meaningful quantification."
-    correction_protocol: re-dispatch (add non-quantifiable factors section)
-  - name: missing-defer
+    correction_protocol: "re-dispatch (add non-quantifiable factors section)"
+  - name: "missing-defer"
     detection_signal: "Decision framed as binary (A or B) when 'wait and learn' or 'buy information' is feasible."
-    correction_protocol: re-dispatch (add defer/pilot/hedge alternative)
-  - name: anchoring-trap
+    correction_protocol: "re-dispatch (add defer/pilot/hedge alternative)"
+  - name: "anchoring-trap"
     detection_signal: "Initial probability estimates anchor subsequent analysis regardless of evidence."
-    correction_protocol: re-dispatch (generate estimates independently before comparison)
+    correction_protocol: "re-dispatch (generate estimates independently before comparison)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - expected-utility-theory
+  - expected-utility-theory
   optional:
-    - real-options-methodology (when financial/staged-investment)
-    - minimax-regret-and-robust-decision-making (under deep uncertainty)
-    - tetlock-superforecasting (when probabilities can be calibrated)
+  - lens_id: real-options-methodology
+    qualification: when financial/staged-investment
+  - lens_id: minimax-regret-and-robust-decision-making
+    qualification: under deep uncertainty
+  - lens_id: tetlock-superforecasting
+    qualification: when probabilities can be calibrated
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
-
+  - kahneman-tversky-bias-catalog
+  - knightian-risk-uncertainty-ambiguity
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: decision-architecture
+    target: {"kind": "active", "id": "decision-architecture"}
     when: "Decision requires molecular orchestration: stakeholders + risk + future + multi-criteria all interact."
   sideways:
-    target_mode_id: scenario-planning
+    target: {"kind": "active", "id": "scenario-planning"}
     when: "Multiple plausible futures need to be explored before a choice is made."
   downward:
-    target_mode_id: constraint-mapping
+    target: {"kind": "active", "id": "constraint-mapping"}
     when: "Probabilities are not material; deterministic tradeoff mapping suffices."
 ```
+
+## Display Description
+
+Frames choice under uncertainty with probability, value-of-information, and conditional recommendation.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work through the uncertainty around this {artifact}"
+  data_shapes: [{"predicate": "decision_with_options", "territory": "T3-decision-under-uncertainty", "priority": 1, "confidence_weight": "strong"}]
+  phrase_aliases: {"decision tree analysis": "decision tree", "ev calculation": "expected value", "expected value calculation": "expected value"}
+  signals:
+    - {"signal": "decision under uncertainty", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "DUU", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode abbreviation"}
+    - {"signal": "decision tree", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "should we act now or wait", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "expected value", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "is it worth waiting for more information", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "value of information", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "minimax regret", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "real options", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "hedge", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (optionality)"}
+    - {"signal": "defer", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (wait-and-learn)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

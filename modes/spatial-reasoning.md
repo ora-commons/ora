@@ -13,19 +13,19 @@ wp: WP-3.4
 
 ```yaml
 # 0. IDENTITY
-mode_id: spatial-reasoning
-canonical_name: Spatial Reasoning
-suffix_rule: analysis
-educational_name: structural gap detection on diagrams
+mode_id: "spatial-reasoning"
+canonical_name: "Spatial Reasoning"
+suffix_rule: "analysis"
+educational_name: "structural gap detection on diagrams"
 
 # 1. TERRITORY AND POSITION
-territory: T11-structural-relationship-mapping
+territory: "T11-structural-relationship-mapping"
 gradation_position:
-  axis: specificity
-  value: visual-input
+  axis: "specificity"
+  value: "visual-input"
 adjacent_modes_in_territory:
-  - mode_id: relationship-mapping
-    relationship: specificity counterpart (general specificity — text-input variant of the same operation)
+  - mode_id: "relationship-mapping"
+    relationship: "specificity counterpart (general specificity — text-input variant of the same operation)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -45,20 +45,34 @@ disambiguation_routing:
     - "user submits a diagrammatic visual input (sketch, whiteboard photo, Excalidraw, Obsidian Canvas, prior Ora visual) AND the diagram IS the question"
     - "gap detection on user-drawn structure: missing nodes, missing connections, missing levels"
   routes_away_when:
-    - "diagram is supporting evidence for a text question (text is query, image is context)" → mode matching the text query
-    - "user wants a new visual deliverable constructed from scratch" → Project Mode with visual output
-    - "user has spatial intuition but no spatial artifact (text-only query)" → relationship-mapping
-    - "user wants to read the layout/composition itself as primary content (not the relations the diagram asserts)" → T19 spatial-composition modes
+    - condition: "diagram is supporting evidence for a text question (text is query, image is context)"
+      targets: [{"kind": "fallback", "id": "route-by-intent"}]
+      qualification: "mode matching the text query"
+    - condition: "user wants a new visual deliverable constructed from scratch"
+      targets: [{"kind": "active", "id": "project-mode"}]
+      qualification: "Project Mode with visual output"
+    - condition: "user has spatial intuition but no spatial artifact (text-only query)"
+      targets: [{"kind": "active", "id": "relationship-mapping"}]
+      qualification: "relationship-mapping"
+    - condition: "user wants to read the layout/composition itself as primary content (not the relations the diagram asserts)"
+      targets: [{"kind": "territory", "id": "T19"}]
+      qualification: "T19 spatial-composition modes"
 when_not_to_invoke:
-  - "Question is about layout, composition, or what the spatial structure itself does as primary content (voids, groupings, forces, affordances)" → T19 (Spatial Composition modes: ma-reading / compositional-dynamics / place-reading-genius-loci / information-density)
-  - "User has no spatial artifact and is asking text-only structural questions" → relationship-mapping
-  - "User mentions feedback loops in pure text without a diagram" → systems-dynamics-causal or systems-dynamics-structural
+  - condition: "Question is about layout, composition, or what the spatial structure itself does as primary content (voids, groupings, forces, affordances)"
+    targets: [{"kind": "active", "id": "ma-reading"}, {"kind": "active", "id": "compositional-dynamics"}, {"kind": "active", "id": "place-reading-genius-loci"}, {"kind": "active", "id": "information-density"}]
+    qualification: "T19 (Spatial Composition modes: ma-reading / compositional-dynamics / place-reading-genius-loci / information-density)"
+  - condition: "User has no spatial artifact and is asking text-only structural questions"
+    targets: [{"kind": "active", "id": "relationship-mapping"}]
+    qualification: "relationship-mapping"
+  - condition: "User mentions feedback loops in pure text without a diagram"
+    targets: [{"kind": "active", "id": "systems-dynamics-causal"}, {"kind": "active", "id": "systems-dynamics-structural"}]
+    qualification: "systems-dynamics-causal or systems-dynamics-structural"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -73,68 +87,102 @@ input_contract:
   detection:
     expert_signals: ["Excalidraw JSON", "Obsidian Canvas", "annotate this CLD", "target_id", "annotation kind"]
     accessible_signals: ["what's missing", "what do you see", "help me see", "I have a sense but can't articulate"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you share the diagram or canvas you want me to look at, and the question you have about it?'"
     on_underspecified: "Ask: 'Is the diagram itself the question (gap detection — stay here), or is the diagram supporting evidence for a text question (route to the text-question mode)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Does the structural extraction capture all visible entities, relationships, clusters, and hierarchy with ambiguities flagged rather than silently resolved?"
-    failure_mode_if_unmet: structural-misrepresentation
-  - cq_id: CQ2
+    failure_mode_if_unmet: "structural-misrepresentation"
+  - cq_id: "CQ2"
     question: "Are identified gaps genuine — implied by the spatial structure or domain logic — or are they template pattern-matching artifacts?"
-    failure_mode_if_unmet: gap-fabrication
-  - cq_id: CQ3
+    failure_mode_if_unmet: "gap-fabrication"
+  - cq_id: "CQ3"
     question: "Are fog-clearing questions open (eliciting the user's pre-conscious structure) rather than leading (encoding a specific answer)?"
-    failure_mode_if_unmet: leading-question
-  - cq_id: CQ4
+    failure_mode_if_unmet: "leading-question"
+  - cq_id: "CQ4"
     question: "Does the mode preserve the user's spatial arrangement — annotating without rearranging?"
-    failure_mode_if_unmet: rearrangement-trap
+    failure_mode_if_unmet: "rearrangement-trap"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: rearrangement-trap
+  - name: "rearrangement-trap"
     detection_signal: "Mode produces a 'cleaner' version of the user's diagram with entities relocated."
-    correction_protocol: re-dispatch (annotate, do not rearrange — propose restructuring as suggestion only)
-  - name: template-projection
+    correction_protocol: "re-dispatch (annotate, do not rearrange — propose restructuring as suggestion only)"
+  - name: "template-projection"
     detection_signal: "A familiar pattern (hub-and-spoke, cycle, tree) is identified that the spatial arrangement visually suggests but the conceptual content does not actually instantiate."
-    correction_protocol: flag (verify pattern is present in concepts, not just pixels)
-  - name: gap-fabrication
+    correction_protocol: "flag (verify pattern is present in concepts, not just pixels)"
+  - name: "gap-fabrication"
     detection_signal: "Proposed missing elements are not implied by the spatial structure or domain logic; they are speculative additions."
-    correction_protocol: re-dispatch (every gap identification cites specific spatial or domain evidence)
-  - name: leading-question
+    correction_protocol: "re-dispatch (every gap identification cites specific spatial or domain evidence)"
+  - name: "leading-question"
     detection_signal: "Fog-clearing question encodes a specific answer ('Isn't there a feedback loop between A and B?')."
-    correction_protocol: re-dispatch (rewrite as open question willing to accept 'no')
-  - name: critic-trap
+    correction_protocol: "re-dispatch (rewrite as open question willing to accept 'no')"
+  - name: "critic-trap"
     detection_signal: "Mode evaluates the user's diagram as correct or incorrect rather than treating spatial intuition as signal."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - tversky-spatial-correspondence-principles
+  - tversky-spatial-correspondence-principles
   optional:
-    - structural-pattern-libraries (hub-and-spoke, chain, cycle, star, cluster bridge, orphan)
-    - senge-system-archetypes (when causal structure present)
-    - larkin-simon-diagram-literacy
+  - lens_id: structural-pattern-libraries
+    qualification: hub-and-spoke, chain, cycle, star, cluster bridge, orphan
+  - lens_id: senge-system-archetypes
+    qualification: when causal structure present
+  - larkin-simon-diagram-literacy
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "T11 has no heavier mode in the visual-input variant; deeper analysis routes sideways."
   sideways:
-    target_mode_id: relationship-mapping
+    target: {"kind": "active", "id": "relationship-mapping"}
     when: "User abandons the visual input and switches to text-only structural questions."
   downward:
-    target_mode_id: null
+    target: null
     when: "Spatial Reasoning is already the lighter end of T11's specificity axis when diagrammatic input is given."
 ```
+
+## Display Description
+
+Performs gap detection and missing-relation surfacing on a user-provided diagram (re-homed from old T19 to T11 per Decision G; the operation is T11 work on visual-medium input).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work through the spatial structure of this {artifact}"
+  data_shapes: [{"predicate": "attached_image", "territory": "T11-structural-relationship-mapping", "priority": 0, "confidence_weight": "weak"}]
+  signals:
+    - {"signal": "spatial reasoning", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "what do you see", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase (with diagram input)"}
+    - {"signal": "what's missing", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase (with diagram input)"}
+    - {"signal": "what am I missing in this diagram", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "help me see what I'm not seeing", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "can you annotate this", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "annotate this causal structure", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "mark up this diagram", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what node am I missing", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "is there a feedback loop I haven't drawn", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what relationships are implied but not shown", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Tversky", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → yes", "confidence_weight": "weak", "evidence": "framework reference"}
+    - {"signal": "look at how things connect", "territory": "T11-structural-relationship-mapping", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "look at how things connect", "territory": "T11-structural-relationship-mapping", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "things connect here", "territory": "T11-structural-relationship-mapping", "confidence_weight": "weak", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

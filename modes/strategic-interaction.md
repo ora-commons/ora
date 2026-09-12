@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: strategic-interaction
-canonical_name: Strategic Interaction
-suffix_rule: analysis
-educational_name: strategic interaction analysis (game-theoretic, 2-to-n-player)
+mode_id: "strategic-interaction"
+canonical_name: "Strategic Interaction"
+suffix_rule: "analysis"
+educational_name: "strategic interaction analysis (game-theoretic, 2-to-n-player)"
 
 # 1. TERRITORY AND POSITION
-territory: T18-strategic-interaction
+territory: "T18-strategic-interaction"
 gradation_position:
-  axis: complexity
-  value: 2-to-n-player
+  axis: "complexity"
+  value: "2-to-n-player"
 adjacent_modes_in_territory:
-  - mode_id: mechanism-design
-    relationship: complexity-heavier sibling (mechanism design, deferred per CR-6)
-  - mode_id: signaling
-    relationship: specificity variant (signaling games, deferred per CR-6)
+  - mode_id: "mechanism-design"
+    relationship: "complexity-heavier sibling (mechanism design, deferred per CR-6)"
+  - mode_id: "signaling"
+    relationship: "specificity variant (signaling games, deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -49,19 +49,31 @@ disambiguation_routing:
     - "opponent responds strategically — outcome depends on interaction not single choice"
     - "wants equilibrium analysis with credibility assessment"
   routes_away_when:
-    - "tracing whose interests a position serves without modeling interaction" → cui-bono (T2)
-    - "choosing between own alternatives without modeling opponent response" → constraint-mapping or decision-under-uncertainty (T3)
-    - "feedback structure rather than actor-to-actor dynamics" → systems-dynamics-causal (T4)
-    - "parties' conflict needs to be resolved (not analyzed strategically)" → principled-negotiation (T13)
+    - condition: "tracing whose interests a position serves without modeling interaction"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono (T2)"
+    - condition: "choosing between own alternatives without modeling opponent response"
+      targets: [{"kind": "active", "id": "constraint-mapping"}, {"kind": "active", "id": "decision-under-uncertainty"}]
+      qualification: "constraint-mapping or decision-under-uncertainty (T3)"
+    - condition: "feedback structure rather than actor-to-actor dynamics"
+      targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+      qualification: "systems-dynamics-causal (T4)"
+    - condition: "parties' conflict needs to be resolved (not analyzed strategically)"
+      targets: [{"kind": "active", "id": "principled-negotiation"}]
+      qualification: "principled-negotiation (T13)"
 when_not_to_invoke:
-  - "Uncertainty is from nature rather than from strategic opponent" → decision-under-uncertainty (T3)
-  - "User wants distributive interest tracing rather than equilibrium analysis" → cui-bono (T2)
+  - condition: "Uncertainty is from nature rather than from strategic opponent"
+    targets: [{"kind": "active", "id": "decision-under-uncertainty"}]
+    qualification: "decision-under-uncertainty (T3)"
+  - condition: "User wants distributive interest tracing rather than equilibrium analysis"
+    targets: [{"kind": "active", "id": "cui-bono"}]
+    qualification: "cui-bono (T2)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -76,72 +88,112 @@ input_contract:
   detection:
     expert_signals: ["payoff matrix", "Nash equilibrium", "subgame perfect", "backward induction"]
     accessible_signals: ["if we do X they'll", "what's their best response", "two parties trying to"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Who are the actors involved, and what is each one trying to achieve in their own terms?'"
     on_underspecified: "Ask: 'Is this primarily an interaction where the other party responds to our moves (Strategic Interaction), or is it about choosing under uncertainty from nature (Decision Under Uncertainty)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the game been classified on all four dimensions (timing, information, duration, sum)?"
-    failure_mode_if_unmet: classification-incomplete
-  - cq_id: CQ2
+    failure_mode_if_unmet: "classification-incomplete"
+  - cq_id: "CQ2"
     question: "Has the equilibrium method been named (backward induction / Nash / subgame perfect / repeated cooperation / Perfect Bayesian)?"
-    failure_mode_if_unmet: method-unnamed
-  - cq_id: CQ3
+    failure_mode_if_unmet: "method-unnamed"
+  - cq_id: "CQ3"
     question: "Have threats and promises passed the credibility test, or are some cheap talk?"
-    failure_mode_if_unmet: cheap-talk-treated-as-credible
-  - cq_id: CQ4
+    failure_mode_if_unmet: "cheap-talk-treated-as-credible"
+  - cq_id: "CQ4"
     question: "Has at least one alternative game structure been tested, or is the analysis classification-locked?"
-    failure_mode_if_unmet: classification-lock
-  - cq_id: CQ5
+    failure_mode_if_unmet: "classification-lock"
+  - cq_id: "CQ5"
     question: "Have payoffs been stated in each player's actual value terms, not what they claim to want?"
-    failure_mode_if_unmet: stated-vs-actual-payoffs
+    failure_mode_if_unmet: "stated-vs-actual-payoffs"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: hyperrationality-trap
+  - name: "hyperrationality-trap"
     detection_signal: "Equilibrium assumes perfect rationality without bounded-rationality assessment."
-    correction_protocol: flag (assess deviation from real-actor behavior)
-  - name: static-frame-trap
+    correction_protocol: "flag (assess deviation from real-actor behavior)"
+  - name: "static-frame-trap"
     detection_signal: "One-shot analysis applied to what is actually a repeated game."
-    correction_protocol: re-dispatch (test repeated framing)
-  - name: classification-lock
+    correction_protocol: "re-dispatch (test repeated framing)"
+  - name: "classification-lock"
     detection_signal: "Only one game classification tested; no alternative structure considered."
-    correction_protocol: re-dispatch (test ≥ 1 alternative timing/information/duration framing)
-  - name: missing-player-trap
+    correction_protocol: "re-dispatch (test ≥ 1 alternative timing/information/duration framing)"
+  - name: "missing-player-trap"
     detection_signal: "Only obvious actors modeled; reactive third parties absent."
-    correction_protocol: flag (identify whose reaction would change the equilibrium)
-  - name: probability-on-decision-trap
+    correction_protocol: "flag (identify whose reaction would change the equilibrium)"
+  - name: "probability-on-decision-trap"
     detection_signal: "Decision-node edges carry probabilities (decisions are choices, not chance outcomes)."
-    correction_protocol: re-dispatch (probabilities belong only on chance/nature nodes)
+    correction_protocol: "re-dispatch (probabilities belong only on chance/nature nodes)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - game-theory-equilibrium-concepts (Nash, subgame perfect, Perfect Bayesian)
-    - schelling-strategy-of-conflict (commitment, credibility, focal points)
+  - lens_id: game-theory-equilibrium-concepts
+    qualification: Nash, subgame perfect, Perfect Bayesian
+  - lens_id: schelling-strategy-of-conflict
+    qualification: commitment, credibility, focal points
   optional:
-    - axelrod-evolution-of-cooperation (when game is repeated)
-    - mechanism-design-foundations (when designing rather than playing the game)
+  - lens_id: axelrod-evolution-of-cooperation
+    qualification: when game is repeated
+  - lens_id: mechanism-design-foundations
+    qualification: when designing rather than playing the game
   foundational:
-    - kahneman-tversky-bias-catalog
-    - bounded-rationality
-
+  - kahneman-tversky-bias-catalog
+  - bounded-rationality
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: mechanism-design
+    target: {"kind": "active", "id": "mechanism-design"}
     when: "User is designing the game's structure rather than playing within it (deferred sibling)."
   sideways:
-    target_mode_id: signaling
+    target: {"kind": "deferred", "id": "signaling"}
     when: "Information asymmetry and signaling dominate the analysis (deferred sibling)."
   downward:
-    target_mode_id: null
+    target: null
     when: "Strategic Interaction is T18's founder mode."
 ```
+
+## Display Description
+
+Models the situation as a game between rational agents and analyses likely play, equilibria, signalling, and credible commitment.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll analyze the strategic interaction at play in this {artifact}"
+  phrase_aliases: {"five forces analysis": "five forces", "porter analysis": "porter five forces"}
+  signals:
+    - {"signal": "strategic interaction", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "game theory", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "payoff matrix", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Nash equilibrium", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method reference"}
+    - {"signal": "backward induction", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method reference"}
+    - {"signal": "deterrence", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "bargaining", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what's their best move", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what will they do if we do X", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "credibility of threat", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "signalling", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (game-theoretic)"}
+    - {"signal": "coalition", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (multi-actor)"}
+    - {"signal": "schelling point", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "tit for tat", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "mutually assured destruction", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "prisoner's dilemma", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "prisoners dilemma", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "porter five forces", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "five forces", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

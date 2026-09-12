@@ -13,22 +13,22 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: worldview-cartography
-canonical_name: Worldview Cartography
-suffix_rule: analysis
-educational_name: worldview cartography (multi-paradigm comparison and synthesis)
+mode_id: "worldview-cartography"
+canonical_name: "Worldview Cartography"
+suffix_rule: "analysis"
+educational_name: "worldview cartography (multi-paradigm comparison and synthesis)"
 
 # 1. TERRITORY AND POSITION
-territory: T9-paradigm-and-assumption-examination
+territory: "T9-paradigm-and-assumption-examination"
 gradation_position:
-  axis: stance
-  value: comparing-and-synthesizing
-  depth_axis_value: molecular
+  axis: "stance"
+  value: "comparing-and-synthesizing"
+  depth_axis_value: "molecular"
 adjacent_modes_in_territory:
-  - mode_id: paradigm-suspension
-    relationship: stance-suspending sibling (light atomic)
-  - mode_id: frame-comparison
-    relationship: stance-comparing sibling (thorough atomic)
+  - mode_id: "paradigm-suspension"
+    relationship: "stance-suspending sibling (light atomic)"
+  - mode_id: "frame-comparison"
+    relationship: "stance-comparing sibling (thorough atomic)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -47,40 +47,51 @@ disambiguation_routing:
     - "user wants integrated cartography spanning paradigm-suspension + frame-comparison + dialectical synthesis"
     - "user willing to spend 10+ minutes for full molecular pass"
   routes_away_when:
-    - "want to suspend a single dominant frame to see what it hides" → paradigm-suspension
-    - "want to compare two specific frames without dialectical synthesis" → frame-comparison
-    - "the question is really within a single frame, evaluating an argument" → T1 modes
+    - condition: "want to suspend a single dominant frame to see what it hides"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension"
+    - condition: "want to compare two specific frames without dialectical synthesis"
+      targets: [{"kind": "active", "id": "frame-comparison"}]
+      qualification: "frame-comparison"
+    - condition: "the question is really within a single frame, evaluating an argument"
+      targets: [{"kind": "territory", "id": "T1"}]
+      qualification: "T1 modes"
 when_not_to_invoke:
-  - "User has time pressure" → frame-comparison or paradigm-suspension
-  - "User is producing an integrated synthesis across domains rather than examining paradigms" → synthesis (T12) or dialectical-analysis (T12)
+  - condition: "User has time pressure"
+    targets: [{"kind": "active", "id": "frame-comparison"}, {"kind": "active", "id": "paradigm-suspension"}]
+    qualification: "frame-comparison or paradigm-suspension"
+  - condition: "User is producing an integrated synthesis across domains rather than examining paradigms"
+    targets: [{"kind": "active", "id": "synthesis"}, {"kind": "active", "id": "dialectical-analysis"}]
+    qualification: "synthesis (T12) or dialectical-analysis (T12)"
 
 # 3. EXECUTION STRUCTURE
-composition: molecular
+composition: "molecular"
 molecular_spec:
+  companion_source: "frameworks/book/worldview-cartography-analysis.md"
   components:
-    - mode_id: paradigm-suspension
-      runs: full
-    - mode_id: frame-comparison
-      runs: full
-    - mode_id: dialectical-analysis
-      runs: full
+    - mode_id: "paradigm-suspension"
+      runs: "full"
+    - mode_id: "frame-comparison"
+      runs: "full"
+    - mode_id: "dialectical-analysis"
+      runs: "full"
       conditional: "always; serves as synthesis stage rather than peer component"
   synthesis_stages:
-    - name: paradigm-inventory
-      type: parallel-merge
+    - name: "paradigm-inventory"
+      type: "parallel-merge"
       input: [paradigm-suspension, frame-comparison]
       output: "consolidated paradigm inventory: each worldview named, suspended, and comparatively positioned with its dominant claims, hidden assumptions, and characteristic blindspots"
-    - name: cross-paradigm-tension-surfacing
-      type: contradiction-surfacing
+    - name: "cross-paradigm-tension-surfacing"
+      type: "contradiction-surfacing"
       input: [paradigm-inventory]
       output: "explicit cross-paradigm tensions named: where paradigms make incompatible claims, where they speak past each other, where they share unrecognized common ground"
-    - name: dialectical-cartography
-      type: dialectical-resolution
+    - name: "dialectical-cartography"
+      type: "dialectical-resolution"
       input: [paradigm-inventory, cross-paradigm-tension-surfacing, dialectical-analysis]
       output: "cartography of competing worldviews: synthetic positions where dialectical resolution is possible, residual incommensurabilities where it is not, and meta-level reflection on what the cartography itself reveals about the problem space"
   partial_composition_handling:
-    on_component_failure: proceed-with-gap
-    on_low_confidence: flag affected synthesis stage; do not aggregate over low-confidence paradigm characterizations
+    on_component_failure: "proceed-with-gap"
+    on_low_confidence: "flag affected synthesis stage; do not aggregate over low-confidence paradigm characterizations"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -95,65 +106,96 @@ input_contract:
   detection:
     expert_signals: ["paradigms include", "frames are", "worldviews", "Kuhn", "Foucault"]
     accessible_signals: ["different worldviews", "they're talking past each other", "fundamental disagreement"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the problem or debate, and what worldviews or paradigms do you see in play?'"
     on_underspecified: "Ask the user whether they want the full Worldview Cartography molecular pass or a lighter Frame Comparison / Paradigm Suspension read."
+    lighter_targets: [{"kind": "active", "id": "frame-comparison"}, {"kind": "active", "id": "paradigm-suspension"}]
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has each paradigm been suspended (its assumptions surfaced) before being compared, or has the analysis evaluated paradigms from inside one of them?"
-    failure_mode_if_unmet: home-paradigm-bias
-  - cq_id: CQ2
+    failure_mode_if_unmet: "home-paradigm-bias"
+  - cq_id: "CQ2"
     question: "Are cross-paradigm tensions named explicitly, or has the cartography smoothed over genuine incommensurability?"
-    failure_mode_if_unmet: tension-collapse
-  - cq_id: CQ3
+    failure_mode_if_unmet: "tension-collapse"
+  - cq_id: "CQ3"
     question: "Where dialectical synthesis is offered, is it grounded in the paradigms' own terms, or is it a meta-paradigm imposed from outside?"
-    failure_mode_if_unmet: meta-paradigm-imposition
-  - cq_id: CQ4
+    failure_mode_if_unmet: "meta-paradigm-imposition"
+  - cq_id: "CQ4"
     question: "Are residual incommensurabilities preserved as such, or has the synthesis prematurely resolved them into a unified picture?"
-    failure_mode_if_unmet: premature-resolution
+    failure_mode_if_unmet: "premature-resolution"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: home-paradigm-bias
+  - name: "home-paradigm-bias"
     detection_signal: "All paradigms evaluated against criteria from one of them; that paradigm's assumptions remain unsurfaced."
-    correction_protocol: re-dispatch (with explicit paradigm-suspension on the home paradigm)
-  - name: tension-collapse
+    correction_protocol: "re-dispatch (with explicit paradigm-suspension on the home paradigm)"
+  - name: "tension-collapse"
     detection_signal: "Cross-paradigm-tensions section is short or absent; output presents paradigms as complementary."
-    correction_protocol: re-dispatch
-  - name: meta-paradigm-imposition
+    correction_protocol: "re-dispatch"
+  - name: "meta-paradigm-imposition"
     detection_signal: "Synthetic positions use vocabulary or criteria that none of the surveyed paradigms would accept."
-    correction_protocol: flag and re-dispatch
-  - name: premature-resolution
+    correction_protocol: "flag and re-dispatch"
+  - name: "premature-resolution"
     detection_signal: "Output presents a unified worldview without naming residual incommensurabilities."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - kuhn-paradigm-incommensurability
+    - "kuhn-paradigm-incommensurability"
   optional:
-    - foucault-discursive-formation
-    - rorty-final-vocabulary
-    - macintyre-traditions-of-inquiry
+    - "foucault-discursive-formation"
+    - "rorty-final-vocabulary"
+    - "macintyre-traditions-of-inquiry"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 3
-expected_runtime: ~10+min
+expected_runtime: "~10+min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Worldview Cartography is the heaviest mode in T9."
   sideways:
-    target_mode_id: null
+    target: null
     when: "No within-T9 stance/complexity sibling beyond the depth ladder."
   downward:
-    target_mode_id: frame-comparison
+    target: {"kind": "active", "id": "frame-comparison"}
     when: "User has time pressure; thorough comparison without dialectical synthesis suffices."
 ```
+
+## Display Description
+
+Maps the worldviews in tension across a debate, locating each on shared and divergent commitments.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll map the worldviews in this {artifact}"
+  signals:
+    - {"signal": "worldview cartography", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "multi-paradigm map", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "compare worldviews and synthesize", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "paradigm suspension plus frame comparison plus dialectical", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "cartography of worldviews", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "comprehensive worldview analysis", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "map multiple paradigms", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "three or more worldviews compared", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "paradigm comparison with synthesis", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "dialectical comparison of paradigms", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "composition reference"}
+    - {"signal": "how do these worldviews relate", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "antinomies between paradigms", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "productive tension among worldviews", "territory": "T9-paradigm-and-assumption", "disambiguation_answer": "within-territory: depth? → molecular", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

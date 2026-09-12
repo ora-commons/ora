@@ -642,3 +642,71 @@ A re-homing without parsing executed per Decision G / research report §10.1:
 - The 5 T19 open debates listed above are kept in this file rather than in mode specs because they bear on territory architecture, not on individual mode operation. Mode specs may reference them.
 
 *End of Reference — Analytical Territories.*
+
+
+## Deterministic selection bindings
+
+These finite names bind existing input detectors and outcomes in Ora pre-routing. The compiler validates the full collection before returning any mode. A deferred candidate is available to explain and offer, never an executable substitute. Prose boundary and escalation notes describe the analyst's decisions during analysis; only the explicit predicates below are evaluated by the deterministic router.
+
+```yaml
+routing_utility_territories:
+  T0: {name: Default judgment, order: 0}
+  T-bypass: {name: Direct conversational response, order: 99}
+routing_actions:
+- ask-for-subject
+- bypass
+- direct-response
+- keep-selection
+- select-depth
+- sequential-selection
+routing_fallbacks:
+- route-by-intent
+routing_predicates:
+- enum_hypotheses
+- enum_options
+- enum_parties
+- enum_frames
+- enum_scenarios
+- pasted_argument
+- decision_with_options
+- failure_description
+- conflict_description
+- spatial_description
+- attached_image
+- attached_document
+- red_team_subject_missing
+- mechanism_subject_missing
+- passion_subject_missing
+routing_conflicts:
+- side_a:
+  - quick
+  - fast
+  - quickly
+  - fast read
+  side_b:
+  - deep dive
+  - deep-dive
+  - deep read
+  - thorough
+  - full
+  axis: depth
+  question: conflict_depth
+- side_a:
+  - steelman
+  - make the case for
+  - strongest case
+  side_b:
+  - red team
+  - red-team
+  - push back
+  - tear apart
+  axis: stance
+  question: conflict_stance
+deferred_signals: []
+deferred_data_shapes:
+- predicate: conflict_description
+  mode: conflict-structure
+  territory: T8-stakeholder-conflict
+  priority: 0
+  confidence_weight: strong
+```

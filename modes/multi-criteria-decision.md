@@ -12,23 +12,23 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: multi-criteria-decision
-canonical_name: Multi-Criteria Decision
-suffix_rule: analysis
+mode_id: "multi-criteria-decision"
+canonical_name: "Multi-Criteria Decision"
+suffix_rule: "analysis"
 educational_name: "multi-criteria decision analysis (MCDM: AHP, SMART, ELECTRE, etc.)"
 
 # 1. TERRITORY AND POSITION
-territory: T3-decision-making-under-uncertainty
+territory: "T3-decision-making-under-uncertainty"
 gradation_position:
-  axis: complexity
-  value: multi-criteria
+  axis: "complexity"
+  value: "multi-criteria"
 adjacent_modes_in_territory:
-  - mode_id: constraint-mapping
-    relationship: depth-lighter sibling (environment-known)
-  - mode_id: decision-under-uncertainty
-    relationship: depth-thorough sibling (probability-and-time-weighted single-criterion)
-  - mode_id: decision-architecture
-    relationship: depth-molecular sibling (built Wave 4)
+  - mode_id: "constraint-mapping"
+    relationship: "depth-lighter sibling (environment-known)"
+  - mode_id: "decision-under-uncertainty"
+    relationship: "depth-thorough sibling (probability-and-time-weighted single-criterion)"
+  - mode_id: "decision-architecture"
+    relationship: "depth-molecular sibling (built Wave 4)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -52,19 +52,31 @@ disambiguation_routing:
     - "user wants explicit weights and a structured cross-criterion comparison"
     - "options are discrete and enumerable; criteria can be operationalized into scores"
   routes_away_when:
-    - "decision turns on probability and time-weighting under a single dominant criterion" → decision-under-uncertainty
-    - "decision is about mapping environmental constraints rather than choosing among options" → constraint-mapping
-    - "decision requires molecular orchestration across stakeholders, scenarios, and criteria" → decision-architecture
+    - condition: "decision turns on probability and time-weighting under a single dominant criterion"
+      targets: [{"kind": "active", "id": "decision-under-uncertainty"}]
+      qualification: "decision-under-uncertainty"
+    - condition: "decision is about mapping environmental constraints rather than choosing among options"
+      targets: [{"kind": "active", "id": "constraint-mapping"}]
+      qualification: "constraint-mapping"
+    - condition: "decision requires molecular orchestration across stakeholders, scenarios, and criteria"
+      targets: [{"kind": "active", "id": "decision-architecture"}]
+      qualification: "decision-architecture"
 when_not_to_invoke:
-  - "Decision has only one or two criteria — overhead of MCDM exceeds value" → decision-under-uncertainty or constraint-mapping
-  - "User is exploring the future or projecting consequences rather than choosing" → T6 modes
-  - "Decision is among parties whose conflict is the analytical object" → T8 stakeholder-mapping or T13 modes
+  - condition: "Decision has only one or two criteria — overhead of MCDM exceeds value"
+    targets: [{"kind": "active", "id": "decision-under-uncertainty"}, {"kind": "active", "id": "constraint-mapping"}]
+    qualification: "decision-under-uncertainty or constraint-mapping"
+  - condition: "User is exploring the future or projecting consequences rather than choosing"
+    targets: [{"kind": "territory", "id": "T6"}]
+    qualification: "T6 modes"
+  - condition: "Decision is among parties whose conflict is the analytical object"
+    targets: [{"kind": "territory", "id": "T8"}, {"kind": "active", "id": "stakeholder-mapping"}, {"kind": "territory", "id": "T13"}]
+    qualification: "T8 stakeholder-mapping or T13 modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -79,67 +91,104 @@ input_contract:
   detection:
     expert_signals: ["criteria are", "weights are", "AHP", "SMART", "ELECTRE", "TOPSIS", "pairwise comparison"]
     accessible_signals: ["choosing between", "weighing", "tradeoff", "what matters most", "stack up"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What are the options you're choosing among, and what dimensions matter to the choice?'"
     on_underspecified: "Ask: 'Of those criteria, which carry more weight for you, and roughly by how much?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are the criteria genuinely independent of one another, or do they double-count by measuring the same underlying attribute under different names?"
-    failure_mode_if_unmet: criterion-redundancy
-  - cq_id: CQ2
+    failure_mode_if_unmet: "criterion-redundancy"
+  - cq_id: "CQ2"
     question: "Are the weights elicited from the decision-maker's actual preferences, or imposed by the analyst's choice of MCDM method without preference elicitation?"
-    failure_mode_if_unmet: weight-imposition
-  - cq_id: CQ3
+    failure_mode_if_unmet: "weight-imposition"
+  - cq_id: "CQ3"
     question: "Has sensitivity analysis surfaced how robust the ranking is to weight perturbations and scoring uncertainty, or is the top-ranked option presented as if the ranking were stable?"
-    failure_mode_if_unmet: false-stability
-  - cq_id: CQ4
+    failure_mode_if_unmet: "false-stability"
+  - cq_id: "CQ4"
     question: "Have dominated options (those beaten by another option on every criterion) been identified and pruned, and have dominant options (beating others on every criterion) been flagged as no-brainer choices?"
-    failure_mode_if_unmet: dominance-blindness
+    failure_mode_if_unmet: "dominance-blindness"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: criterion-redundancy
+  - name: "criterion-redundancy"
     detection_signal: "Two or more criteria score highly correlated across options without explicit acknowledgment that they capture related aspects."
-    correction_protocol: flag
-  - name: weight-imposition
+    correction_protocol: "flag"
+  - name: "weight-imposition"
     detection_signal: "Weights stated without rationale or elicitation history; equal weights used as a 'neutral' default without surfacing that equal weighting is itself a preference choice."
-    correction_protocol: re-dispatch
-  - name: false-stability
+    correction_protocol: "re-dispatch"
+  - name: "false-stability"
     detection_signal: "Sensitivity analysis section is empty, or perturbation tested only one weight at a time when joint perturbation would change the ranking."
-    correction_protocol: re-dispatch
-  - name: dominance-blindness
+    correction_protocol: "re-dispatch"
+  - name: "dominance-blindness"
     detection_signal: "Output presents a full ranking when dominance relations would have pruned the option set or made the top choice obvious."
-    correction_protocol: flag
-  - name: aggregation-method-opacity
+    correction_protocol: "flag"
+  - name: "aggregation-method-opacity"
     detection_signal: "Aggregation method (additive, multiplicative, ELECTRE-style outranking, etc.) not named, or named without explanation of why this method fits the decision shape."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - mcdm-methods
+  - mcdm-methods
   optional:
-    - kahneman-tversky-bias-catalog (when weight elicitation is anchored or framed)
-    - rumelt-strategy-kernel (when criteria are strategic and the choice is strategy-shaped)
+  - lens_id: kahneman-tversky-bias-catalog
+    qualification: when weight elicitation is anchored or framed
+  - lens_id: rumelt-strategy-kernel
+    qualification: when criteria are strategic and the choice is strategy-shaped
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: decision-architecture
+    target: {"kind": "active", "id": "decision-architecture"}
     when: "Decision involves multiple stakeholders with diverging weights, requires scenario integration, or carries sequential-decision structure (real options)."
   sideways:
-    target_mode_id: decision-under-uncertainty
+    target: {"kind": "active", "id": "decision-under-uncertainty"}
     when: "On reflection a single criterion dominates; multi-criteria framing was overhead."
   downward:
-    target_mode_id: constraint-mapping
+    target: {"kind": "active", "id": "constraint-mapping"}
     when: "Choice resolves once constraints are mapped; no genuine multi-criteria tradeoff remains."
 ```
+
+## Display Description
+
+Applies MCDA-style weighted-criteria scoring to choices with multiple incommensurable axes.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll weigh the criteria for this {artifact}"
+  data_shapes: [{"predicate": "enum_options", "territory": "T3-decision-under-uncertainty", "priority": 1, "confidence_weight": "strong"}]
+  signals:
+    - {"signal": "multi-criteria decision", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: complexity? → multi-criteria", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "multi-criteria", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: complexity? → multi-criteria", "confidence_weight": "strong", "evidence": "mode-name shorthand"}
+    - {"signal": "weigh several criteria", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: complexity? → multi-criteria", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "multiple criteria", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: complexity? → multi-criteria", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "MCDA", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "MCDM", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "AHP", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "weighted-sum decision", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "weighted criteria", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "SMART analysis", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "ELECTRE", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "TOPSIS", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "pairwise comparison", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "criteria matrix", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "prioritize across dimensions", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "within-territory: complexity? → multi-criteria", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "rank options across", "territory": "T3-decision-under-uncertainty", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "mcdm methods", "territory": "T3-decision-making-under-uncertainty", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "multi-criteria decision making methods", "territory": "T3-decision-making-under-uncertainty", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

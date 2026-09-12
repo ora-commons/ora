@@ -12,29 +12,29 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: red-team-advocate
-canonical_name: Red Team (Advocate)
-suffix_rule: analysis
-educational_name: adversarial argument brief for external use (red team, advocate stance)
+mode_id: "red-team-advocate"
+canonical_name: "Red Team (Advocate)"
+suffix_rule: "analysis"
+educational_name: "adversarial argument brief for external use (red team, advocate stance)"
 
 # 1. TERRITORY AND POSITION
-territory: T15-artifact-evaluation-by-stance
+territory: "T15-artifact-evaluation-by-stance"
 gradation_position:
-  axis: stance
-  value: adversarial-actor-modeling-advocate
+  axis: "stance"
+  value: "adversarial-actor-modeling-advocate"
 adjacent_modes_in_territory:
-  - mode_id: red-team-assessment
-    relationship: stance-counterpart (operation-counterpart in same territory; assessment vs. advocate)
-  - mode_id: steelman-construction
-    relationship: stance-counterpart (constructive-strong — direct opposite)
-  - mode_id: benefits-analysis
-    relationship: stance-counterpart (constructive-balanced)
-  - mode_id: balanced-critique
-    relationship: stance-counterpart (neutral)
-  - mode_id: devils-advocate-lite
-    relationship: stance-lighter sibling (adversarial-light — gap-deferred)
+  - mode_id: "red-team-assessment"
+    relationship: "stance-counterpart (operation-counterpart in same territory; assessment vs. advocate)"
+  - mode_id: "steelman-construction"
+    relationship: "stance-counterpart (constructive-strong — direct opposite)"
+  - mode_id: "benefits-analysis"
+    relationship: "stance-counterpart (constructive-balanced)"
+  - mode_id: "balanced-critique"
+    relationship: "stance-counterpart (neutral)"
+  - mode_id: "devils-advocate-lite"
+    relationship: "stance-lighter sibling (adversarial-light — gap-deferred)"
 cross_territory_reference:
-  - territory: T7-risk-and-failure-analysis
+  - territory: "T7-risk-and-failure-analysis"
     note: "Red Team (Advocate) and T7's pre-mortem-fragility / fragility-antifragility-audit both attack artifacts adversarially, but Red Team models a hostile actor while T7 audits structural fragility regardless of attacker presence. When the user wants 'how could this fail under any pressure' rather than 'how do I argue against this for an audience,' route to T7."
 
 # 2. TRIGGER CONDITIONS AND ROUTING
@@ -62,28 +62,54 @@ disambiguation_routing:
     - "user is building a case AGAINST the artifact for external use"
     - "audience-modelling matters: the brief will be argued in front of someone whose persuasion is the goal"
   routes_away_when:
-    - "stress-test for own decision / what's wrong / fix list" → red-team-assessment (stance-counterpart in same territory)
-    - "want strongest case FOR the artifact" → steelman-construction (direct opposite)
-    - "want balanced evaluation (positive AND negative AND interesting)" → benefits-analysis
-    - "want neutral examination weighing both sides" → balanced-critique
-    - "want opposition driven toward synthesis" → dialectical-analysis (T12)
-    - "want to choose between alternatives" → constraint-mapping (T3)
-    - "want to question the framework the artifact rests on" → paradigm-suspension (T9)
-    - "want structural fragility audit (no specific adversary)" → pre-mortem-fragility or fragility-antifragility-audit (T7)
+    - condition: "stress-test for own decision / what's wrong / fix list"
+      targets: [{"kind": "active", "id": "red-team-assessment"}]
+      qualification: "red-team-assessment (stance-counterpart in same territory)"
+    - condition: "want strongest case FOR the artifact"
+      targets: [{"kind": "active", "id": "steelman-construction"}]
+      qualification: "steelman-construction (direct opposite)"
+    - condition: "want balanced evaluation (positive AND negative AND interesting)"
+      targets: [{"kind": "active", "id": "benefits-analysis"}]
+      qualification: "benefits-analysis"
+    - condition: "want neutral examination weighing both sides"
+      targets: [{"kind": "active", "id": "balanced-critique"}]
+      qualification: "balanced-critique"
+    - condition: "want opposition driven toward synthesis"
+      targets: [{"kind": "active", "id": "dialectical-analysis"}]
+      qualification: "dialectical-analysis (T12)"
+    - condition: "want to choose between alternatives"
+      targets: [{"kind": "active", "id": "constraint-mapping"}]
+      qualification: "constraint-mapping (T3)"
+    - condition: "want to question the framework the artifact rests on"
+      targets: [{"kind": "active", "id": "paradigm-suspension"}]
+      qualification: "paradigm-suspension (T9)"
+    - condition: "want structural fragility audit (no specific adversary)"
+      targets: [{"kind": "active", "id": "pre-mortem-fragility"}, {"kind": "active", "id": "fragility-antifragility-audit"}]
+      qualification: "pre-mortem-fragility or fragility-antifragility-audit (T7)"
 when_not_to_invoke:
-  - "User wants to know what to fix in their own artifact" → red-team-assessment
-  - "User wants framework-level critique rather than artifact-level attack" → paradigm-suspension
-  - "User wants structural fragility audit independent of adversary modeling" → T7 pre-mortem-fragility
-  - "User has not supplied a specific named artifact" → run Input Sufficiency Protocol; offer redirect
-  - "No external audience is in the picture — the user owns the decision" → red-team-assessment
+  - condition: "User wants to know what to fix in their own artifact"
+    targets: [{"kind": "active", "id": "red-team-assessment"}]
+    qualification: "red-team-assessment"
+  - condition: "User wants framework-level critique rather than artifact-level attack"
+    targets: [{"kind": "active", "id": "paradigm-suspension"}]
+    qualification: "paradigm-suspension"
+  - condition: "User wants structural fragility audit independent of adversary modeling"
+    targets: [{"kind": "active", "id": "pre-mortem-fragility"}]
+    qualification: "T7 pre-mortem-fragility"
+  - condition: "User has not supplied a specific named artifact"
+    targets: [{"kind": "action", "id": "ask-for-subject"}]
+    qualification: "run Input Sufficiency Protocol; offer redirect"
+  - condition: "No external audience is in the picture — the user owns the decision"
+    targets: [{"kind": "active", "id": "red-team-assessment"}]
+    qualification: "red-team-assessment"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: adversarial
+  posture: "adversarial"
   input_sufficiency_protocol:
-    runs: first stage of execution, before attack
+    runs: "first stage of execution, before attack"
     conditions:
       - identifiable_artifact: "specific named thing under attack, not a domain or area"
       - bounded_scope: "clear edges; in vs out of attack range knowable"
@@ -105,87 +131,123 @@ input_contract:
   detection:
     expert_signals: ["red team this advocate", "audience model is X", "persuasive-force threshold at devastating", "brief is for hostile review by Y"]
     accessible_signals: ["argue against this", "make the case against", "give me ammunition", "I need to dissuade", "prep me for debate"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Emit Input Sufficiency redirect (three-part shape: What I see / What's missing / Three options with override). Do not attack thin material without flagging."
     on_underspecified: "If audience is missing, ask one clarifying question via clarification panel: 'Who is the brief argued in front of?' If artifact is missing, run Input Sufficiency Protocol redirect."
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Is the audience model accurate — does it capture the audience's actual frame, priorities, and persuasion pathways, or is it a generic 'critic' construct?"
-    failure_mode_if_unmet: audience-misalignment
-  - cq_id: CQ2
+    failure_mode_if_unmet: "audience-misalignment"
+  - cq_id: "CQ2"
     question: "Is persuasive-force calibration honest, or have weak attacks been promoted to 'devastating' to inflate the brief's apparent power?"
-    failure_mode_if_unmet: cynical-overreach
-  - cq_id: CQ3
+    failure_mode_if_unmet: "cynical-overreach"
+  - cq_id: "CQ3"
     question: "Does every attack stay grounded in the artifact's actual content — no fabrication, no straw-target distortion?"
-    failure_mode_if_unmet: straw-target-trap
-  - cq_id: CQ4
+    failure_mode_if_unmet: "straw-target-trap"
+  - cq_id: "CQ4"
     question: "Does the brief stay within the artifact's framework, or does it drift into framework-level critique that belongs to paradigm-suspension?"
-    failure_mode_if_unmet: framework-attack-trap
-  - cq_id: CQ5
+    failure_mode_if_unmet: "framework-attack-trap"
+  - cq_id: "CQ5"
     question: "Are concessions honestly named (preempting the strongest counter-moves) rather than omitted to make the brief look one-sided?"
-    failure_mode_if_unmet: cynical-overreach
-  - cq_id: CQ6
+    failure_mode_if_unmet: "cynical-overreach"
+  - cq_id: "CQ6"
     question: "If Input Sufficiency override was invoked, is every attack flagged as low-specificity / generic so the user knows the limitation when arguing it?"
-    failure_mode_if_unmet: fabricated-override-trap
+    failure_mode_if_unmet: "fabricated-override-trap"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: cynical-overreach
+  - name: "cynical-overreach"
     detection_signal: "Weak attacks framed as 'devastating' to inflate the brief; persuasive-force calibration dishonest; concessions omitted to make the brief look one-sided."
-    correction_protocol: re-dispatch
-  - name: straw-target-trap
+    correction_protocol: "re-dispatch"
+  - name: "straw-target-trap"
     detection_signal: "Attack targets a weakened version of the artifact; doesn't apply to artifact as written. Critical failure for advocate stance — a brief built on straw-targets will collapse on first counter-move from anyone who has actually read the artifact."
-    correction_protocol: re-dispatch
-  - name: audience-misalignment
+    correction_protocol: "re-dispatch"
+  - name: "audience-misalignment"
     detection_signal: "Attacks ranked by what would persuade a generic 'critic' rather than the named audience. Suggested phrasing reads in the analyst's voice, not in language the audience would respond to."
-    correction_protocol: re-dispatch
-  - name: no-fabrication-violation
+    correction_protocol: "re-dispatch"
+  - name: "no-fabrication-violation"
     detection_signal: "Attack rests on a claim the artifact does not actually make, or on capabilities/intentions the artifact does not actually have. Indistinguishable from straw-target if undetected; detected separately because fabrication can survive even when the attacked claim is verbatim."
-    correction_protocol: re-dispatch
-  - name: sycophantic-inverse-trap
+    correction_protocol: "re-dispatch"
+  - name: "sycophantic-inverse-trap"
     detection_signal: "Performing hostility rather than analysing; inverse of sycophantic affirmation. Attacks fail the 'would a committed opponent actually use this' check."
-    correction_protocol: flag
-  - name: framework-attack-trap
+    correction_protocol: "flag"
+  - name: "framework-attack-trap"
     detection_signal: "Brief drifts into critique of the framework the artifact rests on rather than the artifact within it. Often indicates the audience would not accept the framework either, in which case route to paradigm-suspension."
-    correction_protocol: escalate
-  - name: manufacture-on-revise-trap
+    correction_protocol: "escalate"
+  - name: "manufacture-on-revise-trap"
     detection_signal: "Reviser added attacks without new evidence; sycophantic-inverse drift at revision stage."
-    correction_protocol: re-dispatch
-  - name: fabricated-override-trap
+    correction_protocol: "re-dispatch"
+  - name: "fabricated-override-trap"
     detection_signal: "Override invoked but attacks not flagged as low-specificity / generic; user loses signal that the brief was built on thin material."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - cia-tradecraft-red-team
+    - "cia-tradecraft-red-team"
   optional:
-    - klein-pre-mortem
-    - failure-mode-literature
-    - post-mortem-analyses
-    - adversarial-case-studies
-    - fgl-fear-greed-laziness
-    - opv-other-points-of-view
-    - rapoport-rules-of-engagement
+    - "klein-pre-mortem"
+    - "failure-mode-literature"
+    - "post-mortem-analyses"
+    - "adversarial-case-studies"
+    - "fgl-fear-greed-laziness"
+    - "opv-other-points-of-view"
+    - "rapoport-rules-of-engagement"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Red Team (Advocate) is the heaviest advocate-stance adversarial mode in T15; for richer integrated analysis, escalate cross-territory to wicked-problems."
   sideways:
-    target_mode_id: red-team-assessment
+    target: {"kind": "active", "id": "red-team-assessment"}
     when: "User shifts from external-audience-brief framing to wanting their own vulnerabilities surfaced for fix-prioritisation."
   downward:
-    target_mode_id: devils-advocate-lite
+    target: {"kind": "deferred", "id": "devils-advocate-lite"}
     when: "User wants light adversarial pressure rather than full advocate-brief workup; deferred — fall back to balanced-critique with critical lean if devils-advocate-lite not built."
 ```
+
+## Display Description
+
+Builds an argument brief against the artifact for an external audience, ranking attacks by persuasive force with suggested phrasing. Requires explicit advocate-stance signal. **Parsed from `red-team` per Decision D, 2026-05-01.**
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll push back hard on this {artifact}"
+  home_priority: true
+  signals:
+    - {"signal": "red-team advocate", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "argue against this", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "make the case against", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "give me ammunition", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "I need to dissuade", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "talk them out of it", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "prep me for debate", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "prep me for hostile review", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "every angle including weak ones", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal; comprehensive critique)"}
+    - {"signal": "comprehensive critique", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "strong", "evidence": "trigger phrase (advocate-signal)"}
+    - {"signal": "no triage", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → adversarial-actor-modeling-advocate", "confidence_weight": "weak", "evidence": "trigger phrase (advocate-signal; tonal cue)"}
+    - {"signal": "devil's advocacy", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "devils advocacy", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "asymmetric warfare", "territory": "T15-artifact-evaluation-by-stance", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+  question: "red-team-advocate-subject"
+  question_predicate: "red_team_subject_missing"
+routing_questions:
+  - {"id": "red-team-advocate-subject", "text": "What specific plan, draft, claim, decision, design, or argument would you like me to stress-test? A lighter critique also needs that subject; you can provide it or choose a different kind of analysis.", "answers": [{"phrases": ["lighter", "balanced critique"], "targets": [{"kind": "active", "id": "balanced-critique"}], "qualification": "Still requires the missing subject; ask for it before analysis."}], "default": {"targets": [{"kind": "action", "id": "ask-for-subject"}]}, "territories": ["T15"]}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

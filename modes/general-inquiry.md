@@ -12,19 +12,19 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: general-inquiry
-canonical_name: General Inquiry
-suffix_rule: none
-educational_name: general analytical inquiry (universal pipeline)
+mode_id: "general-inquiry"
+canonical_name: "General Inquiry"
+suffix_rule: "none"
+educational_name: "general analytical inquiry (universal pipeline)"
 
 # 1. TERRITORY AND POSITION
-territory: T0-default-judgment
+territory: "T0-default-judgment"
 gradation_position:
-  axis: specificity
-  value: catch-all
+  axis: "specificity"
+  value: "catch-all"
 adjacent_modes_in_territory:
-  - mode_id: subjective-inquiry
-    relationship: specificity counterpart (this handles judgment-with-objective-criteria; subjective-inquiry handles judgment-without-objective-criteria)
+  - mode_id: "subjective-inquiry"
+    relationship: "specificity counterpart (this handles judgment-with-objective-criteria; subjective-inquiry handles judgment-without-objective-criteria)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -36,26 +36,36 @@ trigger_conditions:
     - "what should"
     - "is it worth"
     - "tradeoff"
-    - "comparison" (without analytical-mode-specific vocabulary)
-    - "help me think about" (when not curiosity-driven exploration)
+    - "\"comparison\" (without analytical-mode-specific vocabulary)"
+    - "\"help me think about\" (when not curiosity-driven exploration)"
 disambiguation_routing:
   routes_to_this_mode_when:
     - "Stage 2 detected judgment markers but no specific analytical mode dispatched cleanly"
     - "default catch-all for judgment-required prompts"
   routes_away_when:
-    - "any specific analytical mode (T1–T21) dispatches" → that mode
-    - "no judgment markers, just retrieval needed" → Gear 2 RAG path
-    - "purely subjective question (aesthetic, preference, taste)" → subjective-inquiry
+    - condition: "any specific analytical mode (T1–T21) dispatches"
+      targets: [{"kind": "fallback", "id": "route-by-intent"}]
+      qualification: "that mode"
+    - condition: "no judgment markers, just retrieval needed"
+      targets: [{"kind": "active", "id": "factual-lookup"}]
+      qualification: "Gear 2 RAG path"
+    - condition: "purely subjective question (aesthetic, preference, taste)"
+      targets: [{"kind": "active", "id": "subjective-inquiry"}]
+      qualification: "subjective-inquiry"
 when_not_to_invoke:
   - "A more specific analytical mode fits the prompt — prefer the specific mode"
-  - "Prompt is information-only with no judgment required" → Gear 2 RAG lookup
-  - "Prompt is greeting / system command / mechanical request" → Stage 0 bypass
+  - condition: "Prompt is information-only with no judgment required"
+    targets: [{"kind": "active", "id": "factual-lookup"}]
+    qualification: "Gear 2 RAG lookup"
+  - condition: "Prompt is greeting / system command / mechanical request"
+    targets: [{"kind": "action", "id": "bypass"}]
+    qualification: "Stage 0 bypass"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive-analytical
+  posture: "descriptive-analytical"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -70,53 +80,70 @@ input_contract:
   detection:
     expert_signals: ["constraints are", "the decision is between", "stakes include", "context:"]
     accessible_signals: ["should I", "what should", "help me think about", "is it worth"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the question or topic you'd like to think through?'"
     on_underspecified: "Proceed — universal scaffolding handles ambiguity."
 
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Is a more specific analytical mode actually appropriate here, and should this analysis recommend the user re-dispatch?"
-    failure_mode_if_unmet: catch-all-overuse (analyzing in general-inquiry what should have routed to a specific mode)
-  - cq_id: CQ2
+    failure_mode_if_unmet: "catch-all-overuse (analyzing in general-inquiry what should have routed to a specific mode)"
+  - cq_id: "CQ2"
     question: "Has the universal f-evaluate / f-revise / f-verify discipline been applied, or has the response leaned only on the model's freeform judgment?"
-    failure_mode_if_unmet: scaffolding-bypass
+    failure_mode_if_unmet: "scaffolding-bypass"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: catch-all-overuse
+  - name: "catch-all-overuse"
     detection_signal: "Prompt actually matches a specific analytical mode (cui-bono, ACH, root-cause-analysis, etc.) but routed here because Stage 2 missed the signal."
-    correction_protocol: re-dispatch
-  - name: scaffolding-bypass
+    correction_protocol: "re-dispatch"
+  - name: "scaffolding-bypass"
     detection_signal: "Analysis lacks confidence-per-finding, coverage-gap acknowledgment, or methodological framing — the universal f-* discipline was not applied."
-    correction_protocol: flag
-  - name: false-objectivity-on-subjective
+    correction_protocol: "flag"
+  - name: "false-objectivity-on-subjective"
     detection_signal: "Prompt was actually a subjective question (taste, preference, aesthetic) and the analysis treated subjective claims as objective."
-    correction_protocol: re-dispatch (to subjective-inquiry)
+    correction_protocol: "re-dispatch (to subjective-inquiry)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional: []
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~1min
+expected_runtime: "~1min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "If analysis surfaces a specific analytical territory, re-dispatch to that territory's mode rather than escalating in place."
   sideways:
-    target_mode_id: subjective-inquiry
+    target: {"kind": "active", "id": "subjective-inquiry"}
     when: "Analysis discovers the question was actually subjective and false objectivity was applied."
   downward:
-    target_mode_id: null
+    target: null
     when: "If the question is purely informational, it should have been routed to Gear 2 RAG; not a re-dispatch from inside the pipeline."
 ```
+
+## Display Description
+
+Catch-all analytical inquiry when judgment is required but no specific analytical mode cleanly fits.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  judgment_markers: ["should", "ought", "best", "better", "worst", "compare", "comparison", "evaluate", "analyze", "analyse", "audit", "review", "decide", "recommend", "recommendation", "assess", "assessment", "critique", "judge", "pre-mortem", "premortem", "pre mortem", "cui bono", "who benefits", "why does", "why did", "pros and cons", "tradeoffs", "trade-offs", "trade offs", "make the case", "steelman", "red team", "red-team", "stress test", "stress-test", "root cause", "root-cause", "frame audit", "frame check", "propaganda", "is X better than", "is x better than", "do you think", "what do you think"]
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals: []
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

@@ -12,27 +12,27 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: benefits-analysis
-canonical_name: Benefits Analysis
-suffix_rule: analysis
-educational_name: balanced benefits-and-strengths analysis (PMI — plus, minus, interesting)
+mode_id: "benefits-analysis"
+canonical_name: "Benefits Analysis"
+suffix_rule: "analysis"
+educational_name: "balanced benefits-and-strengths analysis (PMI — plus, minus, interesting)"
 
 # 1. TERRITORY AND POSITION
-territory: T15-artifact-evaluation-by-stance
+territory: "T15-artifact-evaluation-by-stance"
 gradation_position:
-  axis: stance
-  value: constructive-balanced
+  axis: "stance"
+  value: "constructive-balanced"
 adjacent_modes_in_territory:
-  - mode_id: steelman-construction
-    relationship: stance counterpart (constructive-strong, single position only)
-  - mode_id: balanced-critique
-    relationship: stance counterpart (neutral, no constructive lean)
-  - mode_id: red-team-assessment
-    relationship: stance counterpart (adversarial-actor-modeling, assessment)
-  - mode_id: red-team-advocate
-    relationship: stance counterpart (adversarial-actor-modeling, advocate)
-  - mode_id: devils-advocate-lite
-    relationship: stance counterpart (adversarial-light, deferred per CR-6)
+  - mode_id: "steelman-construction"
+    relationship: "stance counterpart (constructive-strong, single position only)"
+  - mode_id: "balanced-critique"
+    relationship: "stance counterpart (neutral, no constructive lean)"
+  - mode_id: "red-team-assessment"
+    relationship: "stance counterpart (adversarial-actor-modeling, assessment)"
+  - mode_id: "red-team-advocate"
+    relationship: "stance counterpart (adversarial-actor-modeling, advocate)"
+  - mode_id: "devils-advocate-lite"
+    relationship: "stance counterpart (adversarial-light, deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -52,20 +52,30 @@ disambiguation_routing:
     - "one proposal, three columns (Plus / Minus / Interesting)"
     - "wants balanced evaluation without recommendation by default"
   routes_away_when:
-    - "comparing multiple options" → constraint-mapping (T3)
-    - "wants the strongest version of the proposal" → steelman-construction (T15)
-    - "wants the adversarial actor stress test for own decision" → red-team-assessment (T15)
-    - "wants adversarial argument brief for external use" → red-team-advocate (T15)
-    - "wants forward causal cascades over time" → consequences-and-sequel (T6)
+    - condition: "comparing multiple options"
+      targets: [{"kind": "active", "id": "constraint-mapping"}]
+      qualification: "constraint-mapping (T3)"
+    - condition: "wants the strongest version of the proposal"
+      targets: [{"kind": "active", "id": "steelman-construction"}]
+      qualification: "steelman-construction (T15)"
+    - condition: "wants the adversarial actor stress test for own decision"
+      targets: [{"kind": "active", "id": "red-team-assessment"}]
+      qualification: "red-team-assessment (T15)"
+    - condition: "wants adversarial argument brief for external use"
+      targets: [{"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-advocate (T15)"
+    - condition: "wants forward causal cascades over time"
+      targets: [{"kind": "active", "id": "consequences-and-sequel"}]
+      qualification: "consequences-and-sequel (T6)"
 when_not_to_invoke:
   - "User wants to choose between alternatives — Benefits Analysis evaluates a single proposal"
   - "User wants a verdict — Benefits Analysis presents the envelope; user decides"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: constructive
+  posture: "constructive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -80,70 +90,97 @@ input_contract:
   detection:
     expert_signals: ["affected parties", "stakeholders include", "stated goal is"]
     accessible_signals: ["thinking about doing X", "considering this", "wondering if I should"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the specific proposal you want me to evaluate? More detail makes the analysis more useful.'"
     on_underspecified: "Ask: 'Are you weighing this single proposal, or comparing it against alternatives? Single proposal = Benefits Analysis; alternatives = Constraint Mapping.'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Are all three PMI columns populated, or has the analysis collapsed into Plus/Minus only?"
-    failure_mode_if_unmet: two-column-trap
-  - cq_id: CQ2
+    failure_mode_if_unmet: "two-column-trap"
+  - cq_id: "CQ2"
     question: "Are claims grounded in the user's specific case, or generic boilerplate?"
-    failure_mode_if_unmet: boilerplate-trap
-  - cq_id: CQ3
+    failure_mode_if_unmet: "boilerplate-trap"
+  - cq_id: "CQ3"
     question: "Has the Interesting column captured at least one second-order implication (precedent, signaling, path-dependency) — or explicitly noted that none was identified?"
-    failure_mode_if_unmet: second-order-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "second-order-omission"
+  - cq_id: "CQ4"
     question: "Have asymmetries (Plus for one party, Minus for another) been surfaced via the affected-parties map?"
-    failure_mode_if_unmet: single-perspective-trap
-  - cq_id: CQ5
+    failure_mode_if_unmet: "single-perspective-trap"
+  - cq_id: "CQ5"
     question: "Has the analysis avoided unsolicited recommendation — presenting the envelope rather than rendering a verdict?"
-    failure_mode_if_unmet: verdict-trap
+    failure_mode_if_unmet: "verdict-trap"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: two-column-trap
+  - name: "two-column-trap"
     detection_signal: "Plus and Minus populated; Interesting column empty without explicit 'none identified' statement."
-    correction_protocol: re-dispatch (audit for second-order implications and populate or explicitly mark empty)
-  - name: boilerplate-trap
+    correction_protocol: "re-dispatch (audit for second-order implications and populate or explicitly mark empty)"
+  - name: "boilerplate-trap"
     detection_signal: "Claims read as generic — could apply to any proposal of this type."
-    correction_protocol: re-dispatch (rewrite each claim with specifics from user's case)
-  - name: single-perspective-trap
+    correction_protocol: "re-dispatch (rewrite each claim with specifics from user's case)"
+  - name: "single-perspective-trap"
     detection_signal: "All claims viewed from one party's perspective; affected-parties map missing or single-row."
-    correction_protocol: re-dispatch (map affected parties; surface asymmetries)
-  - name: verdict-trap
+    correction_protocol: "re-dispatch (map affected parties; surface asymmetries)"
+  - name: "verdict-trap"
     detection_signal: "Output recommends adoption (or rejection) when user did not ask for a lean."
-    correction_protocol: flag (remove recommendation; BA produces envelope, not verdict)
-  - name: false-symmetry-trap
+    correction_protocol: "flag (remove recommendation; BA produces envelope, not verdict)"
+  - name: "false-symmetry-trap"
     detection_signal: "Equal pros and cons presented for appearance of balance, not honest distribution."
-    correction_protocol: flag (report honest distribution explicitly)
+    correction_protocol: "flag (report honest distribution explicitly)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - debono-pmi
+  - debono-pmi
   optional:
-    - stakeholder-incidence-analysis
-    - second-order-effects-catalog (precedent / signaling / path-dependency)
+  - stakeholder-incidence-analysis
+  - lens_id: second-order-effects-catalog
+    qualification: precedent / signaling / path-dependency
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: red-team-assessment
+    target: {"kind": "active", "id": "red-team-assessment"}
     when: "Stress-testing under adversarial-actor framing is needed beyond balanced-constructive evaluation; assessment stance for own decision (default), or red-team-advocate when the user needs a brief for external use."
   sideways:
-    target_mode_id: balanced-critique
+    target: {"kind": "active", "id": "balanced-critique"}
     when: "User wants neutral evaluation with no constructive lean rather than balanced-constructive."
   downward:
-    target_mode_id: null
+    target: null
     when: "Benefits Analysis is one of T15's lighter evaluation stances."
 ```
+
+## Display Description
+
+Applies de Bono's PMI (Plus / Minus / Interesting) with stress-tested claims and second-order effects.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll lay out what this {artifact} would gain you"
+  home_priority: true
+  signals:
+    - {"signal": "benefits analysis", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "PMI", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "method abbreviation"}
+    - {"signal": "plus minus interesting", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "pros and cons of", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what are the benefits and risks", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "evaluate this proposal", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "cost-benefit analysis", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "method reference"}
+    - {"signal": "full picture on X", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "envelope of", "territory": "T15-artifact-evaluation-by-stance", "disambiguation_answer": "within-territory: stance? → constructive-balanced", "confidence_weight": "weak", "evidence": "tonal cue (envelope framing)"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

@@ -6,6 +6,12 @@
 
 ## Locked Template
 
+Each instantiated mode owns a `## Display Description` followed immediately by `## Selection/Activation Guidance`. The latter contains one valid YAML `selection` mapping: identity aliases, weighted signal records with answer cues and evidence, any existing data-shape predicate bindings, and a named canonical question when selection needs one. Mode IDs, canonical names, and educational names also generate explicit-name aliases mechanically. Catalogues, indexes, readable signal tables, and reverse lens relationships are derived from these sources; they are not additional authored authorities.
+
+Quote full prose values, including conditions. A boundary that names another route has `condition`, `targets` (an ordered typed list), and `qualification`; a target is `{kind: active|deferred|territory|fallback|action, id: ...}`. Alternatives remain alternatives, and a null escalation target remains null. The deterministic compiler validates references across the entire source set before exposing any record. Runtime conditions use only the finite named detector bindings in the territory canonical; an unbound operative predicate is an error. Narrative mode boundaries remain instructions for the analyst during analysis, not prose evaluated as program code.
+
+Molecular components retain their authored order and `runs: full|fragment` distinction. A fragment may declare a `reference_id` when a synthesis-stage input uses a different name. Stage inputs resolve only to component references and earlier named synthesis stages; they are not routing destinations. `molecular_spec.companion_source` identifies the existing protected companion. Compilation preserves its full text and does not implement or replace molecular execution.
+
 ```yaml
 # 0. IDENTITY
 mode_id: <kebab-case-id>            # filename without .md extension
@@ -99,13 +105,13 @@ default_depth_tier: 1 | 2 | 3
 expected_runtime: ~1min | ~5min | ~10+min
 escalation_signals:                              # signals to escalate to a sibling
   upward:
-    target_mode_id: <heavier sibling>
+    target: {kind: active, id: <heavier sibling>}
     when: "<condition under which to escalate>"
   sideways:
-    target_mode_id: <stance/complexity sibling>
+    target: {kind: active, id: <stance/complexity sibling>}
     when: "<condition under which to switch>"
   downward:
-    target_mode_id: <lighter sibling>
+    target: {kind: active, id: <lighter sibling>}
     when: "<condition under which to de-escalate>"
 
 # 9. PER-PIPELINE-STAGE GUIDANCE                # Decision C-extension
@@ -233,7 +239,7 @@ plus citations.]
 
 ### Field semantics
 
-- `mode_id` — kebab-case identifier; matches filename. Referenced by other modes' `adjacent_modes_in_territory`, by `molecular_spec.components`, by `Reference — Mode Runtime Configuration.md`, by the signal vocabulary registry, and by territory frameworks.
+- `mode_id` — kebab-case identifier; matches filename. Referenced by other modes' `adjacent_modes_in_territory`, molecular components, typed routing targets, and territory frameworks. The compiler validates these references and derives the readable catalogues; the retired runtime configuration is not an authority.
 - `canonical_name` — display name, title-case, no suffix. The suffix is generated dynamically by the orchestrator per `suffix_rule`.
 - `suffix_rule` — `analysis` (default for analytical operations) | `reading` (interpretive operations like Ma Reading) | `none` (generative T20 modes like Passion Exploration; execution T21 modes like Project Mode).
 - `educational_name` — the named technique the mode embodies, used in the educational parenthetical convention `"plain language *(named technique)*"` per Decision E. Maximum 15 words. No acronyms unless the acronym is the canonical/recognizable form, in which case keep the acronym AND expand the letters in a sub-parenthesis (e.g., "SWOT analysis *(strengths, weaknesses, opportunities, threats)*"). The verification script flags any user-visible acronym lacking expansion.
@@ -253,7 +259,7 @@ Decision C originally specified that runtime mechanics live in a separate `Refer
 
 **All runtime fields now live in the mode file:**
 
-- `gear` — declared in a `## DEFAULT GEAR` section near the bottom of the mode file (e.g., `Gear 4`). The orchestrator's `extract_default_gear` regex reads this directly.
+- `gear` — declared in a `## DEFAULT GEAR` section near the bottom of the mode file (e.g., `Gear 4`). The compiler validates it and the orchestrator's `extract_default_gear` returns the same compiled value.
 - `expected_runtime` — bullet under `## DEFAULT GEAR` (e.g., `- **Expected Runtime:** ~5min`).
 - `context_budget` — bullet under `## DEFAULT GEAR` (e.g., `- **Context Budget:** default`).
 - `type_filter` — `### type_filter` subsection inside `## RAG PROFILE` (e.g., ``Retrieve only chunks whose `type` is in: `[engram, resource, incubator]```). The orchestrator's `_extract_mode_type_filter` reads this directly.
@@ -408,13 +414,13 @@ default_depth_tier: 2
 expected_runtime: ~5min
 escalation_signals:
   upward:
-    target_mode_id: stakeholder-mapping
+    target: {kind: active, id: stakeholder-mapping}
     when: "Beneficiary inventory exceeds 5 parties or interest structure is multi-layered."
   sideways:
-    target_mode_id: boundary-critique
+    target: {kind: active, id: boundary-critique}
     when: "Most identified parties are inside one frame; boundary-critique surfaces parties outside it."
   downward:
-    target_mode_id: null
+    target: null
     when: "Cui Bono is already the lightest mode in T2."
 ```
 
@@ -654,13 +660,13 @@ default_depth_tier: 3
 expected_runtime: ~10+min
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Wicked Problems is the heaviest mode in T2's complexity ladder."
   sideways:
-    target_mode_id: decision-clarity
+    target: {kind: active, id: decision-clarity}
     when: "Output should be a decision-clarity document for a decision-maker rather than an integrated analysis."
   downward:
-    target_mode_id: cui-bono
+    target: {kind: active, id: cui-bono}
     when: "User has time pressure or scope is narrower than initially estimated."
 
 # 10. CAVEATS AND OPEN DEBATES

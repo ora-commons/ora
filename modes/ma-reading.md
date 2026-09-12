@@ -12,24 +12,24 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: ma-reading
-canonical_name: Ma Reading
-suffix_rule: reading
-educational_name: ma reading (Japanese aesthetics: void as content)
+mode_id: "ma-reading"
+canonical_name: "Ma Reading"
+suffix_rule: "reading"
+educational_name: "ma reading (Japanese aesthetics: void as content)"
 
 # 1. TERRITORY AND POSITION
-territory: T19-spatial-composition
+territory: "T19-spatial-composition"
 gradation_position:
-  axis: specificity
-  value: aesthetic-experiential
-  stance_axis_value: contemplative-descriptive-deep
+  axis: "specificity"
+  value: "aesthetic-experiential"
+  stance_axis_value: "contemplative-descriptive-deep"
 adjacent_modes_in_territory:
-  - mode_id: compositional-dynamics
-    relationship: stance-counterpart (universal-perceptual descriptive medium-depth; built Wave 2; covers gestalt grouping + Arnheim forces)
-  - mode_id: place-reading-genius-loci
-    relationship: specificity-counterpart (descriptive-evaluative-deep; affordance + inhabited-place; Wave 3)
-  - mode_id: information-density
-    relationship: specificity-counterpart (applied-evaluative-medium-depth; Tufte + Bertin + Cleveland-McGill; Wave 3)
+  - mode_id: "compositional-dynamics"
+    relationship: "stance-counterpart (universal-perceptual descriptive medium-depth; built Wave 2; covers gestalt grouping + Arnheim forces)"
+  - mode_id: "place-reading-genius-loci"
+    relationship: "specificity-counterpart (descriptive-evaluative-deep; affordance + inhabited-place; Wave 3)"
+  - mode_id: "information-density"
+    relationship: "specificity-counterpart (applied-evaluative-medium-depth; Tufte + Bertin + Cleveland-McGill; Wave 3)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -58,21 +58,37 @@ disambiguation_routing:
     - "user wants contemplative-descriptive stance (the analysis participates in articulating the experience)"
     - "user wants Japanese-aesthetics vocabulary (Ma + Yūgen + Wabi-sabi + Mu) applied"
   routes_away_when:
-    - "user wants the universal compositional-forces / gestalt reading (figure-ground, perceptual grouping, visual weight, Arnheim forces)" → compositional-dynamics
-    - "user wants prospect-refuge / pattern-language / inhabited-place reading" → place-reading-genius-loci (Wave 3)
-    - "user wants information-graphic / data-encoding analysis (Tufte / Bertin)" → information-density (Wave 3)
-    - "user wants relation-extraction from a diagram (what does the diagram assert about A→B→C)" → relationship-mapping or spatial-reasoning (T11)
-    - "user wants open-ended generative exploration of what the work opens up rather than analytical reading" → passion-exploration (T20)
+    - condition: "user wants the universal compositional-forces / gestalt reading (figure-ground, perceptual grouping, visual weight, Arnheim forces)"
+      targets: [{"kind": "active", "id": "compositional-dynamics"}]
+      qualification: "compositional-dynamics"
+    - condition: "user wants prospect-refuge / pattern-language / inhabited-place reading"
+      targets: [{"kind": "active", "id": "place-reading-genius-loci"}]
+      qualification: "place-reading-genius-loci (Wave 3)"
+    - condition: "user wants information-graphic / data-encoding analysis (Tufte / Bertin)"
+      targets: [{"kind": "active", "id": "information-density"}]
+      qualification: "information-density (Wave 3)"
+    - condition: "user wants relation-extraction from a diagram (what does the diagram assert about A→B→C)"
+      targets: [{"kind": "active", "id": "relationship-mapping"}, {"kind": "active", "id": "spatial-reasoning"}]
+      qualification: "relationship-mapping or spatial-reasoning (T11)"
+    - condition: "user wants open-ended generative exploration of what the work opens up rather than analytical reading"
+      targets: [{"kind": "active", "id": "passion-exploration"}]
+      qualification: "passion-exploration (T20)"
 when_not_to_invoke:
-  - "Composition has no operative voids/intervals/silences (every element fills space; there is no held-open absence)" → compositional-dynamics
-  - "Input is not a spatial composition (raw data, prose, instructions)" → other territory
-  - "User wants causal investigation or process analysis" → T4 / T17
+  - condition: "Composition has no operative voids/intervals/silences (every element fills space; there is no held-open absence)"
+    targets: [{"kind": "active", "id": "compositional-dynamics"}]
+    qualification: "compositional-dynamics"
+  - condition: "Input is not a spatial composition (raw data, prose, instructions)"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "other territory"
+  - condition: "User wants causal investigation or process analysis"
+    targets: [{"kind": "territory", "id": "T4"}, {"kind": "territory", "id": "T17"}]
+    qualification: "T4 / T17"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: contemplative
+  posture: "contemplative"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -87,75 +103,109 @@ input_contract:
   detection:
     expert_signals: ["Ma", "間", "Yūgen", "Wabi-sabi", "Mu", "Isozaki", "Nitschke", "Itō", "Suzuki", "Okakura", "Tanizaki", "ma-ai", "Cage 4'33", "Ozu pillow shot", "Tarkovsky long take", "Sesshū splashed ink", "Ryōan-ji"]
     accessible_signals: ["the empty space here", "the silence", "the void in this", "what the absence is doing"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe or share the composition (image / film still / garden / room / page) you want a ma reading on, and roughly where the operative emptiness sits if you've noticed it?'"
     on_underspecified: "Ask: 'Are you noticing a specific void or interval doing work, or do you want me to surface what's load-bearing in the composition?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Is the interval load-bearing for meaning, or is it incidental negative space? (If incidental, this is not a ma reading and the analysis should defer to compositional-dynamics for visual-weight balance.)"
-    failure_mode_if_unmet: incidental-void-mistaken-for-ma
-  - cq_id: CQ2
+    failure_mode_if_unmet: "incidental-void-mistaken-for-ma"
+  - cq_id: "CQ2"
     question: "Is the void *active* — held open as content, generating rhythm / breath / suggestion / kami-space / ma-ai — or *passive* / residual?"
-    failure_mode_if_unmet: passive-void-asserted-as-active
-  - cq_id: CQ3
+    failure_mode_if_unmet: "passive-void-asserted-as-active"
+  - cq_id: "CQ3"
     question: "Would removing or altering the void substantively change the work? (If no — if a content of equal compositional weight could replace the void without loss — the mode does not apply.)"
-    failure_mode_if_unmet: removal-test-failure
-  - cq_id: CQ4
+    failure_mode_if_unmet: "removal-test-failure"
+  - cq_id: "CQ4"
     question: "Is the apparent suggestion productive incompleteness (the viewer/listener invited to complete) or actually under-specification (failure of execution)? (Yūgen test.)"
-    failure_mode_if_unmet: under-specification-mistaken-for-yūgen
-  - cq_id: CQ5
+    failure_mode_if_unmet: "under-specification-mistaken-for-yūgen"
+  - cq_id: "CQ5"
     question: "Is the proposed reading falsifiable by a counter-example in the same tradition, or is it asserted as inviolable? (Defeasibility test — even contemplative readings carry critical questions whose negative answers invalidate them.)"
-    failure_mode_if_unmet: inviolable-reading
+    failure_mode_if_unmet: "inviolable-reading"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: incidental-void-mistaken-for-ma
+  - name: "incidental-void-mistaken-for-ma"
     detection_signal: "Reading treats negative space as load-bearing without applying the removal-test or showing what each void is doing."
-    correction_protocol: re-dispatch (or sideways to compositional-dynamics)
-  - name: passive-void-asserted-as-active
+    correction_protocol: "re-dispatch (or sideways to compositional-dynamics)"
+  - name: "passive-void-asserted-as-active"
     detection_signal: "Reading describes the void's effect without showing it is *held open as content* (generative) rather than residual."
-    correction_protocol: re-dispatch
-  - name: removal-test-failure
+    correction_protocol: "re-dispatch"
+  - name: "removal-test-failure"
     detection_signal: "Reading does not perform the removal/alteration test (would replacing the void with content of equal weight alter the work substantively?)."
-    correction_protocol: re-dispatch
-  - name: under-specification-mistaken-for-yūgen
+    correction_protocol: "re-dispatch"
+  - name: "under-specification-mistaken-for-yūgen"
     detection_signal: "Reading attributes yūgen-like withholding to a work that is simply under-developed; the suggestion-resonances are projected by the reader rather than enabled by the work."
-    correction_protocol: re-dispatch
-  - name: inviolable-reading
+    correction_protocol: "re-dispatch"
+  - name: "inviolable-reading"
     detection_signal: "Reading is asserted as inviolable (no counter-readings, no falsifiability conditions); contemplative stance has slid into devotional assertion."
-    correction_protocol: re-dispatch
-  - name: tradition-misappropriation
+    correction_protocol: "re-dispatch"
+  - name: "tradition-misappropriation"
     detection_signal: "Reading invokes Ma/Yūgen/Wabi-sabi/Mu vocabulary on a composition that bears no engagement with those traditions, asserting an aesthetic genealogy that is not present."
-    correction_protocol: flag
+    correction_protocol: "flag"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - japanese-aesthetics-catalog
+  - japanese-aesthetics-catalog
   optional:
-    - cage-silence-and-framing-of-attention (when input is musical or temporal-composition)
-    - bordwell-poetics-of-cinema (when input is film, especially Ozu)
-    - schrader-transcendental-style (when input is slow-cinema lineage: Ozu / Bresson / Tarkovsky)
-    - tanizaki-in-praise-of-shadows (when input involves shadow-as-material, lighting, or Japanese architectural interior)
+  - lens_id: cage-silence-and-framing-of-attention
+    qualification: when input is musical or temporal-composition
+  - lens_id: bordwell-poetics-of-cinema
+    qualification: when input is film, especially Ozu
+  - lens_id: schrader-transcendental-style
+    qualification: 'when input is slow-cinema lineage: Ozu / Bresson / Tarkovsky'
+  - lens_id: tanizaki-in-praise-of-shadows
+    qualification: when input involves shadow-as-material, lighting, or Japanese architectural interior
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Ma Reading is the deepest contemplative-descriptive mode in T19; deepening occurs by repeated readings rather than by escalation to a heavier sibling."
   sideways:
-    target_mode_id: compositional-dynamics
+    target: {"kind": "active", "id": "compositional-dynamics"}
     when: "On reflection the operative compositional work is being done by figure-ground / gestalt grouping / visual-weight forces rather than by held-open void; switch to the universal-perceptual reading."
   downward:
-    target_mode_id: null
+    target: null
     when: "Ma Reading is the only contemplative-descriptive-deep mode in T19."
 ```
+
+## Display Description
+
+Reads negative space, interval, and presence-of-absence in compositions through the Ma + Yūgen + Wabi-sabi + Mu Japanese-aesthetics tradition.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals:
+    - {"signal": "ma reading", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → aesthetic-experiential", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Ma", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → aesthetic-experiential", "confidence_weight": "strong", "evidence": "tradition vocabulary"}
+    - {"signal": "void as content", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → aesthetic-experiential", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "interval as primary", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → aesthetic-experiential", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "interval as content", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → aesthetic-experiential", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "Japanese aesthetics", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → aesthetic-experiential", "confidence_weight": "strong", "evidence": "tradition reference"}
+    - {"signal": "Japanese aesthetic reading", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → aesthetic-experiential", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Yūgen", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tradition vocabulary"}
+    - {"signal": "Wabi-sabi", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tradition vocabulary"}
+    - {"signal": "Mu", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tradition vocabulary"}
+    - {"signal": "the empty space here", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (void-as-content)"}
+    - {"signal": "what is the silence doing", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (void-as-content)"}
+    - {"signal": "Ozu pillow shot", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tradition reference"}
+    - {"signal": "Tarkovsky long take", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "tradition reference"}
+    - {"signal": "japanese aesthetics catalog", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

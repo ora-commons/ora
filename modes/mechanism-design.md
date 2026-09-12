@@ -14,19 +14,19 @@ date modified: 2026-06-01
 
 ```yaml
 # 0. IDENTITY
-mode_id: mechanism-design
-canonical_name: Mechanism and Incentive Analysis
-suffix_rule: analysis
-educational_name: mechanism design and information-economics analysis (adverse-selection / moral-hazard / auction lineage)
+mode_id: "mechanism-design"
+canonical_name: "Mechanism and Incentive Analysis"
+suffix_rule: "analysis"
+educational_name: "mechanism design and information-economics analysis (adverse-selection / moral-hazard / auction lineage)"
 
 # 1. TERRITORY AND POSITION
-territory: T18-strategic-interaction
+territory: "T18-strategic-interaction"
 gradation_position:
-  axis: complexity
-  value: mechanism-design
+  axis: "complexity"
+  value: "mechanism-design"
 adjacent_modes_in_territory:
-  - mode_id: strategic-interaction
-    relationship: complexity sibling (analyze the game as given vs. analyze/design the information-and-incentive structure that shapes the game)
+  - mode_id: "strategic-interaction"
+    relationship: "complexity sibling (analyze the game as given vs. analyze/design the information-and-incentive structure that shapes the game)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -48,19 +48,31 @@ disambiguation_routing:
     - "the task is to analyze an information-asymmetry market failure (adverse selection, moral hazard) or to design a mechanism/contract/auction that aligns incentives"
     - "signaling, screening, or incentive-compatibility is the operative structure"
   routes_away_when:
-    - "the situation is a game with observable moves and no information asymmetry (equilibrium analysis)" → strategic-interaction (T18 sibling)
-    - "the question is how a market's prices/quantities behave, not its information structure" → market-dynamics (T17)
-    - "the question is who benefits and who holds power" → cui-bono (T2)
-    - "the task is to negotiate the deal rather than design the mechanism" → principled-negotiation (T13)
+    - condition: "the situation is a game with observable moves and no information asymmetry (equilibrium analysis)"
+      targets: [{"kind": "active", "id": "strategic-interaction"}]
+      qualification: "strategic-interaction (T18 sibling)"
+    - condition: "the question is how a market's prices/quantities behave, not its information structure"
+      targets: [{"kind": "active", "id": "market-dynamics"}]
+      qualification: "market-dynamics (T17)"
+    - condition: "the question is who benefits and who holds power"
+      targets: [{"kind": "active", "id": "cui-bono"}]
+      qualification: "cui-bono (T2)"
+    - condition: "the task is to negotiate the deal rather than design the mechanism"
+      targets: [{"kind": "active", "id": "principled-negotiation"}]
+      qualification: "principled-negotiation (T13)"
 when_not_to_invoke:
-  - "User wants the observable-move game analyzed without information asymmetry" → strategic-interaction (T18)
-  - "User wants market price/quantity behavior, not the incentive/information structure" → market-dynamics (T17)
+  - condition: "User wants the observable-move game analyzed without information asymmetry"
+    targets: [{"kind": "active", "id": "strategic-interaction"}]
+    qualification: "strategic-interaction (T18)"
+  - condition: "User wants market price/quantity behavior, not the incentive/information structure"
+    targets: [{"kind": "active", "id": "market-dynamics"}]
+    qualification: "market-dynamics (T17)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: analytical-and-design
+  posture: "analytical-and-design"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -75,76 +87,124 @@ input_contract:
   detection:
     expert_signals: ["incentive-compatibility constraint", "individual-rationality constraint", "revelation principle", "optimal auction", "Bayesian Nash", "incentive compatible mechanism"]
     accessible_signals: ["adverse selection", "moral hazard", "winner's curse", "why is this market full of lemons", "only the risky people sign up", "they overpaid at auction", "screening", "principal-agent", "hidden information", "design a contract so people behave"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Who are the parties, and what does each one privately know or privately do that the others can't see? That hidden information or hidden action is what this analysis turns on.'"
     on_underspecified: "Ask: 'Are you trying to ANALYZE why an existing arrangement misfires (adverse selection, moral hazard), or to DESIGN a mechanism/contract/auction that fixes it? Either is in scope — I just need to know which.'"
 
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Is the information asymmetry named explicitly — who holds private information or takes hidden action, and who cannot observe it?"
-    failure_mode_if_unmet: asymmetry-unnamed
-  - cq_id: CQ2
+    failure_mode_if_unmet: "asymmetry-unnamed"
+  - cq_id: "CQ2"
     question: "Is hidden information (adverse selection — type is private before contracting) distinguished from hidden action (moral hazard — effort is private after contracting)?"
-    failure_mode_if_unmet: selection-hazard-conflation
-  - cq_id: CQ3
+    failure_mode_if_unmet: "selection-hazard-conflation"
+  - cq_id: "CQ3"
     question: "For a designed mechanism, are participation (individual-rationality) and incentive-compatibility constraints both addressed — will the parties join, and will they behave as intended once in?"
-    failure_mode_if_unmet: constraint-omission
-  - cq_id: CQ4
+    failure_mode_if_unmet: "constraint-omission"
+  - cq_id: "CQ4"
     question: "When a named mechanism concept is invoked (winner's curse, screening, signaling), is its actual mechanism shown to operate here, or is it a name-drop?"
-    failure_mode_if_unmet: mechanism-name-drop
-  - cq_id: CQ5
+    failure_mode_if_unmet: "mechanism-name-drop"
+  - cq_id: "CQ5"
     question: "Is the analytical-vs-design posture explicit — is the output explaining why an arrangement misfires, or proposing a mechanism, rather than silently sliding between the two?"
-    failure_mode_if_unmet: posture-drift
+    failure_mode_if_unmet: "posture-drift"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: asymmetry-unnamed
+  - name: "asymmetry-unnamed"
     detection_signal: "Analysis proceeds without naming who holds private information or takes unobserved action."
-    correction_protocol: re-dispatch (name the asymmetry first)
-  - name: selection-hazard-conflation
+    correction_protocol: "re-dispatch (name the asymmetry first)"
+  - name: "selection-hazard-conflation"
     detection_signal: "Adverse selection and moral hazard used interchangeably; pre-contract type and post-contract effort conflated."
-    correction_protocol: flag (mandatory)
-  - name: constraint-omission
+    correction_protocol: "flag (mandatory)"
+  - name: "constraint-omission"
     detection_signal: "A proposed mechanism addresses incentive-compatibility but not participation (or vice versa) — parties either won't join or will game it."
-    correction_protocol: re-dispatch
-  - name: mechanism-name-drop
+    correction_protocol: "re-dispatch"
+  - name: "mechanism-name-drop"
     detection_signal: "A mechanism concept invoked in prose without its mechanism shown operating on the specific situation."
-    correction_protocol: re-dispatch
-  - name: posture-drift
+    correction_protocol: "re-dispatch"
+  - name: "posture-drift"
     detection_signal: "Output slides between explaining a failure and proposing a fix without marking which it is doing."
-    correction_protocol: flag
-  - name: assume-away-asymmetry
+    correction_protocol: "flag"
+  - name: "assume-away-asymmetry"
     detection_signal: "Analysis quietly assumes full information, dissolving the very problem the mode exists to handle."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - adverse-selection
-    - moral-hazard
+    - "adverse-selection"
+    - "moral-hazard"
   optional:
-    - winners-curse
-    - signaling
-    - principal-agent-problem
+    - "winners-curse"
+    - "signaling"
+    - "principal-agent-problem"
   foundational:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~10min
+expected_runtime: "~10min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Mechanism and Incentive Analysis is the information-and-incentive-structure mode of T18."
   sideways:
-    target_mode_id: strategic-interaction
+    target: {"kind": "active", "id": "strategic-interaction"}
     when: "The situation is actually a full-information game of observable moves — switch to equilibrium analysis."
   downward:
-    target_mode_id: null
+    target: null
     when: "n/a"
 ```
+
+## Display Description
+
+Applies adverse-selection, moral-hazard, principal-agent, and auction-design frameworks to information-asymmetry market failures and incentive-structure design problems (promoted from deferred 2026-06-01).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals:
+    - {"signal": "adverse selection", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "moral hazard", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "winner's curse", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "winners curse", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "mechanism design", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "incentive compatible", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "incentive-compatible", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "screening", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "principal-agent", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "information asymmetry", "territory": "T18-strategic-interaction", "disambiguation_answer": "within-territory: complexity? → mechanism-design", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "hidden information", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "hidden action", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "market for lemons", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "design the contract so", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "trigger phrase"}
+    - {"signal": "auction design", "territory": "T18-strategic-interaction", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "trigger phrase"}
+    - {"signal": "costly signal", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "signaling game", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "signal quality", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "adverse selection", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "moral hazard", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "winner's curse", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "winners curse", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "mechanism design", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "incentive compatible", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "incentive-compatible", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "screening", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "principal-agent", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "information asymmetry", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "hidden information", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "hidden action", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "market for lemons", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "auction design", "territory": "T18-strategic-interaction", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

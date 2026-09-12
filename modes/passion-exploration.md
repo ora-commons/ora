@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: passion-exploration
-canonical_name: Passion Exploration
-suffix_rule: none
-educational_name: passion exploration (specificity-personal-interest)
+mode_id: "passion-exploration"
+canonical_name: "Passion Exploration"
+suffix_rule: "none"
+educational_name: "passion exploration (specificity-personal-interest)"
 
 # 1. TERRITORY AND POSITION
-territory: T20-open-exploration
+territory: "T20-open-exploration"
 gradation_position:
-  axis: specificity
-  value: personal-interest
+  axis: "specificity"
+  value: "personal-interest"
 adjacent_modes_in_territory:
-  - mode_id: idea-development
-    relationship: specificity variant (creative-generation, deferred per CR-6)
-  - mode_id: research-question-generation
-    relationship: specificity variant (question-formulation, deferred per CR-6)
+  - mode_id: "idea-development"
+    relationship: "specificity variant (creative-generation, deferred per CR-6)"
+  - mode_id: "research-question-generation"
+    relationship: "specificity variant (question-formulation, deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -45,24 +45,30 @@ disambiguation_routing:
     - "wants to wander productively without committing to a destination"
     - "open exploration of an area of personal interest"
   routes_away_when:
-    - "names a deliverable or uses directive language" → project-mode (T21)
-    - "expresses unfamiliarity and needs orientation" → terrain-mapping (T14)
-    - "two developed positions emerge in tension" → synthesis or dialectical-analysis (T12)
+    - condition: "names a deliverable or uses directive language"
+      targets: [{"kind": "active", "id": "project-mode"}]
+      qualification: "project-mode (T21)"
+    - condition: "expresses unfamiliarity and needs orientation"
+      targets: [{"kind": "active", "id": "terrain-mapping"}]
+      qualification: "terrain-mapping (T14)"
+    - condition: "two developed positions emerge in tension"
+      targets: [{"kind": "active", "id": "synthesis"}, {"kind": "active", "id": "dialectical-analysis"}]
+      qualification: "synthesis or dialectical-analysis (T12)"
 when_not_to_invoke:
   - "User has named a deliverable or specified an output — Passion Exploration is generative, not productive"
   - "User needs analytical defeasibility — Passion Exploration produces maps and questions, not adjudicated findings"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: generative
+  posture: "generative"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
   expert_mode:
-    required: not-applicable
-    optional: not-applicable
+    required: "not-applicable"
+    optional: "not-applicable"
     notes: "expert_mode is not-applicable for Passion Exploration — the mode is generative rather than analytical, so the dual-contract distinction (which separates expert-vocabulary prompts from accessible prompts within an analytical operation) does not apply. All Passion Exploration prompts are accessible_mode by construction."
   accessible_mode:
     required: [topic_or_seed_thought]
@@ -71,67 +77,96 @@ input_contract:
   detection:
     expert_signals: []
     accessible_signals: ["I'm interested in", "wondering about", "let me explore", "help me think about"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What's the topic or thread you'd like to explore? It can be loose — exploration starts where curiosity points.'"
     on_underspecified: "Ask: 'Are you exploring open-endedly, or do you have a specific question or deliverable in mind? The first invites Passion Exploration; the second invites Project Mode.'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Have at least three open questions emerged and remained open, rather than being closed prematurely?"
-    failure_mode_if_unmet: premature-closure
-  - cq_id: CQ2
+    failure_mode_if_unmet: "premature-closure"
+  - cq_id: "CQ2"
     question: "Have at least two next-directions been offered (one deepening, one lateral)?"
-    failure_mode_if_unmet: lecture-trap
-  - cq_id: CQ3
+    failure_mode_if_unmet: "lecture-trap"
+  - cq_id: "CQ3"
     question: "Has the mode monitored for crystallization signals (shift to directive language) and reflected them back to the user?"
-    failure_mode_if_unmet: missed-crystallization
-  - cq_id: CQ4
+    failure_mode_if_unmet: "missed-crystallization"
+  - cq_id: "CQ4"
     question: "Does the exploration map honestly reflect the wandering state, or has it been over-polished into apparent completion?"
-    failure_mode_if_unmet: over-polished-map
+    failure_mode_if_unmet: "over-polished-map"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: premature-closure
+  - name: "premature-closure"
     detection_signal: "Output converges to conclusions rather than maintaining open questions."
-    correction_protocol: re-dispatch (consolidate toward open questions, not closed conclusions)
-  - name: lecture-trap
+    correction_protocol: "re-dispatch (consolidate toward open questions, not closed conclusions)"
+  - name: "lecture-trap"
     detection_signal: "Output delivers monologue or comprehensive briefing rather than exploring."
-    correction_protocol: re-dispatch (generate directions and connections; not comprehensive briefing)
-  - name: missed-crystallization
+    correction_protocol: "re-dispatch (generate directions and connections; not comprehensive briefing)"
+  - name: "missed-crystallization"
     detection_signal: "User's language has shifted to directive ('I want to', 'let's build') but mode continued to explore."
-    correction_protocol: flag (reflect crystallization signal and offer Project Mode)
-  - name: over-polished-map
+    correction_protocol: "flag (reflect crystallization signal and offer Project Mode)"
+  - name: "over-polished-map"
     detection_signal: "Map is tightly balanced when exploration is still fanning."
-    correction_protocol: flag (preserve frontier roughness; mark frontier nodes explicitly)
-  - name: productivity-trap
+    correction_protocol: "flag (preserve frontier roughness; mark frontier nodes explicitly)"
+  - name: "productivity-trap"
     detection_signal: "Mode treats exploration as inefficient and pushes toward output."
-    correction_protocol: flag (the exploration IS the product)
+    correction_protocol: "flag (the exploration IS the product)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - debono-concept-fan (climb the abstraction ladder)
-    - debono-random-entry (break exploration loops)
-    - cross-domain-analogical-mapping
+  - lens_id: debono-concept-fan
+    qualification: climb the abstraction ladder
+  - lens_id: debono-random-entry
+    qualification: break exploration loops
+  - cross-domain-analogical-mapping
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: terrain-mapping
+    target: {"kind": "active", "id": "terrain-mapping"}
     when: "User shifts from wandering to wanting a structured orientation map of the domain."
   sideways:
-    target_mode_id: project-mode
+    target: {"kind": "active", "id": "project-mode"}
     when: "Crystallization signals appear — user shifts to directive language naming a deliverable."
   downward:
-    target_mode_id: null
+    target: null
     when: "Passion Exploration is already T20's lightest depth posture."
 ```
+
+## Display Description
+
+Wanders an open territory with the user, surfacing questions, connections, and potential project nodes without driving toward resolution. Output is generative (no `Analysis` suffix per Decision L).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll explore this passion area with you"
+  catch_all: true
+  signals:
+    - {"signal": "passion exploration", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "I'm interested in", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "help me think about", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "I've been wondering", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what if", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "trigger phrase (also fires T9 paradigm)"}
+    - {"signal": "just exploring", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (open-endedness)"}
+    - {"signal": "no specific deliverable", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (no project)"}
+    - {"signal": "mull over", "territory": "T20-open-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (wandering)"}
+    - {"signal": "evolution by natural selection", "territory": "T20-open-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "evolution natural selection", "territory": "T20-open-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

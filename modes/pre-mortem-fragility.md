@@ -12,25 +12,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: pre-mortem-fragility
-canonical_name: Pre-Mortem (Fragility)
-suffix_rule: analysis
-educational_name: pre-mortem on structural fragilities (Klein, Taleb adjacent)
+mode_id: "pre-mortem-fragility"
+canonical_name: "Pre-Mortem (Fragility)"
+suffix_rule: "analysis"
+educational_name: "pre-mortem on structural fragilities (Klein, Taleb adjacent)"
 
 # 1. TERRITORY AND POSITION
-territory: T7-risk-and-failure-analysis
+territory: "T7-risk-and-failure-analysis"
 gradation_position:
-  axis: stance
-  value: adversarial-future
+  axis: "stance"
+  value: "adversarial-future"
 adjacent_modes_in_territory:
-  - mode_id: pre-mortem-action
-    relationship: parsed-sibling (stance-counterpart on plan rather than system; lives in T6; shares klein-pre-mortem lens)
-  - mode_id: fragility-antifragility-audit
-    relationship: depth-heavier sibling (Talebian asymmetry-focused; built Wave 3)
-  - mode_id: failure-mode-scan
-    relationship: depth-light sibling (gap-deferred per CR-6)
-  - mode_id: fault-tree
-    relationship: depth-thorough sibling (gap-deferred per CR-6)
+  - mode_id: "pre-mortem-action"
+    relationship: "parsed-sibling (stance-counterpart on plan rather than system; lives in T6; shares klein-pre-mortem lens)"
+  - mode_id: "fragility-antifragility-audit"
+    relationship: "depth-heavier sibling (Talebian asymmetry-focused; built Wave 3)"
+  - mode_id: "failure-mode-scan"
+    relationship: "depth-light sibling (gap-deferred per CR-6)"
+  - mode_id: "fault-tree"
+    relationship: "depth-thorough sibling (gap-deferred per CR-6)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -53,20 +53,32 @@ disambiguation_routing:
     - "user wants prospective-hindsight failure narration of structural breakage"
     - "the relevant failures are about how the structure responds to stress, not about how a team executes"
   routes_away_when:
-    - "the artifact is an action plan or course of action rather than a structure" → pre-mortem-action (T6)
-    - "user wants Talebian asymmetry analysis (fragile / robust / antifragile)" → fragility-antifragility-audit
-    - "user wants adversarial-actor stress test (someone is trying to defeat this)" → red-team-assessment / red-team-advocate (T15)
-    - "user wants exhaustive structured fault decomposition" → fault-tree (when built)
+    - condition: "the artifact is an action plan or course of action rather than a structure"
+      targets: [{"kind": "active", "id": "pre-mortem-action"}]
+      qualification: "pre-mortem-action (T6)"
+    - condition: "user wants Talebian asymmetry analysis (fragile / robust / antifragile)"
+      targets: [{"kind": "active", "id": "fragility-antifragility-audit"}]
+      qualification: "fragility-antifragility-audit"
+    - condition: "user wants adversarial-actor stress test (someone is trying to defeat this)"
+      targets: [{"kind": "active", "id": "red-team-assessment"}, {"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-assessment / red-team-advocate (T15)"
+    - condition: "user wants exhaustive structured fault decomposition"
+      targets: [{"kind": "deferred", "id": "fault-tree"}]
+      qualification: "fault-tree (when built)"
 when_not_to_invoke:
-  - "User is post-failure and wants backward causal trace" → root-cause-analysis (T4)
-  - "User wants to evaluate the design as an argument or proposal" → balanced-critique or steelman-construction (T15)
+  - condition: "User is post-failure and wants backward causal trace"
+    targets: [{"kind": "active", "id": "root-cause-analysis"}]
+    qualification: "root-cause-analysis (T4)"
+  - condition: "User wants to evaluate the design as an argument or proposal"
+    targets: [{"kind": "active", "id": "balanced-critique"}, {"kind": "active", "id": "steelman-construction"}]
+    qualification: "balanced-critique or steelman-construction (T15)"
   - "Design is so under-specified that no failure narrative is possible — degrade to elicitation"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: adversarial
+  posture: "adversarial"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -81,68 +93,102 @@ input_contract:
   detection:
     expert_signals: ["the architecture", "the design", "the system has", "components include", "dependencies are", "operating envelope"]
     accessible_signals: ["where will this break", "structural fragilities", "pre-mortem this design", "what's the weak point"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe the system or design and what it's meant to do under what conditions?'"
     on_underspecified: "Ask: 'What range of conditions is this meant to operate within, so I can imagine the conditions in which it breaks?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the analysis genuinely adopted prospective-hindsight stance on the system (writing as though the breakage has already occurred), or has it slipped into hedged forward-projection?"
-    failure_mode_if_unmet: stance-slippage
-  - cq_id: CQ2
+    failure_mode_if_unmet: "stance-slippage"
+  - cq_id: "CQ2"
     question: "Are the named fragilities specific to this structure's components and dependencies, or are they generic system-failure tropes (single point of failure, cascading failure) without structural specificity?"
-    failure_mode_if_unmet: generic-fragility-trope
-  - cq_id: CQ3
+    failure_mode_if_unmet: "generic-fragility-trope"
+  - cq_id: "CQ3"
     question: "Have load pathways been traced from operating-envelope stresses to specific structural elements that yield, or do the breakages appear without mechanism?"
-    failure_mode_if_unmet: mechanism-gap
-  - cq_id: CQ4
+    failure_mode_if_unmet: "mechanism-gap"
+  - cq_id: "CQ4"
     question: "Have structural mitigations been distinguished from operational workarounds, given that fragility is a property of the structure rather than its operation?"
-    failure_mode_if_unmet: structure-operation-conflation
+    failure_mode_if_unmet: "structure-operation-conflation"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: stance-slippage
+  - name: "stance-slippage"
     detection_signal: "Output uses forward conditional language ('this might fail under load') rather than retrospective ('the system broke when load exceeded X because component Y could not...')."
-    correction_protocol: re-dispatch
-  - name: generic-fragility-trope
+    correction_protocol: "re-dispatch"
+  - name: "generic-fragility-trope"
     detection_signal: "Fragilities named are pattern-matched abstractions (single point of failure, cascading failure, brittle dependency) without naming the specific component, link, or interface."
-    correction_protocol: re-dispatch
-  - name: mechanism-gap
+    correction_protocol: "re-dispatch"
+  - name: "mechanism-gap"
     detection_signal: "A fragility is asserted without naming the load condition that triggers it or the structural property that yields under that load."
-    correction_protocol: flag
-  - name: structure-operation-conflation
+    correction_protocol: "flag"
+  - name: "structure-operation-conflation"
     detection_signal: "Mitigations include operational practices (better monitoring, more careful operators) rather than structural changes."
-    correction_protocol: flag
-  - name: actor-modeling-drift
+    correction_protocol: "flag"
+  - name: "actor-modeling-drift"
     detection_signal: "Failure narratives invoke an adversarial actor trying to defeat the system; this is Red Team's territory, not structural fragility."
-    correction_protocol: re-dispatch (or escalate to red-team-assessment / red-team-advocate)
+    correction_protocol: "re-dispatch (or escalate to red-team-assessment / red-team-advocate)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - klein-pre-mortem
+  - klein-pre-mortem
   optional:
-    - taleb-fragility-antifragility (when Talebian framing fits)
-    - normal-accident-theory (when system is tightly coupled)
+  - lens_id: taleb-fragility-antifragility
+    qualification: when Talebian framing fits
+  - lens_id: normal-accident-theory
+    qualification: when system is tightly coupled
   foundational:
-    - kahneman-tversky-bias-catalog
-    - knightian-risk-uncertainty-ambiguity
-
+  - kahneman-tversky-bias-catalog
+  - knightian-risk-uncertainty-ambiguity
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~1min
+expected_runtime: "~1min"
 escalation_signals:
   upward:
-    target_mode_id: fragility-antifragility-audit
+    target: {"kind": "active", "id": "fragility-antifragility-audit"}
     when: "Analysis needs Talebian asymmetry framing (fragile vs. robust vs. antifragile) or formal stress-envelope decomposition."
   sideways:
-    target_mode_id: pre-mortem-action
+    target: {"kind": "active", "id": "pre-mortem-action"}
     when: "On reflection the artifact is a plan to execute rather than a structure; the relevant failures are about action execution rather than structural breakage."
   downward:
-    target_mode_id: null
+    target: null
     when: "Pre-Mortem (Fragility) is the lightest stance-adversarial-future entry in T7; downward routing is to a lighter-depth mode within T7 once Failure Mode Scan is built."
 ```
+
+## Display Description
+
+Applies Klein's pre-mortem stance to a system or design: assume structural failure, surface fragilities (parsed from Pre-Mortem per Decision D; shares `klein-pre-mortem` lens with `pre-mortem-action`).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  aliases: ["pre-mortem", "premortem", "pre mortem"]
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll stress-test this {artifact} for fragility"
+  phrase_aliases: {"post-mortem": "post mortem", "pre morten": "pre-mortem", "premorten": "pre-mortem"}
+  signals:
+    - {"signal": "pre-mortem this design", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: artifact? → system or design", "confidence_weight": "strong", "evidence": "mode-name reference + disambiguation answer"}
+    - {"signal": "pre-mortem this system", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: artifact? → system or design", "confidence_weight": "strong", "evidence": "mode-name reference + disambiguation answer"}
+    - {"signal": "pre-mortem this architecture", "territory": "T7-risk-and-failure", "disambiguation_answer": "within-territory: artifact? → system or design", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "structural fragilities", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "where will this break", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "where could this design break", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "single points of failure", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "load-bearing", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "failure modes does this exhibit", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "stress-testing this architecture", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "where would I look for the weak point", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (fragility-hunting)"}
+    - {"signal": "structural breakage", "territory": "T7-risk-and-failure", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "mode vocabulary"}
+    - {"signal": "stress test", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "post mortem", "territory": "T7-risk-and-failure-analysis", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

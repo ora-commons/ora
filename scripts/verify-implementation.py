@@ -3708,95 +3708,28 @@ def enqueue_framework_pair_findings(
             pass
 
 
-def extract_top_level_yaml_keys(content: str) -> set[str]:
-    """Extract top-level YAML keys from a YAML-like body (mode file body uses YAML
-    code blocks for the locked template). Returns set of keys found at top level."""
-    keys: set[str] = set()
-    in_yaml_block = False
-    for line in content.split("\n"):
-        if line.strip().startswith("```yaml") or line.strip().startswith("```YAML"):
-            in_yaml_block = True
-            continue
-        if line.strip() == "```":
-            in_yaml_block = False
-            continue
-        if in_yaml_block:
-            # Top-level keys are at column 0 with no leading whitespace
-            if line and not line.startswith(" ") and not line.startswith("\t") and not line.startswith("#"):
-                if ":" in line:
-                    k = line.split(":")[0].strip()
-                    if k:
-                        keys.add(k)
-    return keys
 
 
-def extract_h2_sections(body: str) -> set[str]:
-    """Extract `## HEADING` titles from markdown body."""
-    h2s = set()
-    for line in body.split("\n"):
-        if line.startswith("## ") and not line.startswith("### "):
-            h2s.add(line[3:].strip())
-    return h2s
+_COMPILED_ROUTING_SOURCES: dict | None = None
+
+
+def _compiled_routing_sources() -> dict:
+    global _COMPILED_ROUTING_SOURCES
+    if _COMPILED_ROUTING_SOURCES is None:
+        from orchestrator.routing_sources import compile_routing_sources
+        _COMPILED_ROUTING_SOURCES = compile_routing_sources(ORA_ROOT)
+    return _COMPILED_ROUTING_SOURCES
 
 
 def list_mode_files() -> list[Path]:
-    """List the 64 active resident + utility mode files."""
-    if not MODES_DIR.exists():
-        return []
-    return [
-        p for p in MODES_DIR.glob("*.md")
-        if p.stem not in EXCLUDED_MODE_FILES and not p.stem.endswith(".bak")
-    ]
+    """Enumerate exactly the active modes admitted by the shared compiler."""
+    return [ORA_MODES_DIR / f"{mode_id}.md"
+            for mode_id in _compiled_routing_sources()["modes"]]
 
 
 def _registry_mode_ids() -> tuple[set[str], set[str]]:
-    """Return (resident, deferred) IDs from the canonical Mode Registry.
-
-    The registry deliberately separates the 60 resident analysis modes from
-    fourteen CR-6 candidates. Deferred IDs are valid routing references but do
-    not require a runtime file until promoted.
-    """
-    if not MODE_REGISTRY_FILE.exists():
-        return set(), set()
-    content = read_file(MODE_REGISTRY_FILE)
-    resident_start = content.find("## Per-Territory Mode Entries")
-    resident_end = content.find("## Lens Library Cross-Reference", resident_start)
-    deferred_start = content.find("## Deferred Candidates (CR-6)")
-    deferred_end = content.find("## Cross-References", deferred_start)
-    resident_block = content[resident_start:resident_end]
-    deferred_block = content[deferred_start:deferred_end]
-    entry_pattern = re.compile(r"^- \*\*`([a-z0-9-]+)`\*\*", re.MULTILINE)
-    inline_pattern = re.compile(r"`([a-z0-9-]+)`")
-    return set(entry_pattern.findall(resident_block)), set(inline_pattern.findall(deferred_block))
-
-
-def _declared_mode_id(content: str) -> Optional[str]:
-    match = re.search(r"^mode_id:\s*([a-z0-9-]+)\s*$", content, re.MULTILINE)
-    return match.group(1) if match else None
-
-
-def _lens_dependencies(content: str) -> set[str]:
-    """Extract lens IDs only from the YAML lens_dependencies block."""
-    match = re.search(
-        r"^lens_dependencies:\s*$\n(?P<block>(?:^[ \t]+.*(?:\n|$))*)",
-        content,
-        re.MULTILINE,
-    )
-    if not match:
-        return set()
-    return {
-        item.group(1)
-        for item in re.finditer(
-            r"^\s{4}-\s*([a-z0-9-]+)(?:\s|\(|$)",
-            match.group("block"),
-            re.MULTILINE,
-        )
-    }
-
-
-# ---------------------------------------------------------------------------
-# Checks
-# ---------------------------------------------------------------------------
+    sources = _compiled_routing_sources()
+    return set(sources["modes"]) - UTILITY_MODE_IDS, set(sources["deferred"])
 
 def check_template_conformance(verbose: bool = False) -> CheckResult:
     """Verify the current 64-file mode schema and canonical registry split."""
@@ -3834,17 +3767,18 @@ def check_template_conformance(verbose: bool = False) -> CheckResult:
                 f"Expected 14 deferred CR-6 IDs in registry; found {len(deferred_ids)}")
 
     for mode_file in sorted(mode_files):
-        content = read_file(mode_file)
+        compiled_mode = _compiled_routing_sources()["modes"][mode_file.stem]
+        content = compiled_mode["text"]
         _, body = parse_yaml_frontmatter(content)
 
-        declared_id = _declared_mode_id(body)
+        declared_id = compiled_mode["metadata"].get("mode_id")
         identity_issues = []
         if declared_id != mode_file.stem:
             identity_issues.append(
                 f"declared mode_id {declared_id!r} != filename {mode_file.stem!r}")
 
         # Check YAML keys (in code blocks within body)
-        yaml_keys = extract_top_level_yaml_keys(body)
+        yaml_keys = set(compiled_mode["metadata"])
         # Composition determines whether atomic_spec or molecular_spec is required
         if "atomic_spec" in yaml_keys or "molecular_spec" in yaml_keys:
             yaml_keys.add("composition_spec")  # treat either as composition_spec
@@ -3860,14 +3794,13 @@ def check_template_conformance(verbose: bool = False) -> CheckResult:
         # The required set only has top-level fields the template lists. Let's just check.
 
         # Check pipeline-stage subsections (## headings in body)
-        h2s = extract_h2_sections(body)
+        h2s = set(compiled_mode["sections"])
         missing_subsections = REQUIRED_PIPELINE_SUBSECTIONS - h2s
 
         # educational_name word count and acronym check (parse from raw text)
-        edu_name_match = re.search(r"^educational_name:\s*(.+?)$", body, re.MULTILINE)
+        edu_name = compiled_mode["educational_name"]
         edu_name_issues = []
-        if edu_name_match:
-            edu_name = edu_name_match.group(1).strip()
+        if edu_name:
             words = edu_name.split()
             if len(words) > 15:
                 edu_name_issues.append(f"educational_name >15 words ({len(words)})")
@@ -3912,129 +3845,41 @@ def check_template_conformance(verbose: bool = False) -> CheckResult:
 
 
 def check_crossref_resolution(verbose: bool = False) -> CheckResult:
-    """Verify active/deferred/utility mode, territory, and lens references."""
+    """The full compiler validates typed mode, territory, lens and question closure."""
     result = CheckResult(name="crossref", passed=True)
-
-    mode_files = list_mode_files()
-    if not mode_files:
+    try:
+        sources = _compiled_routing_sources()
+    except (ValueError, OSError) as exc:
         result.passed = False
-        result.details.append("No mode files found")
+        result.details.append(str(exc))
         return result
-
-    active_mode_ids = {p.stem for p in mode_files}
-    resident_ids, deferred_ids = _registry_mode_ids()
-    valid_mode_ids = active_mode_ids | deferred_ids
-    valid_lens_ids = {
-        p.stem for p in LENSES_DIR.glob("*.md")
-        if p.stem != "INDEX" and not p.stem.endswith(".bak")
-    }
-
-    # Read territories file once
-    territories_content = read_file(TERRITORIES_FILE) if TERRITORIES_FILE.exists() else ""
-
-    for mode_file in sorted(mode_files):
-        content = read_file(mode_file)
-
-        # Check territory reference
-        territory_match = re.search(r"^territory:\s*(T\d+)-", content, re.MULTILINE)
-        if mode_file.stem == "simple":
-            if not re.search(r"^territory:\s*T-bypass\s*$", content, re.MULTILINE):
-                result.passed = False
-                result.details.append(
-                    f"{mode_file.name}: direct bypass must declare territory T-bypass")
-            territory_match = None
-        if territory_match:
-            territory_id = territory_match.group(1)
-            if mode_file.stem in UTILITY_MODE_IDS:
-                if territory_id != "T0":
-                    result.passed = False
-                    result.details.append(
-                        f"{mode_file.name}: utility mode must use T0, found '{territory_id}'")
-            elif territory_id not in TERRITORY_IDS:
-                result.passed = False
-                result.details.append(f"{mode_file.name}: invalid territory '{territory_id}'")
-            elif territory_id not in territories_content:
-                result.passed = False
-                result.details.append(f"{mode_file.name}: territory '{territory_id}' not present in territories file")
-
-        # Check adjacent_modes_in_territory references
-        for adj_match in re.finditer(r"mode_id:\s*([\w-]+)", content):
-            ref_id = adj_match.group(1)
-            if ref_id and ref_id not in valid_mode_ids and ref_id != "null":
-                # Skip the mode_id at the top of its own file
-                if ref_id != mode_file.stem:
-                    result.passed = False
-                    result.details.append(f"{mode_file.name}: references unknown mode_id '{ref_id}'")
-
-        # Deferred CR-6 IDs are valid references without runtime files. Every
-        # lens dependency, by contrast, must resolve to an installed lens now.
-        for lens_id in sorted(_lens_dependencies(content)):
-            if lens_id not in valid_lens_ids:
-                result.passed = False
-                result.details.append(
-                    f"{mode_file.name}: references unknown lens_id '{lens_id}'")
-
     if verbose:
         result.details.append(
-            f"Resolved {len(active_mode_ids)} active mode IDs "
-            f"({len(resident_ids)} resident + {len(UTILITY_MODE_IDS)} utility), "
-            f"{len(deferred_ids)} deferred IDs, and {len(valid_lens_ids)} content lens IDs "
-            "(INDEX.md excluded)")
-
+            f"Compiled {len(sources['modes'])} active modes, "
+            f"{len(sources['deferred'])} deferred candidates, "
+            f"{len(sources['lenses'])} lenses, and {len(sources['questions'])} questions")
     return result
 
 
 def check_signal_vocabulary(verbose: bool = False) -> CheckResult:
-    """Verify every mode_id has ≥3 signal entries; no orphans."""
+    """Verify coverage from the same mode-owned signals used at runtime."""
     result = CheckResult(name="signals", passed=True)
-
-    if not SIGNAL_REGISTRY_FILE.exists():
+    try:
+        sources = _compiled_routing_sources()
+    except (ValueError, OSError) as exc:
         result.passed = False
-        result.details.append(f"Signal vocabulary registry not found: {SIGNAL_REGISTRY_FILE}")
+        result.details.append(str(exc))
         return result
-
-    content = read_file(SIGNAL_REGISTRY_FILE)
-    valid_mode_ids = {p.stem for p in list_mode_files()} - UTILITY_MODE_IDS
-
-    # Count signals per mode_id (heuristic: count rows in markdown tables that reference each mode_id)
-    signal_counts: dict[str, int] = {m: 0 for m in valid_mode_ids}
-    referenced_mode_ids: set[str] = set()
-
-    # Match table rows. The third data column is the mode ID.
-    all_referenced_mode_ids: set[str] = set()
-    for line in content.split("\n"):
-        if not line.startswith("|"):
-            continue
-        parts = [p.strip() for p in line.split("|")]
-        # Skip header rows / separator rows
-        if any(p.startswith("-") and all(c in "-: " for c in p) for p in parts):
-            continue
-        if len(parts) < 5:
-            continue
-        mode_id = parts[3]
-        if not re.fullmatch(r"[a-z0-9-]+", mode_id) or mode_id == "mode":
-            continue
-        all_referenced_mode_ids.add(mode_id)
-        if mode_id in valid_mode_ids:
-            signal_counts[mode_id] += 1
-            referenced_mode_ids.add(mode_id)
-
-    # Modes with <3 signals are flagged
-    for mode_id, count in signal_counts.items():
+    counts = {mode_id: 0 for mode_id in sources["modes"] if mode_id not in UTILITY_MODE_IDS}
+    for signal in sources["signals"]:
+        if signal.get("mode") in counts:
+            counts[signal["mode"]] += 1
+    for mode_id, count in sorted(counts.items()):
         if count < 3:
             result.passed = False
             result.details.append(f"mode '{mode_id}' has only {count} signal entries (need ≥3)")
-
-    orphan_ids = all_referenced_mode_ids - valid_mode_ids
-    for mode_id in sorted(orphan_ids):
-        result.passed = False
-        result.details.append(f"signal registry references non-resident mode '{mode_id}'")
-
     if verbose and result.passed:
-        result.details.append(
-            f"All {len(valid_mode_ids)} resident modes have ≥3 signals; "
-            "utility/bypass modes are correctly exempt")
-
+        result.details.append(f"All {len(counts)} resident modes have ≥3 compiled signals")
     return result
 
 

@@ -12,21 +12,21 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: factual-lookup
-canonical_name: Factual Lookup
-suffix_rule: none
-educational_name: factual lookup (retrieval, no judgment)
+mode_id: "factual-lookup"
+canonical_name: "Factual Lookup"
+suffix_rule: "none"
+educational_name: "factual lookup (retrieval, no judgment)"
 
 # 1. TERRITORY AND POSITION
-territory: T0-default-judgment
+territory: "T0-default-judgment"
 gradation_position:
-  axis: specificity
-  value: information-only
+  axis: "specificity"
+  value: "information-only"
 adjacent_modes_in_territory:
-  - mode_id: general-inquiry
-    relationship: gear counterpart (general-inquiry handles judgment-required; this handles info-only)
-  - mode_id: subjective-inquiry
-    relationship: gear counterpart (subjective-inquiry handles subjective questions; this handles objective lookups)
+  - mode_id: "general-inquiry"
+    relationship: "gear counterpart (general-inquiry handles judgment-required; this handles info-only)"
+  - mode_id: "subjective-inquiry"
+    relationship: "gear counterpart (subjective-inquiry handles subjective questions; this handles objective lookups)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -49,19 +49,25 @@ disambiguation_routing:
     - "Stage 1 GEAR2_RAG_TRIGGERS match present AND no judgment markers"
     - "question is factual, may require retrieval, has no debate or evaluation component"
   routes_away_when:
-    - "any judgment marker present" → general-inquiry or specific analytical mode
-    - "question is subjective" → subjective-inquiry
-    - "question is system-meta or no-retrieval-needed" → Stage 0 bypass
+    - condition: "any judgment marker present"
+      targets: [{"kind": "active", "id": "general-inquiry"}]
+      qualification: "general-inquiry or specific analytical mode"
+    - condition: "question is subjective"
+      targets: [{"kind": "active", "id": "subjective-inquiry"}]
+      qualification: "subjective-inquiry"
+    - condition: "question is system-meta or no-retrieval-needed"
+      targets: [{"kind": "action", "id": "bypass"}]
+      qualification: "Stage 0 bypass"
 when_not_to_invoke:
   - "Question requires judgment or evaluation"
   - "Question is conversational meta (Stage 0 bypass instead)"
   - "Question fits a specific analytical mode"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: retrieval-only
+  posture: "retrieval-only"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -76,37 +82,37 @@ input_contract:
   detection:
     expert_signals: ["as of", "from <source>", "per BLS", "per the latest"]
     accessible_signals: ["what's the", "what is the current", "who won"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What specifically would you like to know?'"
     on_underspecified: "Proceed with reasonable interpretation; surface the interpretation alongside the answer."
 
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Was the answer retrieved or model-asserted? Retrieved answers cite the source; model-asserted answers tag the recency limitation."
-    failure_mode_if_unmet: silent-confabulation
-  - cq_id: CQ2
+    failure_mode_if_unmet: "silent-confabulation"
+  - cq_id: "CQ2"
     question: "If the question is time-sensitive, has the answer's freshness been stated?"
-    failure_mode_if_unmet: stale-answer
-  - cq_id: CQ3
+    failure_mode_if_unmet: "stale-answer"
+  - cq_id: "CQ3"
     question: "If retrieval failed or returned conflicting results, has that been surfaced rather than papered over?"
-    failure_mode_if_unmet: retrieval-failure-masked
+    failure_mode_if_unmet: "retrieval-failure-masked"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: silent-confabulation
+  - name: "silent-confabulation"
     detection_signal: "Specific quantitative or named-entity claim presented without provenance, where training-knowledge may be stale."
-    correction_protocol: flag
-  - name: stale-answer
+    correction_protocol: "flag"
+  - name: "stale-answer"
     detection_signal: "Time-sensitive answer provided without dating the source or noting training-data recency."
-    correction_protocol: flag
-  - name: retrieval-failure-masked
+    correction_protocol: "flag"
+  - name: "retrieval-failure-masked"
     detection_signal: "Retrieval returned nothing useful and the response substituted a plausible-sounding answer rather than acknowledging the gap."
-    correction_protocol: re-frame
-  - name: judgment-creep
+    correction_protocol: "re-frame"
+  - name: "judgment-creep"
     detection_signal: "Response begins offering recommendations or evaluations the question didn't ask for."
-    correction_protocol: re-dispatch (to general-inquiry or specific analytical mode)
+    correction_protocol: "re-dispatch (to general-inquiry or specific analytical mode)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
@@ -116,18 +122,35 @@ lens_dependencies:
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~10sec
+expected_runtime: "~10sec"
 escalation_signals:
   upward:
-    target_mode_id: general-inquiry
+    target: {"kind": "active", "id": "general-inquiry"}
     when: "If the question turns out to require judgment, escalate to general-inquiry."
   sideways:
-    target_mode_id: null
+    target: null
     when: "Information lookups don't typically have sideways modes."
   downward:
-    target_mode_id: null
+    target: null
     when: "Already the lightest analytical pathway."
 ```
+
+## Display Description
+
+Retrieval-only factual lookup when no judgment or analysis is needed.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  retrieval_triggers: ["what is the capital", "what's the capital", "what is the population", "what's the population", "remind me of", "remind me what", "who is the current", "who's the current", "current president", "current prime minister", "current ceo of", "current chair of", "current head of", "current leader of", "current governor", "current senator", "who won the", "what was the score", "what happened in 2024", "what happened in 2025", "what happened in 2026", "latest news", "what's the latest", "any news on", "any updates on", "what's new with", "what's new in", "weather today", "weather tomorrow", "the weather in", "is it raining", "will it rain", "current temperature", "what's the forecast", "stock price", "current price of", "exchange rate", "is it open", "are they open", "open right now", "still open", "still in business", "the score of", "who's winning", "what's happening in", "what's happening with"]
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals: []
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

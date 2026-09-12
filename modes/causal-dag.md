@@ -12,25 +12,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: causal-dag
-canonical_name: Causal DAG
-suffix_rule: analysis
-educational_name: causal directed acyclic graph analysis (Pearl do-calculus)
+mode_id: "causal-dag"
+canonical_name: "Causal DAG"
+suffix_rule: "analysis"
+educational_name: "causal directed acyclic graph analysis (Pearl do-calculus)"
 
 # 1. TERRITORY AND POSITION
-territory: T4-causal-investigation
+territory: "T4-causal-investigation"
 gradation_position:
-  axis: depth
-  value: thorough
-  secondary_axis: specificity
-  secondary_value: formalism-explicit
+  axis: "depth"
+  value: "thorough"
+  secondary_axis: "specificity"
+  secondary_value: "formalism-explicit"
 adjacent_modes_in_territory:
-  - mode_id: root-cause-analysis
-    relationship: complexity-lighter sibling (single cause-chain, no formal graph)
-  - mode_id: systems-dynamics-causal
-    relationship: complexity-counterpart (feedback structure, cyclic — DAG is acyclic by definition)
-  - mode_id: process-tracing
-    relationship: specificity-counterpart (historical-event-specific, evidence-test-driven)
+  - mode_id: "root-cause-analysis"
+    relationship: "complexity-lighter sibling (single cause-chain, no formal graph)"
+  - mode_id: "systems-dynamics-causal"
+    relationship: "complexity-counterpart (feedback structure, cyclic — DAG is acyclic by definition)"
+  - mode_id: "process-tracing"
+    relationship: "specificity-counterpart (historical-event-specific, evidence-test-driven)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -57,20 +57,34 @@ disambiguation_routing:
     - "user wants to identify confounders, mediators, and colliders before estimating effects"
     - "user wants formal reasoning about identifiability of a causal effect"
   routes_away_when:
-    - "single cause-chain on a defined symptom (no graph needed)" → root-cause-analysis
-    - "system has feedback loops that violate acyclicity" → systems-dynamics-causal
-    - "specific historical event where evidence-tests on competing causal hypotheses are central" → process-tracing
-    - "evaluating multiple competing hypotheses against evidence (Bayesian)" → competing-hypotheses (T5)
+    - condition: "single cause-chain on a defined symptom (no graph needed)"
+      targets: [{"kind": "active", "id": "root-cause-analysis"}]
+      qualification: "root-cause-analysis"
+    - condition: "system has feedback loops that violate acyclicity"
+      targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+      qualification: "systems-dynamics-causal"
+    - condition: "specific historical event where evidence-tests on competing causal hypotheses are central"
+      targets: [{"kind": "active", "id": "process-tracing"}]
+      qualification: "process-tracing"
+    - condition: "evaluating multiple competing hypotheses against evidence (Bayesian)"
+      targets: [{"kind": "active", "id": "competing-hypotheses"}]
+      qualification: "competing-hypotheses (T5)"
 when_not_to_invoke:
-  - "User wants to map how a system works rather than why an outcome occurred" → T17
-  - "User wants to explain how parts produce the whole's behavior" → T16
-  - "Frame itself may be generating the problem" → T9 paradigm modes
+  - condition: "User wants to map how a system works rather than why an outcome occurred"
+    targets: [{"kind": "territory", "id": "T17"}]
+    qualification: "T17"
+  - condition: "User wants to explain how parts produce the whole's behavior"
+    targets: [{"kind": "territory", "id": "T16"}]
+    qualification: "T16"
+  - condition: "Frame itself may be generating the problem"
+    targets: [{"kind": "territory", "id": "T9"}]
+    qualification: "T9 paradigm modes"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -85,74 +99,115 @@ input_contract:
   detection:
     expert_signals: ["DAG", "do-calculus", "back-door", "front-door", "confounder", "instrumental variable", "Pearl"]
     accessible_signals: ["what would happen if", "is X causing Y", "correlation vs causation", "intervention"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What outcome are you trying to explain or change, and what are the candidate causes you have in mind?'"
     on_underspecified: "Ask: 'Are you asking what would happen if you intervened on X (do-operator), or asking what caused the observed Y (counterfactual)?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the causal question been locked at a specific rung of Pearl's ladder (observation, intervention, or counterfactual), and is the analysis using the operators appropriate to that rung?"
-    failure_mode_if_unmet: rung-confusion
-  - cq_id: CQ2
+    failure_mode_if_unmet: "rung-confusion"
+  - cq_id: "CQ2"
     question: "Have all plausible confounders been named and either included in the DAG or explicitly assumed away with justification?"
-    failure_mode_if_unmet: hidden-confounder
-  - cq_id: CQ3
+    failure_mode_if_unmet: "hidden-confounder"
+  - cq_id: "CQ3"
     question: "Has the back-door (or front-door) criterion been checked, and is the causal effect identifiable from the assumed graph?"
-    failure_mode_if_unmet: non-identifiability-elision
-  - cq_id: CQ4
+    failure_mode_if_unmet: "non-identifiability-elision"
+  - cq_id: "CQ4"
     question: "Have collider variables been correctly classified, with the analysis avoiding conditioning on them (which would induce spurious dependence)?"
-    failure_mode_if_unmet: collider-conditioning
-  - cq_id: CQ5
+    failure_mode_if_unmet: "collider-conditioning"
+  - cq_id: "CQ5"
     question: "Are the structural assumptions encoded in the DAG (which arrows present, which absent) made explicit, with the most fragile assumptions flagged?"
-    failure_mode_if_unmet: implicit-assumption
+    failure_mode_if_unmet: "implicit-assumption"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: rung-confusion
+  - name: "rung-confusion"
     detection_signal: "Analysis uses observational language ('we observe X correlated with Y') to answer an interventional question ('what if we did X')."
-    correction_protocol: re-dispatch
-  - name: hidden-confounder
+    correction_protocol: "re-dispatch"
+  - name: "hidden-confounder"
     detection_signal: "DAG omits a plausible common cause without an explicit no-confounding assumption."
-    correction_protocol: flag
-  - name: non-identifiability-elision
+    correction_protocol: "flag"
+  - name: "non-identifiability-elision"
     detection_signal: "Final causal claim made without checking back-door or front-door criterion."
-    correction_protocol: re-dispatch
-  - name: collider-conditioning
+    correction_protocol: "re-dispatch"
+  - name: "collider-conditioning"
     detection_signal: "Analysis conditions on a variable that is a common effect of two other variables in the graph (collider), inducing spurious association."
-    correction_protocol: re-dispatch
-  - name: implicit-assumption
+    correction_protocol: "re-dispatch"
+  - name: "implicit-assumption"
     detection_signal: "DAG presented without enumerating which arrows were excluded and why (no-direct-effect assumptions invisible)."
-    correction_protocol: flag
-  - name: cycle-violation
+    correction_protocol: "flag"
+  - name: "cycle-violation"
     detection_signal: "Causal structure exhibits feedback (X → Y → X) — DAG cannot represent this; mode boundary violation."
-    correction_protocol: escalate
+    correction_protocol: "escalate"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - pearl-causal-graphs
-    - pearl-do-calculus
+  - pearl-causal-graphs
+  - pearl-do-calculus
   optional:
-    - bennett-checkel-process-tracing-tests (when historical-event-specific evidence-tests are also relevant)
-    - knightian-risk-uncertainty-ambiguity (when assumption fragility crosses into deep uncertainty)
+  - lens_id: bennett-checkel-process-tracing-tests
+    qualification: when historical-event-specific evidence-tests are also relevant
+  - lens_id: knightian-risk-uncertainty-ambiguity
+    qualification: when assumption fragility crosses into deep uncertainty
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Causal DAG is the most formal mode in T4's depth axis at thorough tier; molecular escalation deferred."
   sideways:
-    target_mode_id: systems-dynamics-causal
+    target: {"kind": "active", "id": "systems-dynamics-causal"}
     when: "Causal structure exhibits feedback loops that violate acyclicity; switch to feedback-structure analysis."
   downward:
-    target_mode_id: root-cause-analysis
+    target: {"kind": "active", "id": "root-cause-analysis"}
     when: "Single cause-chain suffices; formal graph adds overhead without analytical gain."
 ```
+
+## Display Description
+
+Builds an explicit causal directed-acyclic graph and applies do-calculus / backdoor reasoning.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll build a formal causal model of this {artifact}"
+  phrase_aliases: {"casual dag": "causal dag"}
+  signals:
+    - {"signal": "causal DAG", "territory": "T4-causal-investigation", "disambiguation_answer": "within-territory: depth? → thorough + formalism? → explicit", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "causal dag", "territory": "T4-causal-investigation", "disambiguation_answer": "within-territory: depth? → thorough + formalism? → explicit", "confidence_weight": "strong", "evidence": "mode-name shorthand"}
+    - {"signal": "Pearl", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "do-calculus", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "do calculus", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "do-operator", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "directed acyclic graph", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "backdoor criterion", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "back-door criterion", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "front-door criterion", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "d-separation", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "confounder", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "collider", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "intervention model", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "intervention vs observation", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "counterfactual", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what would happen if we did X", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "identifiability", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "pearl causal graphs", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "pearl causal graphs and the ladder of causation", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "pearl do calculus", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "pearl do-calculus", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

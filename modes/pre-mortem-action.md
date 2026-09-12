@@ -12,27 +12,27 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: pre-mortem-action
-canonical_name: Pre-Mortem (Action)
-suffix_rule: analysis
-educational_name: pre-mortem on the action plan (Klein, Tetlock lineage)
+mode_id: "pre-mortem-action"
+canonical_name: "Pre-Mortem (Action)"
+suffix_rule: "analysis"
+educational_name: "pre-mortem on the action plan (Klein, Tetlock lineage)"
 
 # 1. TERRITORY AND POSITION
-territory: T6-future-exploration
+territory: "T6-future-exploration"
 gradation_position:
-  axis: stance
-  value: adversarial-future
+  axis: "stance"
+  value: "adversarial-future"
 adjacent_modes_in_territory:
-  - mode_id: pre-mortem-fragility
-    relationship: parsed-sibling (stance-counterpart on system rather than plan; lives in T7; shares klein-pre-mortem lens)
-  - mode_id: consequences-and-sequel
-    relationship: stance-counterpart (neutral-forward depth-light)
-  - mode_id: probabilistic-forecasting
-    relationship: stance-counterpart (neutral-forward depth-thorough; built Wave 2)
-  - mode_id: scenario-planning
-    relationship: stance-counterpart (neutral-future narrative-output)
-  - mode_id: wicked-future
-    relationship: depth-molecular sibling (built Wave 4)
+  - mode_id: "pre-mortem-fragility"
+    relationship: "parsed-sibling (stance-counterpart on system rather than plan; lives in T7; shares klein-pre-mortem lens)"
+  - mode_id: "consequences-and-sequel"
+    relationship: "stance-counterpart (neutral-forward depth-light)"
+  - mode_id: "probabilistic-forecasting"
+    relationship: "stance-counterpart (neutral-forward depth-thorough; built Wave 2)"
+  - mode_id: "scenario-planning"
+    relationship: "stance-counterpart (neutral-future narrative-output)"
+  - mode_id: "wicked-future"
+    relationship: "depth-molecular sibling (built Wave 4)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -55,20 +55,32 @@ disambiguation_routing:
     - "user wants prospective-hindsight failure narration of that plan"
     - "user is pre-commitment and wants to surface failure modes before locking in"
   routes_away_when:
-    - "the artifact is a system, design, or structure rather than a plan to execute" → pre-mortem-fragility (T7)
-    - "user wants neutral forecast or scenarios rather than failure-mode walk" → probabilistic-forecasting / scenario-planning
-    - "user wants light forward causal cascade without adversarial framing" → consequences-and-sequel
-    - "user wants adversarial-actor stress test (someone is trying to defeat this)" → red-team-assessment / red-team-advocate (T15)
+    - condition: "the artifact is a system, design, or structure rather than a plan to execute"
+      targets: [{"kind": "active", "id": "pre-mortem-fragility"}]
+      qualification: "pre-mortem-fragility (T7)"
+    - condition: "user wants neutral forecast or scenarios rather than failure-mode walk"
+      targets: [{"kind": "active", "id": "probabilistic-forecasting"}, {"kind": "active", "id": "scenario-planning"}]
+      qualification: "probabilistic-forecasting / scenario-planning"
+    - condition: "user wants light forward causal cascade without adversarial framing"
+      targets: [{"kind": "active", "id": "consequences-and-sequel"}]
+      qualification: "consequences-and-sequel"
+    - condition: "user wants adversarial-actor stress test (someone is trying to defeat this)"
+      targets: [{"kind": "active", "id": "red-team-assessment"}, {"kind": "active", "id": "red-team-advocate"}]
+      qualification: "red-team-assessment / red-team-advocate (T15)"
 when_not_to_invoke:
-  - "User is post-failure and wants backward causal trace" → root-cause-analysis (T4)
-  - "User wants to evaluate the plan's argumentative structure rather than its execution" → T1 modes
+  - condition: "User is post-failure and wants backward causal trace"
+    targets: [{"kind": "active", "id": "root-cause-analysis"}]
+    qualification: "root-cause-analysis (T4)"
+  - condition: "User wants to evaluate the plan's argumentative structure rather than its execution"
+    targets: [{"kind": "territory", "id": "T1"}]
+    qualification: "T1 modes"
   - "Plan is so under-specified that no failure narrative is possible — degrade to elicitation"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: adversarial
+  posture: "adversarial"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -83,67 +95,105 @@ input_contract:
   detection:
     expert_signals: ["the plan is", "milestones include", "success criteria are", "decision horizon", "rollout plan"]
     accessible_signals: ["pre-mortem this", "imagine it failed", "we're about to launch", "before we commit"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe the plan you want to pre-mortem and roughly when you expect to know whether it worked?'"
     on_underspecified: "Ask: 'What does success look like for this plan, so I can imagine its absence?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the analysis genuinely adopted prospective-hindsight stance (writing as though the failure has already occurred), or has it slipped into hedged forward-projection?"
-    failure_mode_if_unmet: stance-slippage
-  - cq_id: CQ2
+    failure_mode_if_unmet: "stance-slippage"
+  - cq_id: "CQ2"
     question: "Are the named failure modes specific to this plan's mechanism, or are they generic project-failure tropes (scope creep, communication breakdown) that would apply to any plan?"
-    failure_mode_if_unmet: generic-failure-trope
-  - cq_id: CQ3
+    failure_mode_if_unmet: "generic-failure-trope"
+  - cq_id: "CQ3"
     question: "Have failure pathways been traced to leading indicators the team could observe pre-failure, or do the failures only become visible at the post-mortem?"
-    failure_mode_if_unmet: lagging-indicator-only
-  - cq_id: CQ4
+    failure_mode_if_unmet: "lagging-indicator-only"
+  - cq_id: "CQ4"
     question: "Have pre-commitment mitigations been distinguished from post-hoc remediations, given that pre-mortem's value is in the pre-commitment window?"
-    failure_mode_if_unmet: post-hoc-conflation
+    failure_mode_if_unmet: "post-hoc-conflation"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: stance-slippage
+  - name: "stance-slippage"
     detection_signal: "Output uses forward conditional language ('this might fail if...') rather than retrospective ('the plan failed because...')."
-    correction_protocol: re-dispatch
-  - name: generic-failure-trope
+    correction_protocol: "re-dispatch"
+  - name: "generic-failure-trope"
     detection_signal: "Failure modes named are domain-agnostic clichés (scope creep, communication breakdown, stakeholder misalignment) without plan-specific mechanism."
-    correction_protocol: re-dispatch
-  - name: lagging-indicator-only
+    correction_protocol: "re-dispatch"
+  - name: "lagging-indicator-only"
     detection_signal: "Leading-indicators section is empty, or all indicators are post-failure observations."
-    correction_protocol: flag
-  - name: post-hoc-conflation
+    correction_protocol: "flag"
+  - name: "post-hoc-conflation"
     detection_signal: "Mitigations include actions that can only be taken after the failure has begun."
-    correction_protocol: flag
-  - name: optimism-residue
+    correction_protocol: "flag"
+  - name: "optimism-residue"
     detection_signal: "Failure-mode inventory is shorter than success-pathway language elsewhere in the analysis suggests; analyst's prior on success bleeds through."
-    correction_protocol: re-dispatch
+    correction_protocol: "re-dispatch"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - klein-pre-mortem
+  - klein-pre-mortem
   optional:
-    - tetlock-superforecasting (when failure pathways involve probabilistic estimation)
-    - kahneman-planning-fallacy (when plan timelines are central to the analysis)
+  - lens_id: tetlock-superforecasting
+    qualification: when failure pathways involve probabilistic estimation
+  - lens_id: kahneman-planning-fallacy
+    qualification: when plan timelines are central to the analysis
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~1min
+expected_runtime: "~1min"
 escalation_signals:
   upward:
-    target_mode_id: wicked-future
+    target: {"kind": "active", "id": "wicked-future"}
     when: "Plan is entangled with multiple stakeholder conflicts and feedback loops; failure modes interact across systems."
   sideways:
-    target_mode_id: pre-mortem-fragility
+    target: {"kind": "active", "id": "pre-mortem-fragility"}
     when: "On reflection the artifact is a system or design rather than a plan to execute; the relevant failures are structural rather than action-execution."
   downward:
-    target_mode_id: consequences-and-sequel
+    target: {"kind": "active", "id": "consequences-and-sequel"}
     when: "User wants neutral forward cascade rather than adversarial failure walk."
 ```
+
+## Display Description
+
+Applies Klein's pre-mortem stance to an action plan: assume failure, generate causes (parsed from Pre-Mortem per Decision D; shares `klein-pre-mortem` lens with `pre-mortem-fragility`).
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  aliases: ["pre-mortem", "premortem", "pre mortem"]
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll work backward from how this {artifact} could fail"
+  signals:
+    - {"signal": "pre-mortem this plan", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: artifact? → action plan", "confidence_weight": "strong", "evidence": "mode-name reference + disambiguation answer"}
+    - {"signal": "pre-mortem on the plan", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: artifact? → action plan", "confidence_weight": "strong", "evidence": "trigger phrase + disambiguation"}
+    - {"signal": "imagine this failed", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "prospective-hindsight signal"}
+    - {"signal": "Klein pre-mortem", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name + author reference"}
+    - {"signal": "prospective hindsight", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "what would the post-mortem say", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "before we launch", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: artifact? → action plan", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "before we commit", "territory": "T6-future-exploration", "disambiguation_answer": "within-territory: artifact? → action plan", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "where would I bet this trips", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (failure-anticipation)"}
+    - {"signal": "sober failure walk", "territory": "T6-future-exploration", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (anti-optimism)"}
+    - {"signal": "what could go wrong", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "launch plan", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "within-territory: artifact? → action plan", "evidence": "action-plan object signal"}
+    - {"signal": "stress-test our launch plan", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "within-territory: artifact? → action plan", "evidence": "trigger phrase + action-plan object"}
+    - {"signal": "pre mortem", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "premortem", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "klein pre mortem", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "hindsight bias", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "premortem analysis", "territory": "T6-future-exploration", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+  phrase_aliases: {"pre morten": "pre-mortem", "premorten": "pre-mortem", "pre morten action": "pre-mortem-action"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

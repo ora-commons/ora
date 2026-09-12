@@ -12,25 +12,25 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: compositional-dynamics
-canonical_name: Compositional Dynamics
-suffix_rule: analysis
-educational_name: compositional dynamics analysis (Gestalt + Arnheim + Albers)
+mode_id: "compositional-dynamics"
+canonical_name: "Compositional Dynamics"
+suffix_rule: "analysis"
+educational_name: "compositional dynamics analysis (Gestalt + Arnheim + Albers)"
 
 # 1. TERRITORY AND POSITION
-territory: T19-spatial-composition
+territory: "T19-spatial-composition"
 gradation_position:
-  axis: specificity
-  value: universal-perceptual
-  stance_axis_value: descriptive
-  depth_axis_value: medium
+  axis: "specificity"
+  value: "universal-perceptual"
+  stance_axis_value: "descriptive"
+  depth_axis_value: "medium"
 adjacent_modes_in_territory:
-  - mode_id: ma-reading
-    relationship: stance-counterpart (aesthetic-experiential contemplative-descriptive-deep; built Wave 2; Japanese aesthetics of void)
-  - mode_id: place-reading-genius-loci
-    relationship: specificity-counterpart (descriptive-evaluative-deep; affordance + inhabited-place; Wave 3)
-  - mode_id: information-density
-    relationship: specificity-counterpart (applied-evaluative-medium-depth; Tufte + Bertin + Cleveland-McGill; Wave 3)
+  - mode_id: "ma-reading"
+    relationship: "stance-counterpart (aesthetic-experiential contemplative-descriptive-deep; built Wave 2; Japanese aesthetics of void)"
+  - mode_id: "place-reading-genius-loci"
+    relationship: "specificity-counterpart (descriptive-evaluative-deep; affordance + inhabited-place; Wave 3)"
+  - mode_id: "information-density"
+    relationship: "specificity-counterpart (applied-evaluative-medium-depth; Tufte + Bertin + Cleveland-McGill; Wave 3)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -59,21 +59,37 @@ disambiguation_routing:
     - "user wants a descriptive analytical stance (predict the viewer's perceptual parse and the dynamic forces in play)"
     - "user wants Gestalt grouping principles + Arnheim compositional forces applied (with Itten color contrasts and Albers color-field interactions where applicable)"
   routes_away_when:
-    - "user wants the void / interval / silence read as primary content (Japanese aesthetics)" → ma-reading
-    - "user wants prospect-refuge / pattern-language / inhabited-place reading" → place-reading-genius-loci (Wave 3)
-    - "user wants information-graphic / data-encoding analysis (Tufte / Bertin / Cleveland-McGill)" → information-density (Wave 3)
-    - "user wants relation-extraction from a diagram (what does the diagram assert about A→B→C)" → relationship-mapping or spatial-reasoning (T11)
-    - "user wants open-ended generative exploration of what the work opens up" → passion-exploration (T20)
+    - condition: "user wants the void / interval / silence read as primary content (Japanese aesthetics)"
+      targets: [{"kind": "active", "id": "ma-reading"}]
+      qualification: "ma-reading"
+    - condition: "user wants prospect-refuge / pattern-language / inhabited-place reading"
+      targets: [{"kind": "active", "id": "place-reading-genius-loci"}]
+      qualification: "place-reading-genius-loci (Wave 3)"
+    - condition: "user wants information-graphic / data-encoding analysis (Tufte / Bertin / Cleveland-McGill)"
+      targets: [{"kind": "active", "id": "information-density"}]
+      qualification: "information-density (Wave 3)"
+    - condition: "user wants relation-extraction from a diagram (what does the diagram assert about A→B→C)"
+      targets: [{"kind": "active", "id": "relationship-mapping"}, {"kind": "active", "id": "spatial-reasoning"}]
+      qualification: "relationship-mapping or spatial-reasoning (T11)"
+    - condition: "user wants open-ended generative exploration of what the work opens up"
+      targets: [{"kind": "active", "id": "passion-exploration"}]
+      qualification: "passion-exploration (T20)"
 when_not_to_invoke:
-  - "Composition is non-visual or has no structural-perceptual organization (raw text, audio without spatial-imagistic component)" → other territory
-  - "User wants the void as primary content (held-open emptiness)" → ma-reading
-  - "User wants causal investigation or process analysis" → T4 / T17
+  - condition: "Composition is non-visual or has no structural-perceptual organization (raw text, audio without spatial-imagistic component)"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "other territory"
+  - condition: "User wants the void as primary content (held-open emptiness)"
+    targets: [{"kind": "active", "id": "ma-reading"}]
+    qualification: "ma-reading"
+  - condition: "User wants causal investigation or process analysis"
+    targets: [{"kind": "territory", "id": "T4"}, {"kind": "territory", "id": "T17"}]
+    qualification: "T4 / T17"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -88,79 +104,120 @@ input_contract:
   detection:
     expert_signals: ["gestalt", "figure-ground", "border-ownership", "Wertheimer", "Köhler", "Koffka", "Wagemans", "Rubin", "Arnheim", "structural skeleton", "visual weight", "force vector", "Itten", "seven contrasts", "Albers", "Interaction of Color", "Hambidge", "dynamic symmetry"]
     accessible_signals: ["where the eye goes", "what jumps out", "is this balanced", "how is this composed"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe or share the composition (image / film still / page / diagram-as-image / room) you want a perceptual reading on?'"
     on_underspecified: "Ask: 'Are you noticing a specific perceptual question (figure-ground, eye-path, balance), or do you want a general perceptual-and-force reading?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Does the proposed grouping survive a swap of grouping cues (e.g., proximity replaced with similarity)? If the grouping is brittle to cue substitution, the parse is local rather than structural."
-    failure_mode_if_unmet: cue-fragile-grouping
-  - cq_id: CQ2
+    failure_mode_if_unmet: "cue-fragile-grouping"
+  - cq_id: "CQ2"
     question: "Does the figure-ground assignment reverse under attention shift, or is it locked? Where it is contested, are the borders unambiguously owned, or contested? (Border-ownership test per Zhou, Friedman & von der Heydt.)"
-    failure_mode_if_unmet: contested-border-asserted-as-stable
-  - cq_id: CQ3
+    failure_mode_if_unmet: "contested-border-asserted-as-stable"
+  - cq_id: "CQ3"
     question: "Does displacing an element by a small amount alter the reading substantively? (Tests whether the force-reading is doing analytical work or is post-hoc storytelling.)"
-    failure_mode_if_unmet: post-hoc-force-story
-  - cq_id: CQ4
+    failure_mode_if_unmet: "post-hoc-force-story"
+  - cq_id: "CQ4"
     question: "Does the structural-skeleton assignment survive cropping? (Tests whether the skeleton is inherent to the composition or imposed by the analyst's frame-of-reference.)"
-    failure_mode_if_unmet: imposed-skeleton
-  - cq_id: CQ5
+    failure_mode_if_unmet: "imposed-skeleton"
+  - cq_id: "CQ5"
     question: "Are visual-weight assignments empirically defensible (size, contrast, color, isolation, position), or is the analyst asserting symbolic weight masquerading as visual weight?"
-    failure_mode_if_unmet: symbolic-weight-confusion
+    failure_mode_if_unmet: "symbolic-weight-confusion"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: cue-fragile-grouping
+  - name: "cue-fragile-grouping"
     detection_signal: "Reading proposes a grouping that depends on a single cue and would dissolve if the cue were swapped (proximity for similarity, etc.)."
-    correction_protocol: re-dispatch
-  - name: contested-border-asserted-as-stable
+    correction_protocol: "re-dispatch"
+  - name: "contested-border-asserted-as-stable"
     detection_signal: "Reading asserts a stable figure-ground assignment for a composition where border-ownership is contested or the figure-ground reverses under attention shift."
-    correction_protocol: re-dispatch
-  - name: post-hoc-force-story
+    correction_protocol: "re-dispatch"
+  - name: "post-hoc-force-story"
     detection_signal: "Reading describes force vectors and tensions that would survive arbitrary displacement of elements; the force-story is decorative rather than analytical."
-    correction_protocol: re-dispatch
-  - name: imposed-skeleton
+    correction_protocol: "re-dispatch"
+  - name: "imposed-skeleton"
     detection_signal: "Reading asserts a structural skeleton that does not survive cropping the composition; the skeleton is the analyst's frame, not the composition's."
-    correction_protocol: re-dispatch
-  - name: symbolic-weight-confusion
+    correction_protocol: "re-dispatch"
+  - name: "symbolic-weight-confusion"
     detection_signal: "Reading attributes high visual weight to an element on grounds of meaning or symbol rather than empirical visual properties (size, contrast, isolation, position, color)."
-    correction_protocol: re-dispatch
-  - name: void-blindness
+    correction_protocol: "re-dispatch"
+  - name: "void-blindness"
     detection_signal: "Reading produces a forces-and-grouping analysis on a composition where the operative work is being done by held-open void; ma-reading would have been the right mode."
-    correction_protocol: flag (sideways escalation to ma-reading)
+    correction_protocol: "flag (sideways escalation to ma-reading)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - gestalt-grouping-principles
-    - arnheim-compositional-forces
+  - gestalt-grouping-principles
+  - arnheim-compositional-forces
   optional:
-    - itten-seven-contrasts (when color contrast is central)
-    - albers-interaction-of-color (when color-field interactions and figure-ground reversal via color are central)
-    - hambidge-dynamic-symmetry (as proportional vocabulary; treat as tool, not warrant — empirical evidence weak)
-    - tufte-data-ink-chartjunk (when input is an information graphic; cite per Wave 3 reserved-mode threshold)
-    - bertin-visual-variables (when input is an information graphic; cite per Wave 3 reserved-mode threshold)
-    - cleveland-mcgill-perceptual-tasks (when input is an information graphic; cite per Wave 3 reserved-mode threshold)
-    - bordwell-poetics-of-cinema (when input is a film still and mise-en-scène is in scope)
+  - lens_id: itten-seven-contrasts
+    qualification: when color contrast is central
+  - lens_id: albers-interaction-of-color
+    qualification: when color-field interactions and figure-ground reversal via color are central
+  - lens_id: hambidge-dynamic-symmetry
+    qualification: as proportional vocabulary; treat as tool, not warrant — empirical evidence weak
+  - lens_id: tufte-data-ink-chartjunk
+    qualification: when input is an information graphic; cite per Wave 3 reserved-mode threshold
+  - lens_id: bertin-visual-variables
+    qualification: when input is an information graphic; cite per Wave 3 reserved-mode threshold
+  - lens_id: cleveland-mcgill-perceptual-tasks
+    qualification: when input is an information graphic; cite per Wave 3 reserved-mode threshold
+  - lens_id: bordwell-poetics-of-cinema
+    qualification: when input is a film still and mise-en-scène is in scope
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "Compositional Dynamics is the medium-depth universal-perceptual mode in T19; deepening occurs by repeated readings rather than by escalation to a heavier sibling. (Place Reading and Information Density are stance/specificity counterparts, not depth-heavier siblings.)"
   sideways:
-    target_mode_id: ma-reading
+    target: {"kind": "active", "id": "ma-reading"}
     when: "On reflection the operative compositional work is being done by held-open void rather than by figure-ground / grouping / force vectors; switch to the contemplative-descriptive-deep aesthetic reading."
   downward:
-    target_mode_id: null
+    target: null
     when: "Compositional Dynamics is already the medium-depth mode; lighter perceptual surveys are not separately implemented."
 ```
+
+## Display Description
+
+Applies Gestalt + Arnheim + Itten + Albers principles to the perceptual dynamics of a composition.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll read the compositional dynamics in this {artifact}"
+  data_shapes: [{"predicate": "spatial_description", "territory": "T19-spatial-composition", "priority": 1, "confidence_weight": "strong"}, {"predicate": "attached_image", "territory": "T19-spatial-composition", "priority": 1, "confidence_weight": "weak"}]
+  signals:
+    - {"signal": "compositional dynamics", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → universal-perceptual", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "Gestalt grouping", "territory": "T19-spatial-composition", "disambiguation_answer": "within-territory: specificity? → universal-perceptual", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "gestalt", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "perceptual grouping", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "figure-ground", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "Arnheim", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Arnheim forces", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method-name reference"}
+    - {"signal": "compositional forces", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "method vocabulary"}
+    - {"signal": "structural skeleton", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "visual weight", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "compositional reading", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Itten", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "Albers", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "author reference"}
+    - {"signal": "where the eye goes", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (perceptual parse)"}
+    - {"signal": "eye path", "territory": "T19-spatial-composition", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode vocabulary"}
+    - {"signal": "arnheim compositional forces", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "gestalt grouping principles", "territory": "T19-spatial-composition", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

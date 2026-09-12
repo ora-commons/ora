@@ -12,19 +12,19 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: subjective-inquiry
-canonical_name: Subjective Inquiry
-suffix_rule: none
-educational_name: subjective inquiry (opinion, preference, aesthetic judgment)
+mode_id: "subjective-inquiry"
+canonical_name: "Subjective Inquiry"
+suffix_rule: "none"
+educational_name: "subjective inquiry (opinion, preference, aesthetic judgment)"
 
 # 1. TERRITORY AND POSITION
-territory: T0-default-judgment
+territory: "T0-default-judgment"
 gradation_position:
-  axis: specificity
-  value: subjective-question
+  axis: "specificity"
+  value: "subjective-question"
 adjacent_modes_in_territory:
-  - mode_id: general-inquiry
-    relationship: specificity counterpart (general-inquiry handles judgment-with-objective-criteria; this handles judgment-without-objective-criteria)
+  - mode_id: "general-inquiry"
+    relationship: "specificity counterpart (general-inquiry handles judgment-with-objective-criteria; this handles judgment-without-objective-criteria)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -45,7 +45,7 @@ trigger_conditions:
     - "what's the best"
     - "do you prefer"
     - "what do you think about"
-    - "is X better than Y" (without objective criteria stated)
+    - "\"is X better than Y\" (without objective criteria stated)"
     - "what's it like to"
     - "is it worth"
 disambiguation_routing:
@@ -54,19 +54,27 @@ disambiguation_routing:
     - "comparison has no agreed-on objective standard"
     - "aesthetic judgment with no defensible objective criteria"
   routes_away_when:
-    - "the question has objective criteria even if contested" → general-inquiry or specific analytical mode
-    - "the question is about facts (winners, statistics, dates)" → Gear 2 RAG lookup
-    - "the question is a decision under criteria the user supplies" → decision-architecture or multi-criteria-decision
+    - condition: "the question has objective criteria even if contested"
+      targets: [{"kind": "active", "id": "general-inquiry"}]
+      qualification: "general-inquiry or specific analytical mode"
+    - condition: "the question is about facts (winners, statistics, dates)"
+      targets: [{"kind": "active", "id": "factual-lookup"}]
+      qualification: "Gear 2 RAG lookup"
+    - condition: "the question is a decision under criteria the user supplies"
+      targets: [{"kind": "active", "id": "decision-architecture"}, {"kind": "active", "id": "multi-criteria-decision"}]
+      qualification: "decision-architecture or multi-criteria-decision"
 when_not_to_invoke:
   - "User supplies objective criteria — let those drive the analysis via general-inquiry or a decision mode"
   - "Question is empirical even if disputed — use the analytical mode that fits the empirical question"
-  - "Question is a values question that the user wants worked through rigorously" → a deliberation mode
+  - condition: "Question is a values question that the user wants worked through rigorously"
+    targets: [{"kind": "fallback", "id": "route-by-intent"}]
+    qualification: "a deliberation mode"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: explicitly-subjective
+  posture: "explicitly-subjective"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -81,65 +89,83 @@ input_contract:
   detection:
     expert_signals: ["I'm leaning toward", "for my context", "people like me", "criteria that matter to me"]
     accessible_signals: ["best", "favorite", "more attractive", "prettier", "what's it like"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Proceed — subjective questions are inherently underspecified."
     on_underspecified: "Proceed — surface the underspecification as part of the response."
 
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the analysis explicitly acknowledged the question's subjectivity, or has it been treated as if objective criteria existed?"
-    failure_mode_if_unmet: false-objectivity
-  - cq_id: CQ2
+    failure_mode_if_unmet: "false-objectivity"
+  - cq_id: "CQ2"
     question: "Are multiple perspectives represented, or has the analysis collapsed to a single 'correct' answer?"
-    failure_mode_if_unmet: false-consensus
-  - cq_id: CQ3
+    failure_mode_if_unmet: "false-consensus"
+  - cq_id: "CQ3"
     question: "If the model offers its own perspective, is it tagged as opinion rather than presented as evaluation?"
-    failure_mode_if_unmet: opinion-as-fact
-  - cq_id: CQ4
+    failure_mode_if_unmet: "opinion-as-fact"
+  - cq_id: "CQ4"
     question: "Are the criteria that would change the answer named, so the user can see which preferences map to which conclusion?"
-    failure_mode_if_unmet: criteria-blindness
+    failure_mode_if_unmet: "criteria-blindness"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: false-objectivity
+  - name: "false-objectivity"
     detection_signal: "Analysis weighs evidence or builds an argument as if objective criteria existed (e.g., 'objectively the better team because…')."
-    correction_protocol: re-frame
-  - name: false-consensus
+    correction_protocol: "re-frame"
+  - name: "false-consensus"
     detection_signal: "Analysis converges on a single 'right answer' when the question's nature admits multiple defensible positions."
-    correction_protocol: re-frame
-  - name: opinion-as-fact
+    correction_protocol: "re-frame"
+  - name: "opinion-as-fact"
     detection_signal: "Model presents its own taste or inclination as evaluation rather than tagging it as opinion."
-    correction_protocol: flag
-  - name: criteria-blindness
+    correction_protocol: "flag"
+  - name: "criteria-blindness"
     detection_signal: "Analysis answers the question without naming the criteria that would change the answer — leaving the user unable to see how their preferences map to conclusions."
-    correction_protocol: flag
-  - name: false-modesty
+    correction_protocol: "flag"
+  - name: "false-modesty"
     detection_signal: "Analysis refuses to engage with the question at all on subjectivity grounds, when the question genuinely admits a substantive multi-perspective response."
-    correction_protocol: flag (the opposite failure of false-objectivity)
+    correction_protocol: "flag (the opposite failure of false-objectivity)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - kahneman-tversky-bias-catalog
+    - "kahneman-tversky-bias-catalog"
   foundational: []
 
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 1
-expected_runtime: ~30sec
+expected_runtime: "~30sec"
 escalation_signals:
   upward:
-    target_mode_id: null
+    target: null
     when: "If the question turns out to have objective criteria the user wants explored, re-dispatch to general-inquiry or a specific analytical mode."
   sideways:
-    target_mode_id: paradigm-suspension
+    target: {"kind": "active", "id": "paradigm-suspension"}
     when: "Question challenges a consensus and the user wants the consensus questioned rather than the preference surveyed."
   downward:
-    target_mode_id: null
+    target: null
     when: "Trivial taste questions — proceed directly without escalation."
 ```
+
+## Display Description
+
+Opinion, preference, taste, and aesthetic questions without objective criteria.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  subjective_triggers: ["more attractive", "more beautiful", "better looking", "prettier", "ugliest", "uglier", "favorite", "favourite", "best tasting", "most enjoyable", "most fun", "do you prefer", "do you like", "what's your favorite", "what's your favourite", "what's it like to", "what is it like to", "is it worth", "would you recommend", "what do you think about", "what do you think of", "what's your take on", "what is your opinion", "vs the", "versus the"]
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  signals:
+    - {"signal": "endowment effect", "territory": "T0-default-judgment", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

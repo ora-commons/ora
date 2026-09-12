@@ -12,19 +12,19 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: relationship-mapping
-canonical_name: Relationship Mapping
-suffix_rule: analysis
-educational_name: structural relationship mapping
+mode_id: "relationship-mapping"
+canonical_name: "Relationship Mapping"
+suffix_rule: "analysis"
+educational_name: "structural relationship mapping"
 
 # 1. TERRITORY AND POSITION
-territory: T11-structural-relationship-mapping
+territory: "T11-structural-relationship-mapping"
 gradation_position:
-  axis: specificity
-  value: general
+  axis: "specificity"
+  value: "general"
 adjacent_modes_in_territory:
-  - mode_id: spatial-reasoning
-    relationship: specificity variant (visual-input — structural gap detection on diagrams)
+  - mode_id: "spatial-reasoning"
+    relationship: "specificity variant (visual-input — structural gap detection on diagrams)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -44,20 +44,34 @@ disambiguation_routing:
     - "relationships are static or acyclic; no feedback loops dominate"
     - "user wants the topology of inter-element connections"
   routes_away_when:
-    - "relationships involve feedback loops, delays, or emergent behaviour" → systems-dynamics-causal (T4) or systems-dynamics-structural (T17)
-    - "user submits a diagram and asks 'what's missing' from it" → spatial-reasoning (visual-input variant within T11)
-    - "user wants to understand a single concept deeply rather than its connections" → deep-clarification (T10)
-    - "user is orienting in unfamiliar territory and wants the lay of the land" → terrain-mapping (T14)
+    - condition: "relationships involve feedback loops, delays, or emergent behaviour"
+      targets: [{"kind": "active", "id": "systems-dynamics-causal"}, {"kind": "active", "id": "systems-dynamics-structural"}]
+      qualification: "systems-dynamics-causal (T4) or systems-dynamics-structural (T17)"
+    - condition: "user submits a diagram and asks 'what's missing' from it"
+      targets: [{"kind": "active", "id": "spatial-reasoning"}]
+      qualification: "spatial-reasoning (visual-input variant within T11)"
+    - condition: "user wants to understand a single concept deeply rather than its connections"
+      targets: [{"kind": "active", "id": "deep-clarification"}]
+      qualification: "deep-clarification (T10)"
+    - condition: "user is orienting in unfamiliar territory and wants the lay of the land"
+      targets: [{"kind": "active", "id": "terrain-mapping"}]
+      qualification: "terrain-mapping (T14)"
 when_not_to_invoke:
-  - "Question is about how this works (mechanism), not how the parts relate (structure)" → mechanism-understanding (T16)
-  - "Question is about temporal flow or process sequence" → process-mapping (T17)
-  - "Diagram is the input and gap detection is the question" → spatial-reasoning
+  - condition: "Question is about how this works (mechanism), not how the parts relate (structure)"
+    targets: [{"kind": "active", "id": "mechanism-understanding"}]
+    qualification: "mechanism-understanding (T16)"
+  - condition: "Question is about temporal flow or process sequence"
+    targets: [{"kind": "active", "id": "process-mapping"}]
+    qualification: "process-mapping (T17)"
+  - condition: "Diagram is the input and gap detection is the question"
+    targets: [{"kind": "active", "id": "spatial-reasoning"}]
+    qualification: "spatial-reasoning"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -72,64 +86,90 @@ input_contract:
   detection:
     expert_signals: ["DAGitty", "causal DAG", "exposure", "outcome", "confounder", "concept map", "linking phrase", "is_cross_link"]
     accessible_signals: ["how do these connect", "what relates to what", "show me the structure", "draw the connections"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'What entities or concepts do you want mapped, and what's the question the map should answer?'"
     on_underspecified: "Ask: 'Are the relationships static, or do feedback loops matter? If feedback loops, route to systems-dynamics-causal (T4) or systems-dynamics-structural (T17) per parse.'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Is every connection labelled with its type (causal / correlational / dependency / influential / structural) and directionality?"
-    failure_mode_if_unmet: causation-correlation-trap
-  - cq_id: CQ2
+    failure_mode_if_unmet: "causation-correlation-trap"
+  - cq_id: "CQ2"
     question: "Have ≥2 non-obvious connections been surfaced, with at least one cross-link in concept-map outputs?"
-    failure_mode_if_unmet: kitchen-sink-or-flat-tree
-  - cq_id: CQ3
+    failure_mode_if_unmet: "kitchen-sink-or-flat-tree"
+  - cq_id: "CQ3"
     question: "Is the output structured as a relational map, not flattened into a linear narrative?"
-    failure_mode_if_unmet: linear-reduction
-  - cq_id: CQ4
+    failure_mode_if_unmet: "linear-reduction"
+  - cq_id: "CQ4"
     question: "Is the output genuinely acyclic — no feedback loops smuggled into a DAG?"
-    failure_mode_if_unmet: silent-cycle
+    failure_mode_if_unmet: "silent-cycle"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: linear-reduction
+  - name: "linear-reduction"
     detection_signal: "Output reads as a sequential narrative rather than a structured map."
-    correction_protocol: re-dispatch (restructure as relational map)
-  - name: kitchen-sink-or-flat-tree
+    correction_protocol: "re-dispatch (restructure as relational map)"
+  - name: "kitchen-sink-or-flat-tree"
     detection_signal: "Map is dense without significance, OR map is a flat tree with no cross-links."
-    correction_protocol: re-dispatch (trim to significant connections; add ≥1 cross-link)
-  - name: causation-correlation-trap
+    correction_protocol: "re-dispatch (trim to significant connections; add ≥1 cross-link)"
+  - name: "causation-correlation-trap"
     detection_signal: "A correlational connection is labelled causal without mechanistic evidence."
-    correction_protocol: flag (default to weakest relationship type the evidence supports)
-  - name: silent-cycle
+    correction_protocol: "flag (default to weakest relationship type the evidence supports)"
+  - name: "silent-cycle"
     detection_signal: "DAG contains a cycle without transition to systems-dynamics-causal (T4) or systems-dynamics-structural (T17)."
-    correction_protocol: re-dispatch (either remove edge with rationale or transition)
+    correction_protocol: "re-dispatch (either remove edge with rationale or transition)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required: []
   optional:
-    - dagitty-causal-dag-formalism (when causal framing dominates)
-    - novak-concept-map-tradition (when heterogeneous relations dominate)
-    - pearl-causal-graphs
+  - lens_id: dagitty-causal-dag-formalism
+    qualification: when causal framing dominates
+  - lens_id: novak-concept-map-tradition
+    qualification: when heterogeneous relations dominate
+  - pearl-causal-graphs
   foundational:
-    - structural-relationship-taxonomy
-
+  - structural-relationship-taxonomy
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: spatial-reasoning
+    target: {"kind": "active", "id": "spatial-reasoning"}
     when: "User has submitted a diagrammatic visual input and wants gap detection (specificity-visual-input variant)."
   sideways:
-    target_mode_id: systems-dynamics-causal
+    target: {"kind": "active", "id": "systems-dynamics-causal"}
     when: "Mapping reveals feedback loops; structure is no longer acyclic."
   downward:
-    target_mode_id: null
+    target: null
     when: "Relationship Mapping is the territory founder; no lighter mode exists in T11."
 ```
+
+## Display Description
+
+Extracts entities and typed connections from prose and renders them as a relationship graph.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll map the relationships in this {artifact}"
+  phrase_aliases: {"casual dag": "causal dag"}
+  signals:
+    - {"signal": "relationship mapping", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → no", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "relationship map", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → no", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "causal DAG", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → no", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "dependency graph", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → no", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what affects what", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → no", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "draw the connections", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → no", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "how do these connect", "territory": "T11-structural-relationship-mapping", "disambiguation_answer": "within-territory: visual-input? → no", "confidence_weight": "strong", "evidence": "trigger phrase"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 

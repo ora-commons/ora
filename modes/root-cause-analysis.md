@@ -14,23 +14,23 @@ date modified: 2026-05-24
 
 ```yaml
 # 0. IDENTITY
-mode_id: root-cause-analysis
-canonical_name: Root Cause Analysis
-suffix_rule: analysis
-educational_name: backward causal-chain tracing for failure diagnosis (5 Whys / Ishikawa)
+mode_id: "root-cause-analysis"
+canonical_name: "Root Cause Analysis"
+suffix_rule: "analysis"
+educational_name: "backward causal-chain tracing for failure diagnosis (5 Whys / Ishikawa)"
 
 # 1. TERRITORY AND POSITION
-territory: T4-causal-investigation
+territory: "T4-causal-investigation"
 gradation_position:
-  axis: complexity
-  value: single-cause-chain
+  axis: "complexity"
+  value: "single-cause-chain"
 adjacent_modes_in_territory:
-  - mode_id: systems-dynamics-causal
-    relationship: complexity-heavier sibling (feedback-structure)
-  - mode_id: causal-dag
-    relationship: depth-thorough sibling (formalism-explicit, Pearl)
-  - mode_id: process-tracing
-    relationship: specificity-historical-event sibling (Bennett/Checkel)
+  - mode_id: "systems-dynamics-causal"
+    relationship: "complexity-heavier sibling (feedback-structure)"
+  - mode_id: "causal-dag"
+    relationship: "depth-thorough sibling (formalism-explicit, Pearl)"
+  - mode_id: "process-tracing"
+    relationship: "specificity-historical-event sibling (Bennett/Checkel)"
 
 # 2. TRIGGER CONDITIONS AND ROUTING
 trigger_conditions:
@@ -52,20 +52,34 @@ disambiguation_routing:
     - "single causal chain, no declared feedback loops"
     - "want a fishbone-style decomposition with category structure"
   routes_away_when:
-    - "ongoing counterintuitive behaviour driven by feedback loops" → systems-dynamics-causal
-    - "multiple competing explanations to adjudicate against evidence" → competing-hypotheses
-    - "want a formal DAG with conditional independence reasoning" → causal-dag
-    - "specific historical event needing trace evidence" → process-tracing
-    - "forward-looking question (what could go wrong if we ship X)" → consequences-and-sequel
+    - condition: "ongoing counterintuitive behaviour driven by feedback loops"
+      targets: [{"kind": "active", "id": "systems-dynamics-causal"}]
+      qualification: "systems-dynamics-causal"
+    - condition: "multiple competing explanations to adjudicate against evidence"
+      targets: [{"kind": "active", "id": "competing-hypotheses"}]
+      qualification: "competing-hypotheses"
+    - condition: "want a formal DAG with conditional independence reasoning"
+      targets: [{"kind": "active", "id": "causal-dag"}]
+      qualification: "causal-dag"
+    - condition: "specific historical event needing trace evidence"
+      targets: [{"kind": "active", "id": "process-tracing"}]
+      qualification: "process-tracing"
+    - condition: "forward-looking question (what could go wrong if we ship X)"
+      targets: [{"kind": "active", "id": "consequences-and-sequel"}]
+      qualification: "consequences-and-sequel"
 when_not_to_invoke:
-  - "User is mapping how a system currently works (process map, no failure trace)" → T17 (process-mapping or systems-dynamics-structural)
-  - "User is choosing between solutions and the diagnosis is settled" → T3 (constraint-mapping or decision-under-uncertainty)
+  - condition: "User is mapping how a system currently works (process map, no failure trace)"
+    targets: [{"kind": "active", "id": "process-mapping"}, {"kind": "active", "id": "systems-dynamics-structural"}]
+    qualification: "T17 (process-mapping or systems-dynamics-structural)"
+  - condition: "User is choosing between solutions and the diagnosis is settled"
+    targets: [{"kind": "active", "id": "constraint-mapping"}, {"kind": "active", "id": "decision-under-uncertainty"}]
+    qualification: "T3 (constraint-mapping or decision-under-uncertainty)"
 
 # 3. EXECUTION STRUCTURE
-composition: atomic
+composition: "atomic"
 atomic_spec:
   passes: 1
-  posture: descriptive
+  posture: "descriptive"
 
 # 4. INPUT AND OUTPUT CONTRACTS
 input_contract:
@@ -80,71 +94,107 @@ input_contract:
   detection:
     expert_signals: ["incident report", "post-mortem", "6M / 4P / 4S / 8P", "prior fix attempts include"]
     accessible_signals: ["why does this keep happening", "what's the real problem", "we tried fixing X"]
-    default: accessible_mode
+    default: "accessible_mode"
   graceful_degradation:
     on_missing_required: "Ask: 'Could you describe what happened — the observable symptom, when it happens, and anything you've tried to fix it?'"
     on_underspecified: "Ask: 'What is the specific failure or symptom you want me to trace causes for?'"
 # 5. CRITICAL QUESTIONS
 critical_questions:
-  - cq_id: CQ1
+  - cq_id: "CQ1"
     question: "Has the chain reached a genuine root cause, or has it stopped at an intermediate cause that itself has deeper causes beneath it?"
-    failure_mode_if_unmet: premature-stop
-  - cq_id: CQ2
+    failure_mode_if_unmet: "premature-stop"
+  - cq_id: "CQ2"
     question: "Has any branch terminated at human error, bad judgment, or insufficient effort without naming the process that permitted or incentivised the behaviour?"
-    failure_mode_if_unmet: human-error-terminal
-  - cq_id: CQ3
+    failure_mode_if_unmet: "human-error-terminal"
+  - cq_id: "CQ3"
     question: "Are causal claims supported by evidence, with correlation explicitly distinguished from causation on at least one link?"
-    failure_mode_if_unmet: correlation-causation-conflation
-  - cq_id: CQ4
+    failure_mode_if_unmet: "correlation-causation-conflation"
+  - cq_id: "CQ4"
     question: "Is the declared categorisation framework used coherently — every category populated by causes that genuinely belong, every category name canonical for the framework?"
-    failure_mode_if_unmet: framework-incoherence
+    failure_mode_if_unmet: "framework-incoherence"
 
 # 6. NAMED FAILURE MODES AND CORRECTION
 failure_modes:
-  - name: premature-stop
+  - name: "premature-stop"
     detection_signal: "Chain accepts an intermediate cause as root because it is satisfying or actionable; one more 'why' would yield non-trivial deeper cause."
-    correction_protocol: re-dispatch (ask one more 'why' on each candidate root)
-  - name: human-error-terminal
+    correction_protocol: "re-dispatch (ask one more 'why' on each candidate root)"
+  - name: "human-error-terminal"
     detection_signal: "Leaf cause names a person's mistake or judgment without a sub-cause naming the process, policy, or incentive structure that permitted it."
-    correction_protocol: flag (mandatory fix — process-not-people is load-bearing)
-  - name: correlation-causation-conflation
+    correction_protocol: "flag (mandatory fix — process-not-people is load-bearing)"
+  - name: "correlation-causation-conflation"
     detection_signal: "Causal links asserted without evidence of mechanism; co-occurrence treated as causation."
-    correction_protocol: flag
-  - name: framework-incoherence
+    correction_protocol: "flag"
+  - name: "framework-incoherence"
     detection_signal: "Categories named before framework declared, or non-canonical category names within a declared canonical framework, or causes mixed across multiple frameworks."
-    correction_protocol: re-dispatch (declare framework first, then re-categorise)
-  - name: linear-chain-isolation
+    correction_protocol: "re-dispatch (declare framework first, then re-categorise)"
+  - name: "linear-chain-isolation"
     detection_signal: "Single causal chain investigated without considering whether multiple chains converge on the same symptom."
-    correction_protocol: flag (request second alternative chain)
-  - name: restatement-as-cause
+    correction_protocol: "flag (request second alternative chain)"
+  - name: "restatement-as-cause"
     detection_signal: "Cause paraphrases the effect ('deployments fail' → cause 'deployments are unreliable') rather than naming a deeper mechanism."
-    correction_protocol: re-dispatch (rewrite at one level deeper)
+    correction_protocol: "re-dispatch (rewrite at one level deeper)"
 
 # 7. LENS DEPENDENCIES
 lens_dependencies:
   required:
-    - fishbone-diagram
-    - five-whys
+  - fishbone-diagram
+  - five-whys
   optional:
-    - swiss-cheese-model (when failure crosses multiple defensive layers)
-    - dekker-just-culture (when human-error terminal needs process re-framing)
+  - lens_id: swiss-cheese-model
+    qualification: when failure crosses multiple defensive layers
+  - lens_id: dekker-just-culture
+    qualification: when human-error terminal needs process re-framing
   foundational:
-    - kahneman-tversky-bias-catalog
-
+  - kahneman-tversky-bias-catalog
 # 8. RUNTIME AND DEPTH
 default_depth_tier: 2
-expected_runtime: ~5min
+expected_runtime: "~5min"
 escalation_signals:
   upward:
-    target_mode_id: systems-dynamics-causal
+    target: {"kind": "active", "id": "systems-dynamics-causal"}
     when: "Causal analysis reveals feedback loops — corrective measures keep being counteracted by the system's own dynamics."
   sideways:
-    target_mode_id: competing-hypotheses
+    target: {"kind": "active", "id": "competing-hypotheses"}
     when: "Multiple plausible causal chains exist and the diagnostic question is which to credit, not how to deepen one."
   downward:
-    target_mode_id: null
+    target: null
     when: "Root Cause Analysis is the lightest causal-investigation mode in T4."
 ```
+
+## Display Description
+
+Traces a symptom backward through at least three causal levels to a root cause and recommends corrective action.
+
+## Selection/Activation Guidance
+
+```yaml
+selection:
+  performer: "Ora deterministic pre-routing"
+  environment: "existing process-lifetime source loader"
+  boundary_performer: "analyst model within the selected mode"
+  boundary_environment: "analysis; preserved boundaries are not runtime predicates"
+  dispatch_description: "I'll trace the root cause behind this {artifact}"
+  data_shapes: [{"predicate": "failure_description", "territory": "T4-causal-investigation", "priority": 0, "confidence_weight": "strong"}]
+  phrase_aliases: {"casual analysis": "causal analysis", "rca analysis": "rca"}
+  signals:
+    - {"signal": "root cause", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode-name reference"}
+    - {"signal": "RCA", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "mode abbreviation"}
+    - {"signal": "fishbone", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "Ishikawa", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "5 whys", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "why does this keep happening", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "what's the real problem", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "we've tried X but it didn't work", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "strong", "evidence": "trigger phrase"}
+    - {"signal": "diagnose", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (backward causal)"}
+    - {"signal": "postmortem", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (failure trace)"}
+    - {"signal": "what went wrong", "territory": "T4-causal-investigation", "disambiguation_answer": "—", "confidence_weight": "weak", "evidence": "tonal cue (backward)"}
+    - {"signal": "fishbone diagram", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "five whys", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "causal analysis", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "5 whys", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+    - {"signal": "postmortem", "territory": "T4-causal-investigation", "confidence_weight": "strong", "disambiguation_answer": "—", "evidence": "authored mode alias"}
+```
+
 
 ## DEPTH ANALYSIS GUIDANCE
 
