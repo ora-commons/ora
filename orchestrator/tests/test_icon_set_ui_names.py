@@ -6,17 +6,10 @@ button renders the fallback "?" glyph at runtime. That is exactly what happened
 to all four Manage Projects lifecycle buttons — Pause, Archive, Reactivate and
 Restore were visually identical question marks.
 
-These tests run against the real built artifact rather than a stub, so a future
-tree-shake that drops a UI icon is caught here instead of by the user.
-
-They do NOT rebuild ``server/static/runtime/icon-set.json`` in place, for two
-reasons. That file is committed, so rebuilding it made an ordinary test run
-modify the checkout — and whether it did was decided by file timestamps, which
-git does not preserve, so it fired unpredictably. Worse, rebuilding first meant
-the assertions only ever saw freshly generated content: a committed icon set
-that was stale and missing an icon would be quietly repaired and then pass,
-which is precisely the bug these tests exist to catch. The shipped file is now
-read as-is, a fresh build goes to a tempdir, and the two are compared.
+The runtime artifact is generated on startup and is not committed. These tests
+seed a stale artifact in a temporary directory, exercise the real self-healing
+builder, and inspect the rebuilt output. A normal test run therefore proves the
+startup path without writing into the checkout.
 """
 from __future__ import annotations
 
@@ -39,66 +32,52 @@ from orchestrator import icon_set_builder as isb  # noqa: E402
 _SIDEBAR_JS = Path(_REPO) / "server" / "static" / "js" / "sidebar.js"
 _NODE_SHAKE = Path(_REPO) / "scripts" / "lucide-tree-shake.js"
 
-# The only key that legitimately differs between two builds of identical input.
-_VOLATILE_KEYS = {"generated_at"}
-
-_REBUILD_HINT = (
-    "Rebuild and commit it:\n"
-    "    python3 -c 'from orchestrator import icon_set_builder as i; "
-    "print(i.rebuild_if_stale())'"
-)
-
-
-def _comparable(payload: dict) -> dict:
-    return {k: v for k, v in payload.items() if k not in _VOLATILE_KEYS}
-
-
 class IconSetUiNamesTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # What Ora actually serves: the committed artifact, untouched.
-        cls.shipped = json.loads(isb.OUT_PATH.read_text())
-        # What today's sources produce, built somewhere disposable.
         cls._tmpdir = tempfile.mkdtemp(prefix="ora-icon-set-")
-        fresh_path = Path(cls._tmpdir) / "icon-set.json"
-        with mock.patch.object(isb, "OUT_PATH", fresh_path):
+        cls.runtime_path = Path(cls._tmpdir) / "icon-set.json"
+        cls.stale = {
+            "version": "stale-test-fixture",
+            "generated_at": "2000-01-01T00:00:00Z",
+            "source": "test fixture",
+            "mode": "tree-shaken",
+            "referenced_from": [],
+            "referenced_names": [],
+            "icon_count": 0,
+            "icons": {},
+        }
+        cls.runtime_path.write_text(json.dumps(cls.stale), encoding="utf-8")
+        with mock.patch.object(isb, "OUT_PATH", cls.runtime_path):
             cls.build_result = isb.rebuild_if_stale()
-        cls.fresh = json.loads(fresh_path.read_text())
+        cls.built = json.loads(cls.runtime_path.read_text(encoding="utf-8"))
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls._tmpdir, ignore_errors=True)
 
     def test_declared_ui_icons_are_built(self):
-        """Asserted against the SHIPPED set, which is what users get."""
-        icons = self.shipped.get("icons") or {}
+        """Every icon declared for the UI survives the runtime build."""
+        icons = self.built.get("icons") or {}
         missing = sorted(n for n in isb._UI_ICON_NAMES if n not in icons)
         self.assertEqual(
             missing, [],
-            f"UI-referenced icons absent from the shipped set: {missing}. "
-            f"Every button using one renders the fallback glyph. {_REBUILD_HINT}",
+            f"UI-referenced icons absent from the runtime set: {missing}. "
+            "Every button using one renders the fallback glyph.",
         )
 
     def test_shipped_icon_set_is_not_stale(self):
-        """The committed artifact must equal a build from today's sources.
-
-        Without this the suite could not fail for the one thing that actually
-        reaches a user: a committed icon set that no longer matches the
-        toolbars, packs and vendor icons it was generated from.
-        """
-        shipped, fresh = _comparable(self.shipped), _comparable(self.fresh)
-        if shipped == fresh:
-            return
-        shipped_icons = set(shipped.get("icons") or {})
-        fresh_icons = set(fresh.get("icons") or {})
-        detail = [
-            f"dropped from the shipped set: {sorted(fresh_icons - shipped_icons)}",
-            f"present but no longer referenced: {sorted(shipped_icons - fresh_icons)}",
-            f"changed keys: {sorted(k for k in set(shipped) | set(fresh) if shipped.get(k) != fresh.get(k))}",
-        ]
-        self.fail(
-            "server/static/runtime/icon-set.json is out of date with its "
-            "sources.\n  " + "\n  ".join(detail) + f"\n{_REBUILD_HINT}")
+        """A stale runtime artifact is detected and rebuilt in place."""
+        self.assertTrue(self.build_result.get("rebuilt"), self.build_result)
+        self.assertEqual(
+            self.build_result.get("reason"), "referenced-names changed")
+        self.assertNotEqual(self.built, self.stale)
+        self.assertEqual(
+            self.built.get("referenced_names"),
+            sorted(set(self.built.get("icons") or {})
+                   | set(self.build_result.get("unknown_names", []))
+                   | set(self.build_result.get("missing_svgs", []))),
+        )
 
     def test_every_icon_the_sidebar_requests_is_declared(self):
         """resolveProjectActionIcon('name') calls must be covered.
