@@ -107,6 +107,7 @@
   };
 
   const fetchOperating = async () => {
+    if (accordion.dataset.activeSuper !== 'processes') return;
     try {
       const r = await fetch('/api/oversight/operating');
       if (!r.ok) return;
@@ -1386,8 +1387,8 @@
 
   // ── Boot ──────────────────────────────────────────────────────────────
 
-  // Initial fetch even though the panels are collapsed, so the count
-  // badges populate.
+  // Paused and Scheduled counts stay current while Oversight is collapsed.
+  // Operating first refreshes when Oversight opens.
   refreshAll();
 
   let pollHandle = null;
