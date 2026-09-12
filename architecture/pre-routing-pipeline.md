@@ -215,7 +215,7 @@ The graceful-degradation offer pairs the heavier mode (with its time-cost) again
 
 ### 3.5 Accept-and-resume path
 
-When the user supplies the missing input, Stage 3 re-runs the completeness check. When it passes, Stage 3 forwards to Stage 4. When the user opts for the lighter sibling, Stage 3 re-dispatches (returning to Stage 2's mode selection with the new mode_id) and re-runs Stage 3 against the new mode's contract.
+When the user supplies the missing input, Stage 3 re-runs the completeness check against the supplied text and actual answers, refreshed eligible conversation history and original attachment-presence facts, without counting presentation labels or inserted paragraph breaks as material. When it passes, Stage 3 forwards to Stage 4. The pause retains each selected mode’s completeness result. When the user opts for the lighter sibling, Stage 3 replaces the mode whose question was shown, preserves the other selections, and re-runs their completeness checks including the new mode's own contract.
 
 **Output.**
 - `inputs_complete: true | false`
@@ -257,7 +257,7 @@ The four-stage pipeline is the default mode-selection mechanism, not the sole on
 - it differs from the pipeline's dispatched mode, and
 - Stage 1 did **not** select bypass-to-direct-response.
 
-When those conditions are met, the manual pick supersedes Stage 2's dispatch and Stage 3 checks the selected mode's own input contract. The server replaces the old pre-routing decision with that selected-mode result. Missing input pauses with the real question; the next reply resumes the same selection without reclassification, preserving the pending turn's configuration, model, conversation, and privacy authority. Complete input continues to execution. The override is recorded as `pre_routing.manual_override_applied: true`, with `manual_override_prior_dispatch` holding the superseded Stage 2 pick. The intent-comparison layer likewise treats the manual pick as the winning expressed intent. An optional lens pick is validated against the same compiled mode/lens relationships and retained in the execution context.
+When those conditions are met, the manual pick supersedes Stage 2's dispatch and Stage 3 checks the selected mode's own input contract. The server replaces the old pre-routing decision with that selected-mode result. Missing input saves the real question; an explicit Answer to that pending identity rechecks the same selection without reclassification, preserving the pending turn's configuration, model, conversation, and privacy authority. Ordinary chat cannot answer the pending question; Skip uses the separate plain-response fallback. Complete input continues to execution. The override is recorded as `pre_routing.manual_override_applied: true`, with `manual_override_prior_dispatch` holding the superseded Stage 2 pick. The intent-comparison layer likewise treats the manual pick as the winning expressed intent. An optional lens pick is validated against the same compiled mode/lens relationships and retained in the execution context.
 
 **Invalid picks.** A `manual_mode_selection` absent from the compiled active modes is logged server-side and falls through to Stage 2's decision; a deferred candidate is not accepted as a runnable mode.
 

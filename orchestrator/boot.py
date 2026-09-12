@@ -6723,7 +6723,8 @@ def stage3_input_completeness_check(mode_id: str, user_prompt: str,
 def run_pre_routing_pipeline(prompt: str,
                              context: dict | None = None,
                              disambiguation_answer: str | None = None,
-                             completeness_answer: str | None = None) -> dict:
+                             completeness_answer: str | None = None,
+                             prior_routing: dict | None = None) -> dict:
     """Run Stages 1-3 of the pre-routing pipeline against a user prompt.
 
     Returns a routing decision the orchestrator can act on — either a
@@ -6759,7 +6760,14 @@ def run_pre_routing_pipeline(prompt: str,
         full_prompt = f"{prompt}\n\n[User clarification]\n{completeness_answer}"
 
     # --- Stage 1 ---
-    s1 = stage1_pre_analysis_filter(full_prompt, context)
+    if prior_routing is not None:
+        if (disambiguation_answer is None
+                or not isinstance(prior_routing.get("stage1_output"), dict)
+                or not (prior_routing.get("stage2_output") or {}).get("question_id")):
+            raise ValueError("The saved routing question is unavailable.")
+        s1 = prior_routing["stage1_output"]
+    else:
+        s1 = stage1_pre_analysis_filter(full_prompt, context)
     if s1.get("bypass_to_direct_response"):
         return {
             "stage1_output": s1,
@@ -6796,7 +6804,8 @@ def run_pre_routing_pipeline(prompt: str,
         }
 
     # --- Stage 2 ---
-    s2 = stage2_sufficiency_analyzer(full_prompt, s1, context)
+    s2 = (prior_routing["stage2_output"] if prior_routing is not None
+          else stage2_sufficiency_analyzer(full_prompt, s1, context))
     if disambiguation_answer is not None and s2.get("question_id"):
         answer_context = {**context, "routing_answer": disambiguation_answer,
                           "implicated_territories": list(_matches_grouped_by_territory(s1.get("matches", [])))}
@@ -7624,6 +7633,10 @@ AMBIGUITY_MODE: {ambiguity_mode}
     # Carry the full routing decision so the server can surface it via SSE
     # (dispatch_announcement, completeness_gaps, residual disambiguation).
     step1_result["pre_routing"] = {
+        "stage1_output": routing.get("stage1_output"),
+        "stage2_output": routing.get("stage2_output"),
+        "stage3_output": routing.get("stage3_output"),
+        "stage3_outputs": routing.get("stage3_outputs", {}),
         "dispatched_mode_id": routing.get("dispatched_mode_id"),
         "dispatched_mode_ids": routing.get("dispatched_mode_ids", []),
         "territory": routing.get("territory"),

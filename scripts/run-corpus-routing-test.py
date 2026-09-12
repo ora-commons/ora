@@ -584,6 +584,15 @@ class ManualObservation:
         def refuse(*args, **kwargs):
             raise MeasurementEffect("Unexpected model or analysis execution")
 
+        def pause(panel_id, step1, config, history, user_input, **kwargs):
+            # Storage is outside Stages 1–3 measurement. Keep the real
+            # question/selection for the next observed answer checkpoint.
+            pending = {"conversation_id": panel_id, "pending_id": "measurement",
+                       "step1": copy.deepcopy(step1), "user_input": user_input,
+                       "question": step1["pre_routing"]["pending_clarification"]}
+            server._pending_clarification[panel_id] = pending
+            return pending
+
         try:
             with ExitStack() as stack:
                 substitutions = [
@@ -606,12 +615,24 @@ class ManualObservation:
                     patch.object(server, "call_model", side_effect=refuse),
                     patch.object(server, "_direct_stream", side_effect=direct_terminal),
                     patch.object(server, "_run_pipeline_from_step2", side_effect=terminal),
+                    patch.object(server, "_load_pending_clarification", side_effect=lambda panel: server._pending_clarification.get(panel)),
+                    patch.object(server, "_pause_clarification", side_effect=pause),
                 ]
                 for substitution in substitutions:
                     stack.enter_context(substitution)
-                chunks = list(server._pipeline_stream(
-                    prompt, self.history, panel_id=self.panel, extra_context=copy.deepcopy(self.context),
-                    manual_mode_selection=manual_mode, config_name="routing-corpus-fixture", conversation_tag=""))
+                pending = server._pending_clarification.get(self.panel)
+                if pending:
+                    step1 = server._clarification_route(pending, prompt, context=copy.deepcopy(self.context))
+                    if step1["pre_routing"].get("pending_clarification"):
+                        pause(self.panel, step1, {}, self.history, pending["user_input"])
+                        chunks = []
+                    else:
+                        server._pending_clarification.pop(self.panel, None)
+                        chunks = list(terminal(step1, {}, self.history, pending["user_input"]))
+                else:
+                    chunks = list(server._pipeline_stream(
+                        prompt, self.history, panel_id=self.panel, extra_context=copy.deepcopy(self.context),
+                        manual_mode_selection=manual_mode, config_name="routing-corpus-fixture", conversation_tag=""))
             pending = server._pending_clarification.get(self.panel)
             step1 = captured[-1] if captured else (pending or {}).get("step1")
             if step1:

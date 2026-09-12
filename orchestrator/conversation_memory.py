@@ -787,6 +787,73 @@ def _mutate_conversation_envelope(
 
 
 
+def update_pending_clarification(
+    conversation_id: str,
+    pending: dict | None,
+    *,
+    expected_id: str | None,
+    exchange: tuple[str, str] | None = None,
+    sessions_root: Path | None = None,
+) -> Path | None:
+    """Compare and replace clarification authority in the existing envelope.
+
+    The server holds its Dialogue lifecycle lock across this operation and
+    execution. A question and its exact pending identity are published in one
+    atomic write; the same writer claims, checkpoints and completes that item.
+    """
+    root = Path(sessions_root) if sessions_root else _DEFAULT_SESSIONS_ROOT
+
+    def mutate(data):
+        current = data.get("pending_clarification")
+        if (current or {}).get("pending_id") != expected_id:
+            raise ValueError("Clarification identity changed; reload the Dialogue.")
+        if data.get("closed"):
+            raise ValueError("Conversation is closed.")
+        if pending is None:
+            data.pop("pending_clarification", None)
+        else:
+            if pending.get("conversation_id") != conversation_id:
+                raise ValueError("Clarification belongs to another Dialogue.")
+            data["pending_clarification"] = copy.deepcopy(pending)
+        if exchange is not None:
+            privacy = pending["turn_privacy"]
+            messages = data["messages"]
+            # A failed question-artifact save retries this same durable pair.
+            # Only its acknowledged ownership may change; never append it twice.
+            if (len(messages) >= 2
+                    and messages[-2].get("clarification_id") == pending["pending_id"]
+                    and messages[-1].get("clarification_id") == pending["pending_id"]):
+                for message, role, content in zip(messages[-2:], ("user", "assistant"), exchange):
+                    if (message.get("role") != role or message.get("content") != content
+                            or message.get("turn_privacy") != privacy):
+                        raise ValueError("Clarification question exchange changed.")
+                    message["chunk_id"] = pending.get("question_chunk_id")
+                return
+            if (expected_id is None and len(messages) >= 2
+                    and messages[-2].get("role") == "user"
+                    and messages[-2].get("content") == exchange[0]
+                    and messages[-1].get("role") == "assistant"
+                    and messages[-1].get("content") == ""
+                    and (messages[-1].get("visual_outcome") or {}).get("state") == "building"):
+                del messages[-2:]
+            pending.setdefault("question_start_message_count", len(messages))
+            data["pending_clarification"]["question_start_message_count"] = pending["question_start_message_count"]
+            turn_index = 1 + sum(message.get("role") == "user" for message in messages
+                                 if isinstance(message, dict))
+            for role, content in zip(("user", "assistant"), exchange):
+                messages.append({
+                    "role": role, "content": content,
+                    "turn_privacy": privacy, "chunk_id": pending.get("question_chunk_id"),
+                    "turn_index": turn_index,
+                    "clarification_id": pending["pending_id"],
+                    "clarification_submission_id": pending.get("submission_id"),
+                })
+            pending["message_count"] = len(messages)
+            data["pending_clarification"]["message_count"] = len(messages)
+
+    return _mutate_conversation_envelope(conversation_id, root, mutate)
+
+
 def load_conversation_json(
     conversation_id: str,
     sessions_root: Path | None = None,
