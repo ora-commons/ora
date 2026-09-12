@@ -2908,102 +2908,270 @@ class TestServerLifecycleWiring(unittest.TestCase):
                 purge.assert_not_called()
 
     def test_clarification_resume_and_skip_refresh_history_and_contributors_under_lock(self):
+        import copy
+        import socket
         import boot as runtime_boot
+        import pipeline_health
 
+        server = self.server
         fresh_history = [{"role": "assistant", "content": "fresh history"}]
         fresh_bundle = {
-            "units": [{
-                "lane": "contributor", "unit_id": "fresh-unit",
-                "source_id": "selected-source-0", "content": "fresh source",
-            }],
-            "sources": [{
-                "source_id": "selected-source-0", "status": "available",
-            }],
-            "exclude_conversation_ids": ["fresh-source"],
-            "exclude_paths": [],
+            "units": [{"lane": "contributor", "unit_id": "fresh-unit",
+                       "source_id": "selected-source-0", "content": "fresh source"}],
+            "sources": [{"source_id": "selected-source-0", "status": "available"}],
+            "exclude_conversation_ids": ["fresh-source"], "exclude_paths": [],
+        }
+        complete = {"inputs_complete": True, "missing_fields": [],
+                    "completeness_question": None}
+        incomplete = {"inputs_complete": False, "missing_fields": ["subject"],
+                      "completeness_question": "Which subject should I examine?"}
+        original_step1 = {
+            "mode": "simple", "triage_tier": 2,
+            "cleaned_prompt": "original", "operational_notation": "original",
+            "pre_routing": {"dispatched_mode_id": "simple",
+                            "pending_clarification": "What should I examine?",
+                            "pending_clarification_stage": "stage3",
+                            "manual_override_applied": True},
         }
 
-        for route, payload in (
-            ("/api/clarification", {"panel_id": "refresh-resume", "answers": "detail"}),
-            ("/api/clarification/skip", {"panel_id": "refresh-skip"}),
-        ):
-            panel_id = payload["panel_id"]
-            captured = {}
-            self.server._pending_clarification[panel_id] = {
-                "step1": {
-                    "mode": "simple", "triage_tier": 1,
-                    "cleaned_prompt": "original",
-                    "operational_notation": "original",
-                    "pre_routing": {},
-                },
-                "config": {},
-                "history": [{"role": "assistant", "content": "stale history"}],
-                "user_input": "original",
-                "images": None,
-                "extra_context": {
-                    "contributor_bundle": {
-                        "units": [{"content": "stale source"}],
-                        "sources": [{"status": "available"}],
-                    },
-                },
-                "conversation_tag": "",
-                "trace_ref": None,
-            }
-            lifecycle_lock = self.server._conversation_lifecycle_lock(panel_id)
+        def events(response):
+            return [json.loads(line[6:]) for line in response.get_data(as_text=True).splitlines()
+                    if line.startswith("data: ")]
 
-            def authoritative(_conversation_id, _supplied=None):
-                self.assertTrue(lifecycle_lock._is_owned())
-                return fresh_history, {"source": "conversation_json"}
+        with tempfile.TemporaryDirectory() as td, contextlib.ExitStack() as stack:
+            root = Path(td)
+            stack.enter_context(mock.patch.object(memory, "_DEFAULT_SESSIONS_ROOT", root))
+            stack.enter_context(mock.patch.object(socket.socket, "connect", side_effect=AssertionError("network forbidden")))
+            stack.enter_context(mock.patch.object(runtime_boot, "PIPELINE_TRACE_AVAILABLE", False))
+            stack.enter_context(mock.patch.object(server, "_clarification_snapshot", return_value="bound-runtime"))
+            stack.enter_context(mock.patch.object(server, "load_config", return_value={}))
+            stack.enter_context(mock.patch.object(pipeline_health, "collect_and_clear", return_value=[]))
+            stack.enter_context(mock.patch.object(pipeline_health, "format_warnings_as_chat_note", return_value=""))
 
-            def contributors(_conversation_id, *, target_tag):
-                self.assertTrue(lifecycle_lock._is_owned())
-                self.assertEqual(target_tag, "private")
-                return fresh_bundle
+            def pause(panel):
+                _write_envelope(root, panel, tag="private")
+                # Real /chat has already made a building placeholder before
+                # routing asks its question. Publication must complete it.
+                memory.begin_visual_outcome(panel, "original", tag="private")
+                with server._conversation_lifecycle_lock(panel):
+                    pending = server._pause_clarification(
+                        panel, copy.deepcopy(original_step1), {}, [], "original",
+                        raw_user_input="original", images=None,
+                        extra_context={"_framework_submission_id": "submission-" + panel,
+                                       "contributor_bundle": {"units": [{"content": "stale source"}]}},
+                        config_name="paused-profile", model_id="paused-model",
+                        conversation_tag="private", trace_ref=None)
+                durable = memory.load_conversation_json(panel)
+                self.assertEqual(len(durable["messages"]), 2)
+                self.assertEqual(durable["messages"][-1]["content"], pending["question"])
+                self.assertEqual(durable["pending_clarification"]["pending_id"], pending["pending_id"])
+                self.assertTrue(server._surface_orphan_as_errored_chunk({
+                    "conversation_id": panel, "submission_id": "submission-" + panel,
+                    "user_input": "original"}))
+                self.assertNotIn("interrupted_input", memory.load_conversation_json(panel))
+                with mock.patch.object(server, "_begin_visual_outcome") as placeholder:
+                    refused = list(server._pipeline_stream_impl(
+                        "unrelated new submission", [], panel_id=panel,
+                        extra_context={}, turn_state={}))
+                    self.assertEqual(json.loads(refused[0][6:])["type"], "error")
+                    placeholder.assert_not_called()
+                server._pending_clarification.clear()  # reopening survives process cache loss
+                return pending
 
-            def run_from_step2(_step1, _config, history, _user_input, *args, **kwargs):
-                self.assertTrue(lifecycle_lock._is_owned())
-                self.assertEqual(
-                    runtime_boot._CONVERSATION_TAG_CV.get(), "private",
-                )
-                captured["history"] = history
-                captured["extra_context"] = kwargs.get("extra_context")
-                yield self.server._sse("response", text="complete")
+            for skip in (False, True):
+                with self.subTest(skip=skip):
+                    panel = "refresh-skip" if skip else "refresh-answer"
+                    pending = pause(panel)
+                    lock = server._conversation_lifecycle_lock(panel)
+                    payload = {"panel_id": panel, "conversation_id": panel,
+                               "pending_id": pending["pending_id"]}
+                    if not skip:
+                        payload["answers"] = "detail"
+                    route = "/api/clarification/skip" if skip else "/api/clarification"
+                    calls, writes = [], []
 
-            def effective_tag(_conversation_id, _requested=""):
-                self.assertTrue(lifecycle_lock._is_owned())
-                return "private"
+                    def authoritative(cid, supplied=None, *, target_tag):
+                        self.assertTrue(lock._is_owned())
+                        self.assertEqual((cid, target_tag), (panel, "private"))
+                        return fresh_history, {"source": "conversation_json"}
 
-            with self.subTest(route=route):
-                with (
-                    mock.patch.object(runtime_boot, "PIPELINE_TRACE_AVAILABLE", False),
-                    mock.patch.object(
-                        self.server, "_effective_conversation_tag",
-                        side_effect=effective_tag,
-                    ),
-                    mock.patch.object(
-                        self.server, "_authoritative_dialogue_history",
-                        side_effect=authoritative,
-                    ),
-                    mock.patch.object(
-                        self.server, "build_contributor_bundle",
-                        side_effect=contributors,
-                    ),
-                    mock.patch.object(
-                        self.server, "_run_pipeline_from_step2",
-                        side_effect=run_from_step2,
-                    ),
-                    mock.patch.object(
-                        self.server, "_save_conversation", return_value=None,
-                    ),
-                ):
-                    response = self.server.app.test_client().post(route, json=payload)
-                    response.get_data()
+                    def contributors(cid, *, target_tag):
+                        self.assertTrue(lock._is_owned())
+                        self.assertEqual((cid, target_tag), (panel, "private"))
+                        return fresh_bundle
 
-                self.assertEqual(response.status_code, 200)
-                self.assertEqual(captured["history"], fresh_history)
-                self.assertEqual(
-                    captured["extra_context"]["contributor_bundle"], fresh_bundle,
-                )
+                    def execute(step1, config, history, user_input, **kwargs):
+                        self.assertTrue(lock._is_owned())
+                        self.assertEqual(runtime_boot._CONVERSATION_TAG_CV.get(), "private")
+                        self.assertEqual(history, fresh_history)
+                        self.assertEqual(kwargs["extra_context"]["contributor_bundle"], fresh_bundle)
+                        self.assertEqual(kwargs["config_name"], "paused-profile")
+                        self.assertIsNone(step1["pre_routing"].get("pending_clarification"))
+                        self.assertEqual(step1["mode"], "simple")
+                        calls.append(step1)
+                        yield server._sse("response", text="complete")
+
+                    def save(user_input, text, cid, is_new, tag, **kwargs):
+                        self.assertTrue(lock._is_owned())
+                        self.assertEqual((tag, kwargs["turn_privacy"], kwargs["model_id"]),
+                                         ("private", "private", "paused-model"))
+                        self.assertEqual(user_input, "[Clarification skipped]" if skip else "detail")
+                        writes.append("chunk")
+                        return "chunk-" + panel
+
+                    def append(*args, **kwargs):
+                        self.assertTrue(lock._is_owned())
+                        self.assertIsNotNone(memory.load_conversation_json(panel).get("pending_clarification"))
+                        writes.append("envelope")
+                        return real_append(*args, **kwargs)
+
+                    real_append = server._persist_turn_spatial_state_unlocked
+                    with (
+                        mock.patch.object(server, "_authoritative_dialogue_history", side_effect=authoritative),
+                        mock.patch.object(server, "build_contributor_bundle", side_effect=contributors),
+                        mock.patch.object(server, "stage3_input_completeness_check", return_value=complete),
+                        mock.patch.object(server, "_run_pipeline_from_step2", side_effect=execute),
+                        mock.patch.object(server, "_save_conversation", side_effect=save),
+                        mock.patch.object(server, "_persist_turn_spatial_state_unlocked", side_effect=append),
+                    ):
+                        client = server.app.test_client()
+                        restored = client.get("/api/clarification/pending", query_string={"conversation_id": panel}).get_json()
+                        self.assertEqual(restored["pending_id"], pending["pending_id"])
+                        with mock.patch.object(server, "_clarification_snapshot", return_value="changed"):
+                            self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
+                        stale = {**payload, "pending_id": "obsolete"}
+                        self.assertEqual(events(client.post(route, json=stale))[-1]["type"], "error")
+                        self.assertFalse(calls)
+                        with mock.patch.object(memory, "update_pending_clarification", return_value=None):
+                            self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
+                        self.assertFalse(calls, "failed claim must never begin analysis")
+                        with mock.patch.object(server, "_save_conversation", return_value=None):
+                            self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
+                        self.assertEqual(len(calls), 1)
+                        # A failed envelope save leaves the successful result and
+                        # chunk acknowledged in the existing pending authority.
+                        with mock.patch.object(server, "_persist_turn_spatial_state_unlocked", return_value=None):
+                            failed = events(client.post(route, json=payload))
+                        self.assertEqual([event["type"] for event in failed], ["error"])
+                        self.assertEqual(len(calls), 1)
+                        server._pending_clarification.clear()
+                        with mock.patch.object(memory, "update_pending_clarification", wraps=memory.update_pending_clarification) as writer:
+                            result = events(client.post(route, json=payload))
+                            self.assertIsNone(writer.call_args.args[1], "pending completion must follow envelope ack")
+                        self.assertEqual([event["type"] for event in result], ["response", "done"])
+                        self.assertEqual(writes, ["chunk", "envelope"])
+                        self.assertEqual(len(calls), 1, "save retry must not rerun analysis")
+                        durable = memory.load_conversation_json(panel)
+                        self.assertNotIn("pending_clarification", durable)
+                        self.assertEqual(len(durable["messages"]), 4)
+                        self.assertEqual(durable["messages"][-2]["content"], "[Clarification skipped]" if skip else "detail")
+                        self.assertEqual(events(client.post(route, json=payload))[-1]["type"], "error")
+                        self.assertEqual(len(calls), 1, "replay must not execute")
+
+            panel = "still-incomplete"
+            pending = pause(panel)
+            payload = {"conversation_id": panel, "pending_id": pending["pending_id"], "answers": "unsure"}
+            with (mock.patch.object(server, "_authoritative_dialogue_history", return_value=(fresh_history, {})),
+                  mock.patch.object(server, "build_contributor_bundle", return_value=fresh_bundle),
+                  mock.patch.object(server, "stage3_input_completeness_check", return_value=incomplete) as check,
+                  mock.patch.object(server, "_run_pipeline_from_step2") as execute):
+                result = events(server.app.test_client().post("/api/clarification", json=payload))
+                self.assertEqual(result[0]["type"], "clarification_needed")
+                self.assertNotEqual(result[0]["pending_id"], pending["pending_id"])
+                self.assertEqual(result[0]["question"], incomplete["completeness_question"])
+                self.assertIn("unsure", check.call_args.args[1])
+                execute.assert_not_called()
+                self.assertEqual(memory.load_conversation_json(panel)["messages"][-2]["content"], "unsure")
+                self.assertEqual(events(server.app.test_client().post("/api/clarification", json=payload))[-1]["type"], "error")
+
+            # A Stage-2 answer resolves the exact saved canonical question;
+            # changed fresh history cannot classify it as a different inquiry.
+            stage2_pending = {"user_input": "original", "step1": {
+                **original_step1,
+                "pre_routing": {"pending_clarification_stage": "stage2",
+                                "stage1_output": {"matches": []},
+                                "stage2_output": {"question_id": "saved-question"}},
+            }}
+            dispatch = {"dispatched_mode_id": "simple", "dispatched_mode_ids": ["simple"],
+                        "confidence": "high", "territory": None}
+            with (mock.patch.object(runtime_boot, "stage1_pre_analysis_filter", side_effect=AssertionError("must retain Stage 1")),
+                  mock.patch.object(runtime_boot, "stage2_sufficiency_analyzer", side_effect=AssertionError("must retain question")),
+                  mock.patch.object(runtime_boot, "_resolve_routing_question", return_value=dispatch) as resolve,
+                  mock.patch.object(runtime_boot, "stage3_input_completeness_check", return_value=complete),
+                  mock.patch.object(runtime_boot, "compose_dispatch_announcement", return_value="Plain response")):
+                step1 = server._clarification_route(stage2_pending, "specific answer")
+                self.assertEqual(resolve.call_args.args[0], "saved-question")
+                self.assertEqual(resolve.call_args.args[3], "specific answer")
+                self.assertEqual(step1["mode"], "simple")
+
+            # A pending item is never visible as success before the same
+            # atomic envelope writer acknowledges its question and authority.
+            _write_envelope(root, "question-save-failure", tag="private")
+            with mock.patch.object(memory, "_atomic_write_envelope", return_value=False):
+                with self.assertRaisesRegex(RuntimeError, "persistence failed"):
+                    server._pause_clarification(
+                        "question-save-failure", copy.deepcopy(original_step1), {}, [], "original",
+                        raw_user_input="original", images=None, extra_context=None,
+                        config_name="paused-profile", model_id="paused-model", conversation_tag="private", trace_ref=None)
+            self.assertNotIn("pending_clarification", memory.load_conversation_json("question-save-failure"))
+            server._pending_clarification.clear()
+
+            # Simultaneous Answer and Skip cannot each run the paused turn.
+            panel = "concurrent-answer"
+            pending = pause(panel)
+            payload = {"conversation_id": panel, "pending_id": pending["pending_id"], "answers": "detail"}
+            entered, release, second_started = threading.Event(), threading.Event(), threading.Event()
+            results, calls = [], []
+
+            def held_execution(*args, **kwargs):
+                calls.append("execute")
+                entered.set()
+                self.assertTrue(release.wait(2))
+                yield server._sse("response", text="one response")
+
+            def request_answer():
+                results.append(events(server.app.test_client().post("/api/clarification", json=payload)))
+
+            def request_skip():
+                second_started.set()
+                results.append(events(server.app.test_client().post("/api/clarification/skip", json={
+                    "conversation_id": panel, "pending_id": pending["pending_id"]})))
+
+            with (mock.patch.object(server, "_authoritative_dialogue_history", return_value=(fresh_history, {})),
+                  mock.patch.object(server, "build_contributor_bundle", return_value=fresh_bundle),
+                  mock.patch.object(server, "stage3_input_completeness_check", return_value=complete),
+                  mock.patch.object(server, "_run_pipeline_from_step2", side_effect=held_execution),
+                  mock.patch.object(server, "_save_conversation", return_value="concurrent-chunk")):
+                first, second = threading.Thread(target=request_answer), threading.Thread(target=request_skip)
+                try:
+                    first.start()
+                    self.assertTrue(entered.wait(2))
+                    second.start()
+                    self.assertTrue(second_started.wait(2))
+                finally:
+                    release.set()
+                    first.join(3)
+                    if second.ident is not None:
+                        second.join(3)
+                self.assertFalse(first.is_alive() or second.is_alive())
+                self.assertEqual(calls, ["execute"])
+                self.assertEqual(sorted(result[-1]["type"] for result in results), ["done", "error"])
+                self.assertEqual(len(memory.load_conversation_json(panel)["messages"]), 4)
+
+            # The real chunk writer reuses an acknowledged deterministic
+            # identity if its return value was lost, without a second pair.
+            panel = "chunk-save-retry"
+            _write_envelope(root, panel, tag="stealth")
+            with (mock.patch.object(server, "CONVERSATIONS_DIR", str(root / "chunks")),
+                  mock.patch.object(server, "CONVERSATIONS_RAW", str(root / "raw")),
+                  mock.patch.object(server, "_generate_chunk_metadata", return_value=("context", []))):
+                kwargs = {"tag": "stealth", "model_id": "paused-model", "turn_privacy": "stealth", "save_id": "a" * 32}
+                first_id = server._save_conversation("answer", "result", panel, False, **kwargs)
+                second_id = server._save_conversation("answer", "result", panel, False, **kwargs)
+                self.assertEqual(first_id, second_id)
+                self.assertEqual(len(list((root / "chunks").glob("*.md"))), 1)
+                self.assertEqual(next((root / "raw").glob("*.md")).read_text().count("**User:**"), 1)
+            server._pending_clarification.clear()
 
     def test_zero_turn_close_blocks_late_artifact_creation(self):
         with tempfile.TemporaryDirectory() as td:
@@ -3141,6 +3309,15 @@ class TestServerLifecycleWiring(unittest.TestCase):
             mock.patch.object(self.server, "RUNTIME_PIPELINE_AVAILABLE", True),
             mock.patch.object(self.server, "RuntimePipeline",
                               BlockingRuntimePipeline),
+            mock.patch.object(
+                self.server, "_canonical_runtime_extraction_turn",
+                return_value={
+                    "turn_tag": "private", "turn_privacy": "private",
+                    "source_chunk_id": "runtime-chunk", "source_turn_index": 1,
+                    "user": {"role": "user", "content": "prompt"},
+                    "assistant": {"role": "assistant", "content": "answer"},
+                },
+            ),
             mock.patch.object(memory, "load_conversation_json",
                               return_value={"tag": "stealth", "messages": []}),
             mock.patch.object(
@@ -3161,6 +3338,7 @@ class TestServerLifecycleWiring(unittest.TestCase):
             runtime_thread = threading.Thread(
                 target=self.server._run_end_of_session_pipeline,
                 args=("prompt", "answer", conversation_id, {}, []),
+                kwargs={"source_chunk_id": "runtime-chunk", "source_turn_index": 1},
             )
             runtime_thread.start()
             self.assertTrue(runtime_started.wait(timeout=2))

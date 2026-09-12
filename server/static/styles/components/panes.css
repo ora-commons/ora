@@ -98,6 +98,49 @@
   border-color: var(--ora-output-pane-border);
   padding-bottom: var(--ora-pane-header-h);
 }
+
+.clarification-form {
+  position: absolute;
+  inset: 12px 12px calc(var(--ora-pane-header-h) + 12px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+.clarification-form[hidden] { display: none; }
+.clarification-form label { white-space: pre-wrap; line-height: 1.5; }
+.clarification-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 80px;
+  flex-shrink: 0;
+  padding: 10px;
+  resize: vertical;
+  font: inherit;
+  color: var(--text-normal);
+  background: var(--background-modifier-form-field);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+}
+.clarification-form__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.clarification-form button {
+  padding: 8px 16px;
+  font: inherit;
+  color: var(--text-normal);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.clarification-form button:disabled { opacity: 0.6; cursor: default; }
+.clarification-form p { margin: 0; color: var(--text-muted); line-height: 1.5; }
+
 .output-pane::before {
   content: '';
   position: absolute;

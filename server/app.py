@@ -2073,8 +2073,95 @@ def settings_verify_api_key():
     return _json_response({"ok": ok, "message": message})
 
 
-# Pending clarification state: {panel_id: {step1, config, history, user_input}}
+# Unacknowledged writes stay retryable here; conversation.json is authority.
 _pending_clarification = {}
+
+
+def _clarification_snapshot(config_name):
+    """Bind continuation to the installed model/profile and Phase-B source state.
+
+    Only a digest is persisted: configuration may contain credentials.
+    """
+    import hashlib
+    from orchestrator import active_configuration
+    config = load_config()
+    name = config_name or active_configuration.get_active_name()
+    profile = active_configuration._load_config(name)
+    state = {"config": config, "profile_name": name, "profile": profile,
+             "endpoint": get_endpoint(config, config_name=config_name),
+             "routing": load_routing_sources()}
+    return hashlib.sha256(json.dumps(
+        state, sort_keys=True, ensure_ascii=False,
+        default=lambda value: sorted(value) if isinstance(value, (set, frozenset)) else str(value),
+    ).encode()).hexdigest()
+
+
+def _load_pending_clarification(conversation_id):
+    from orchestrator.conversation_memory import load_conversation_json
+    envelope = load_conversation_json(conversation_id)
+    durable = (envelope or {}).get("pending_clarification")
+    retry = _pending_clarification.get(conversation_id)
+    if retry and durable and retry.get("pending_id") == durable.get("pending_id"):
+        return retry
+    return durable
+
+
+def _write_pending_clarification(pending, *, expected_id, exchange=None):
+    from orchestrator.conversation_memory import update_pending_clarification
+    conversation_id = pending["conversation_id"]
+    if _is_conversation_deleted(conversation_id) or _is_conversation_closed(conversation_id):
+        raise ValueError("Conversation was closed or permanently deleted.")
+    # Retain a failed result checkpoint in the same process so retry never
+    # repeats successful analysis merely because its save failed.
+    _pending_clarification[conversation_id] = pending
+    if not update_pending_clarification(
+        conversation_id, pending, expected_id=expected_id, exchange=exchange,
+    ):
+        raise RuntimeError("Clarification persistence failed; retry this item.")
+
+
+def _public_clarification(pending):
+    route = pending["step1"].get("pre_routing") or {}
+    return {
+        "pending": True, "panel_id": pending["conversation_id"],
+        "conversation_id": pending["conversation_id"],
+        "pending_id": pending["pending_id"], "question": pending["question"],
+        "questions": [{"question": pending["question"], "rationale": ""}],
+        "mode": pending["step1"].get("mode"),
+        "tier": pending["step1"].get("triage_tier"),
+        "pre_routing_stage": route.get("pending_clarification_stage"),
+    }
+
+
+def _pause_clarification(panel_id, step1, config, history, user_input, *,
+                         raw_user_input, images, extra_context, config_name,
+                         model_id, conversation_tag, trace_ref):
+    from orchestrator.conversation_memory import load_conversation_json
+    with _conversation_lifecycle_lock(panel_id):
+        if _load_pending_clarification(panel_id):
+            raise ValueError("Answer or Skip the existing clarification first.")
+        _ensure_artifact_conversation_envelope(panel_id, conversation_tag)
+        envelope = load_conversation_json(panel_id)
+        pending = {
+            "conversation_id": panel_id, "pending_id": uuid.uuid4().hex,
+            "state": "awaiting", "step1": step1,
+            "question": step1["pre_routing"]["pending_clarification"],
+            "user_input": user_input, "raw_user_input": raw_user_input,
+            "images": images, "extra_context": extra_context,
+            "submission_id": (extra_context or {}).get("_framework_submission_id"),
+            "trace_ref": trace_ref,
+            "message_count": len(envelope["messages"]) + 2,
+            "runtime_snapshot": _clarification_snapshot(config_name),
+            **_capture_clarification_authority(
+                config_name=config_name, model_id=model_id,
+                conversation_tag=conversation_tag,
+            ),
+        }
+        _write_pending_clarification(
+            pending, expected_id=None,
+            exchange=(user_input, pending["question"]),
+        )
+        return pending
 
 
 def _capture_clarification_authority(
@@ -2136,12 +2223,11 @@ def _require_clarification_authority(pending: dict) -> dict:
 
 
 def _manual_clarification_authority(panel_id: str) -> dict | None:
-    pending = _pending_clarification.get(panel_id)
-    if not isinstance(pending, dict):
-        return None
-    if pending.get("source") != "manual_mode_selection":
-        return None
-    return _require_clarification_authority(pending)
+    # Plain chat never implicitly consumes an earlier question. Every caller
+    # must use the explicit identity-bound Answer/Skip endpoint.
+    if _load_pending_clarification(panel_id):
+        raise ValueError("Answer or Skip the pending clarification first.")
+    return None
 
 import base64
 
@@ -2174,79 +2260,6 @@ def _process_attachments(attachments: list) -> tuple:
             except Exception:
                 text_parts.append(f"[Attached file: {name} — could not decode]")
     return text_parts, images
-
-
-def _generate_clarification_questions(step1, config, config_name=None):
-    """Use the breadth model to generate clarification questions for Tier 2/3.
-
-    Uses the cleaned prompt, selected mode, and inferred assumptions directly;
-    retired domain question-bank modules are not injected.
-    """
-    tier = step1["triage_tier"]
-    cleaned = step1["cleaned_prompt"]
-    mode = step1["mode"]
-    inferred = step1.get("inferred_items", "")
-
-    system_prompt = "\n".join([
-        "You generate clarification questions for a user whose prompt needs "
-        "clarification before the AI system can provide a high-quality response.",
-        "",
-        "Use the user's cleaned prompt, selected analytical mode, and any "
-        "inferred assumptions to generate specific, context-grounded questions.",
-        "",
-        "Output only the numbered questions, nothing else.",
-    ])
-
-    if tier == 2:
-        instruction = (
-            f"The user's prompt has been triaged as Tier 2 (Targeted Clarification). "
-            f"The domain is recognizable but the specific need is ambiguous.\n\n"
-            f"Cleaned prompt: {cleaned}\n"
-            f"Selected mode: {mode}\n"
-        )
-        if inferred:
-            instruction += f"Inferred items (assumptions made): {inferred}\n"
-        instruction += (
-            f"\nGenerate 2-3 targeted "
-            f"clarification questions that would resolve the ambiguity. Each "
-            f"question should be specific and answerable in one sentence. "
-            f"Format: one question per line, numbered."
-        )
-    else:  # Tier 3
-        instruction = (
-            f"The user's prompt has been triaged as Tier 3 (Full Perceptual Broadening). "
-            f"The domain boundaries are unclear and the prompt is exploratory.\n\n"
-            f"Cleaned prompt: {cleaned}\n"
-            f"Selected mode: {mode}\n"
-        )
-        if inferred:
-            instruction += f"Inferred items (assumptions made): {inferred}\n"
-        instruction += (
-            f"\nGenerate 3-5 broadening "
-            f"questions that help the user discover what they're actually trying "
-            f"to accomplish. Questions should open up the problem space, not "
-            f"narrow it. Format: one question per line, numbered."
-        )
-
-    endpoint = get_slot_endpoint(
-        config, "step1_cleanup", config_name=config_name)
-    if not endpoint:
-        return ["What specifically are you trying to accomplish?",
-                "What would a successful outcome look like?"]
-
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": instruction},
-    ]
-    response = call_model(messages, endpoint)
-
-    # Parse numbered questions from response
-    questions = []
-    for line in response.splitlines():
-        line = line.strip()
-        if re.match(r'^\d+[\.\)]\s', line):
-            questions.append(re.sub(r'^\d+[\.\)]\s*', '', line))
-    return questions or ["What specifically are you trying to accomplish?"]
 
 
 # ── WP-4.4: Text-only fallback UX ─────────────────────────────────────────────
@@ -2666,44 +2679,8 @@ def _run_pipeline_from_step2(step1, config, history, user_input,
     ``raw_user_input`` retains hold identity across cleanup and clarification.
     """
     _raw_request = raw_user_input if isinstance(raw_user_input, str) else user_input
-    # If clarification was provided, enrich the cleaned prompt and — if the
-    # pause was at Stage 2 or Stage 3 of the pre-routing pipeline — re-run
-    # the routing pipeline so the user's answer can resolve the disambiguation
-    # or supply the missing input.
-    if clarification_text:
-        step1 = dict(step1)  # Don't mutate original
-        step1["cleaned_prompt"] = (
-            f"{step1['cleaned_prompt']}\n\n"
-            f"[User clarification]\n{clarification_text}"
-        )
-        step1["operational_notation"] = step1["cleaned_prompt"]
-
-        # Phase 9 — re-run the four-stage pipeline with the answer baked in
-        prior_pre_routing = step1.get("pre_routing", {}) or {}
-        pause_stage = prior_pre_routing.get("pending_clarification_stage")
-        if pause_stage in ("stage2", "stage3"):
-            try:
-                from boot import run_pre_routing_pipeline
-                routing = run_pre_routing_pipeline(
-                    prompt=step1["operational_notation"],
-                    context=None,
-                )
-                if routing.get("dispatched_mode_id"):
-                    step1["mode"] = routing["dispatched_mode_id"]
-                    step1["triage_tier"] = 2  # default-on-ambiguity Tier-2
-                    step1["pre_routing"] = {
-                        "dispatched_mode_id": routing["dispatched_mode_id"],
-                        "territory": routing.get("territory"),
-                        "bypass_to_direct_response": False,
-                        "pending_clarification": routing.get("pending_clarification"),
-                        "pending_clarification_stage": routing.get("pending_clarification_stage"),
-                        "completeness_gaps": routing.get("completeness_gaps", []),
-                        "dispatch_announcement": routing.get("dispatch_announcement"),
-                        "lighter_sibling_mode_id": routing.get("lighter_sibling_mode_id"),
-                        "confidence": routing.get("confidence", "medium"),
-                    }
-            except Exception as exc:
-                print(f"[pre-routing] resume re-route failed: {exc}")
+    # Answer routing is completed by the lifecycle owner before Step 2.
+    # No best-guess reroute or swallowed completeness failure belongs here.
 
     try:
         try:
@@ -3434,6 +3411,10 @@ def _pipeline_stream_impl(user_input, history, panel_id="main", images=None, ext
             raw_user_input=raw_user_input,
         )
         return
+    if _load_pending_clarification(panel_id):
+        yield _sse("error", text="Answer or Skip the pending clarification first.")
+        return
+
     # Exact request identity stays separate from cleaned executor input.
     _raw_request = (
         raw_user_input
@@ -3858,76 +3839,6 @@ def _pipeline_stream_impl(user_input, history, panel_id="main", images=None, ext
             except Exception as _continuation_visual_exc:
                 print(f"[framework continuation visual-hook] skipped due to error: {_continuation_visual_exc}")
         yield _sse("response", text=text)
-        return
-
-    # --- Manual analysis-mode clarification continuation ---
-    # V3 submits are plain JSON, not a live clarification panel. When a
-    # user explicitly picks an analysis and Stage 3 needs missing input,
-    # the previous turn saves the completeness question as the assistant
-    # reply and records the selected-mode state here. Treat the next user
-    # message in the same thread as the answer, append it to the original
-    # prompt, and run the already-selected mode instead of reclassifying.
-    manual_pending = _pending_clarification.get(panel_id)
-    if manual_pending and manual_pending.get("source") == "manual_mode_selection":
-        try:
-            paused_authority = _require_clarification_authority(manual_pending)
-        except ValueError as exc:
-            turn_state["kind"] = "clarification_resume"
-            turn_state["status"] = "error"
-            yield _sse("error", text=str(exc))
-            return
-        pending = _pending_clarification.pop(panel_id)
-        turn_state["kind"] = "clarification_resume"
-        turn_state["mode"] = (pending.get("step1") or {}).get("mode")
-        # Lineage (design-gate condition 4): the paused turn stored its own
-        # trace ref when it returned; this resume turn records it as parent.
-        turn_state["parent_ref"] = pending.get("trace_ref")
-        yield _sse("pipeline_stage", stage="analysis_mode_clarification",
-                   label="Continuing selected analysis…")
-        step1 = dict(pending["step1"])
-        original_prompt = step1.get("operational_notation") or pending.get("user_input") or ""
-        answered_prompt = (
-            f"{original_prompt}\n\n[User clarification]\n{user_input}"
-        ).strip()
-        step1["cleaned_prompt"] = answered_prompt
-        step1["operational_notation"] = answered_prompt
-        pr = dict(step1.get("pre_routing") or {})
-        pr["pending_clarification"] = None
-        pr["pending_clarification_stage"] = None
-        pr["completeness_gaps"] = []
-        pr["dispatch_announcement"] = compose_dispatch_announcement(
-            step1.get("mode") or "", answered_prompt,
-        )
-        pr["manual_clarification_answered"] = True
-        step1["pre_routing"] = pr
-        try:
-            with _conversation_turn_context(
-                panel_id,
-                paused_authority["conversation_tag"],
-                trace_dir=trace_dir,
-                exact_tag=True,
-            ):
-                yield from _run_pipeline_from_step2(
-                    step1,
-                    pending["config"],
-                    history,
-                    pending.get("user_input") or original_prompt,
-                    images=pending.get("images"),
-                    extra_context=pending.get("extra_context"),
-                    trace_dir=trace_dir,
-                    config_name=paused_authority["config_name"],
-                    conversation_tag=paused_authority["conversation_tag"],
-                    turn_state=turn_state,
-                    raw_user_input=pending.get("raw_user_input"),
-                )
-        finally:
-            if trace_dir:
-                try:
-                    from boot import compute_cost_summary as _ccs
-                    _ccs(trace_dir)
-                except Exception as _cs_exc:
-                    print(f"[cost-summary] post-stream computation failed: "
-                          f"{_cs_exc}", flush=True)
         return
 
     # --- Framework picker selection short-circuit ---
@@ -4389,156 +4300,36 @@ def _pipeline_stream_impl(user_input, history, panel_id="main", images=None, ext
                pending_clarification_stage=pre_routing.get("pending_clarification_stage"),
                label=f"Mode: {step1['mode']}{conf_tag} | Tier {tier}")
 
-    if (pre_routing.get("manual_override_applied")
-        and pre_routing.get("pending_clarification")):
+    if pre_routing.get("pending_clarification"):
         turn_state["kind"] = "clarification_pending"
         turn_state["status"] = "paused"
-        _pending_clarification[panel_id] = {
-            "source": "manual_mode_selection",
-            "step1": step1,
-            "config": config,
-            "history": history,
-            "user_input": user_input,
-            "raw_user_input": _raw_request,
-            "images": images,
-            "extra_context": extra_context,
-            **_capture_clarification_authority(
-                config_name=config_name,
+        try:
+            pending = _pause_clarification(
+                panel_id, step1, config, history, user_input,
+                raw_user_input=_raw_request, images=images,
+                extra_context=extra_context, config_name=config_name,
                 model_id=(endpoint.get("name") or endpoint.get("id")),
-                conversation_tag=conversation_tag,
-            ),
-            "pre_routing_stage": pre_routing.get("pending_clarification_stage"),
-            # This paused turn's own trace ref — the eventual resume turn
-            # records it as parent_trace_ref (design-gate condition 4).
-            "trace_ref": trace_ref_val,
-        }
-        yield _sse("pipeline_stage", stage="analysis_mode_elicitation",
-                   mode=step1["mode"],
-                   label="Missing input for selected analysis")
-        yield _sse("response", text=pre_routing["pending_clarification"])
+                conversation_tag=conversation_tag, trace_ref=trace_ref_val,
+            )
+        except Exception as exc:
+            turn_state["status"] = "error"
+            yield _sse("error", text=str(exc))
+            return
+        yield _sse("clarification_needed", **_public_clarification(pending))
         return
 
-    # --- Legacy direct fallback for unresolved clarification only ---------
-    # ``simple`` is an installed Gear-1 mode, not a placeholder. Routed
-    # direct-response turns must continue through Step 2 and the Gear-1
-    # executor so ``utility.classification``, the named configuration, and
-    # physical-call trace identity remain authoritative. Explicit ``/direct``
-    # still uses ``_direct_stream`` at its separate command boundary.
-    #
-    # The only compatibility fallback here is an unresolved clarification on
-    # a caller that cannot render the clarification surface. Let the direct
-    # model carry that question rather than returning an empty response.
-    fallback_to_direct = (
-        step1.get("mode") == "standard"
-        or pre_routing.get("pending_clarification")
-    )
-    if fallback_to_direct:
+    # Retain the existing legacy-placeholder fallback; unresolved canonical
+    # questions have already returned through their durable boundary above.
+    if step1.get("mode") == "standard":
         turn_state["kind"] = "direct"
-        print(
-            f"[pipeline-bypass] bypass_to_direct={pre_routing.get('bypass_to_direct_response')!r} "
-            f"step1_mode={step1.get('mode')!r} pending_clar={bool(pre_routing.get('pending_clarification'))} "
-            f"dispatched_mode={pre_routing.get('dispatched_mode_id')!r} "
-            f"clar_question={(pre_routing.get('pending_clarification') or '')[:120]!r}",
-            flush=True,
+        yield from _direct_stream(
+            user_input, history, images=images, panel_id=panel_id,
+            conversation_tag=conversation_tag,
+            risk_override=(extra_context or {}).get("risk_override"),
+            extra_context=extra_context, config_name=config_name,
+            turn_state=turn_state, raw_user_input=_raw_request,
         )
-        yield from _direct_stream(user_input, history, images=images,
-                                  panel_id=panel_id, conversation_tag=conversation_tag,
-                                  risk_override=(extra_context or {}).get("risk_override"),
-                                  extra_context=extra_context,
-                                  config_name=config_name,
-                                  turn_state=turn_state,
-                                  raw_user_input=_raw_request)
         return
-
-    # --- Phase 9: pre-routing pipeline question gate ---
-    # Stage 2 and Stage 3 questions ride the existing clarification panel.
-    # Stage 2 surfaces a disambiguation question (territory/mode unclear);
-    # Stage 3 surfaces a completeness question (mode picked but missing input).
-    pending_question = pre_routing.get("pending_clarification")
-    pending_stage = pre_routing.get("pending_clarification_stage")
-    if pending_question:
-        yield _sse("pipeline_stage", stage="clarification_generating",
-                    label=("Need a quick clarification before I can route this..."
-                           if pending_stage == "stage2"
-                           else "I need a bit more to run this analysis..."))
-
-        # Frame the question as a single-question list so the existing
-        # clarification panel renders it. The plain-language phrasing comes
-        # from the pipeline (Disambiguation Style Guide §5.3 / §5.8).
-        questions = [{"question": pending_question, "rationale": ""}]
-        if pending_stage == "stage3" and pre_routing.get("lighter_sibling_mode_id"):
-            questions[0]["lighter_sibling_mode_id"] = pre_routing["lighter_sibling_mode_id"]
-
-        turn_state["kind"] = "clarification_pending"
-        turn_state["status"] = "paused"
-        _pending_clarification[panel_id] = {
-            "step1": step1,
-            "config": config,
-            "history": history,
-            "user_input": user_input,
-            "raw_user_input": _raw_request,
-            "images": images,
-            "extra_context": extra_context,
-            **_capture_clarification_authority(
-                config_name=config_name,
-                model_id=(endpoint.get("name") or endpoint.get("id")),
-                conversation_tag=conversation_tag,
-            ),
-            "pre_routing_stage": pending_stage,
-            "trace_ref": trace_ref_val,
-        }
-
-        yield _sse("clarification_needed",
-                    tier=tier,
-                    mode=step1["mode"],
-                    questions=questions,
-                    pre_routing_stage=pending_stage,
-                    territory=pre_routing.get("territory"),
-                    completeness_gaps=pre_routing.get("completeness_gaps", []),
-                    label=("Quick clarification" if pending_stage == "stage2"
-                           else "Missing input"))
-        return  # Pipeline pauses here — resumed via /api/clarification
-
-    # --- Tier 2/3 fallback clarification gate (legacy path) ---
-    # Phase 9 — skip the legacy clarification path when the pre-routing
-    # pipeline has already dispatched a mode. In that case the tier value
-    # (defaulted to 2 per Decision C's default-on-ambiguity rule) is not a
-    # request for clarification, just the analytical-pipeline tier marker.
-    # Firing legacy clarification here was emitting a `clarification_needed`
-    # event that the plain-HTTP /chat/multipart endpoint can't handle,
-    # producing the silent "pipeline produced no response" failure.
-    already_dispatched = bool(pre_routing.get("dispatched_mode_id"))
-    if tier >= 2 and not already_dispatched:
-        yield _sse("pipeline_stage", stage="clarification_generating",
-                    label="Generating clarification questions…")
-        questions = _generate_clarification_questions(
-            step1, config, config_name=config_name)
-
-        # Store pending state for resumption
-        turn_state["kind"] = "clarification_pending"
-        turn_state["status"] = "paused"
-        _pending_clarification[panel_id] = {
-            "step1": step1,
-            "config": config,
-            "history": history,
-            "user_input": user_input,
-            "raw_user_input": _raw_request,
-            "images": images,
-            "extra_context": extra_context,
-            **_capture_clarification_authority(
-                config_name=config_name,
-                model_id=(endpoint.get("name") or endpoint.get("id")),
-                conversation_tag=conversation_tag,
-            ),
-            "trace_ref": trace_ref_val,
-        }
-
-        yield _sse("clarification_needed",
-                    tier=tier,
-                    mode=step1["mode"],
-                    questions=questions,
-                    label=f"Tier {tier} — clarification recommended")
-        return  # Pipeline pauses here — resumed via /api/clarification
 
     # --- Tier 1 + Stage 4 dispatch announcement ---
     # Phase 9 — emit the dispatch announcement (educational parenthetical)
@@ -7532,6 +7323,17 @@ def _surface_orphan_as_errored_chunk(payload: dict) -> bool:
     submission_id = payload.get("submission_id") or "unknown"
     tag           = _normalize_tag(payload.get("tag", ""))
 
+    # A question is an acknowledged outcome even if moving the original
+    # submission marker failed. Do not turn that saved pause into an orphan
+    # error, including after the clarification itself has completed.
+    with _conversation_lifecycle_lock(conversation_id):
+        from orchestrator.conversation_memory import load_conversation_json
+        envelope = load_conversation_json(conversation_id)
+        if submission_id != "unknown" and isinstance(envelope, dict):
+            if any(message.get("clarification_submission_id") == submission_id
+                   for message in envelope.get("messages", []) if isinstance(message, dict)):
+                return True
+
     failure_summary = (
         "Server interrupted before pipeline completed. Your submission was "
         "captured to disk and recovered on restart."
@@ -7668,7 +7470,7 @@ def _resolve_chunk_destination(output_destination: str) -> str:
 def _save_conversation_unlocked(user_input, ai_response, panel_id,
                                 is_new_session, tag="",
                                 output_destination="", trace_ref=None,
-                                model_id=None, turn_privacy=None):
+                                model_id=None, turn_privacy=None, save_id=None):
     """
     Three steps, all inline, immediately after every response:
 
@@ -7731,6 +7533,19 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
     # envelope's independent composer tag is deliberately not copied here.
     tag = artifact_tag
     chunk_dir = _resolve_chunk_destination(output_destination)
+    if save_id is not None:
+        if not re.fullmatch(r"[a-f0-9]{32}", save_id):
+            raise ValueError("Invalid clarification save identity")
+        saved_chunk_id = f"clarification-{save_id}"
+        saved_path = os.path.join(chunk_dir, saved_chunk_id + ".md")
+        if os.path.isfile(saved_path) and not os.path.islink(saved_path):
+            with open(saved_path, encoding="utf-8") as saved:
+                content = saved.read()
+            if (f"<!-- ora-conversation-id: {json.dumps(panel_id, ensure_ascii=False)} -->" in content
+                    and f"**User:**\n\n{user_input}\n\n**Assistant:**\n\n{ai_response}" in content
+                    and f"<!-- ora-turn-privacy: {json.dumps(turn_privacy)} -->" in content):
+                return saved_chunk_id
+            raise ValueError("Clarification save identity conflicts with its chunk")
     os.makedirs(CONVERSATIONS_RAW, exist_ok=True)
     os.makedirs(chunk_dir, exist_ok=True)
 
@@ -7821,6 +7636,9 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
     topic_slug = _topic_slug(user_input, ai_response)
     chunk_id   = f"session-{session_id}-pair-{pair_num:03d}"
     chunk_name = f"{chunk_id}_{date_str}_{time_str}_{topic_slug}.md"
+    if save_id is not None:
+        chunk_id = saved_chunk_id
+        chunk_name = saved_chunk_id + ".md"
     chunk_path = os.path.join(chunk_dir, chunk_name)
 
     # Phase 5.8: chunk YAML follows Schema §12 conversation chunk template.
@@ -7910,8 +7728,11 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
         f"**Assistant:**\n\n"
         f"{ai_response}\n"
     )
-    with open(chunk_path, "w", encoding="utf-8") as f:
-        f.write(chunk_content)
+    if save_id is not None:
+        rp.atomic_write_text(chunk_path, chunk_content)
+    else:
+        with open(chunk_path, "w", encoding="utf-8") as f:
+            f.write(chunk_content)
 
     # Stealth exchanges remain authoritative for direct Dialogue continuity
     # and protected deletion, but never enter persisted/global Conversation
@@ -8103,7 +7924,7 @@ def _save_conversation_unlocked(user_input, ai_response, panel_id,
 
 def _save_conversation(user_input, ai_response, panel_id, is_new_session,
                        tag="", output_destination="", trace_ref=None,
-                       model_id=None, turn_privacy=None):
+                       model_id=None, turn_privacy=None, save_id=None):
     """Lifecycle-serialized wrapper around the conversation artifact save."""
     with _conversation_lifecycle_lock(panel_id):
         if _is_conversation_deleted(panel_id):
@@ -8128,7 +7949,7 @@ def _save_conversation(user_input, ai_response, panel_id, is_new_session,
             user_input, ai_response, panel_id, is_new_session,
             effective_tag, output_destination=output_destination,
             trace_ref=trace_ref, model_id=model_id,
-            turn_privacy=turn_privacy,
+            turn_privacy=turn_privacy, save_id=save_id,
         )
 
 
@@ -8574,6 +8395,7 @@ def _invoke_pipeline_unlocked(user_input, history, panel_id, is_main, images=Non
     ep             = None
     trace_ref      = None
     process_invocation_state = None
+    clarification = None
 
     def _record_http_terminal(value, *, route, persisted, status_hint=None):
         """Best-effort trace of the exact plain-HTTP boundary value."""
@@ -8642,6 +8464,8 @@ def _invoke_pipeline_unlocked(user_input, history, panel_id, is_main, images=Non
                 t = d.get("type")
                 if t == "response":
                     final_response = d.get("text", "")
+                elif t == "clarification_needed":
+                    clarification = d
                 elif t == "framework_preflight_refusal":
                     framework_refusal = d.get("text", "")
                 elif t == "pipeline_stage":
@@ -8663,6 +8487,14 @@ def _invoke_pipeline_unlocked(user_input, history, panel_id, is_main, images=Non
             # boot it surfaces as an errored chunk via orphan recovery.
             failure_summary = f"pipeline crashed: {e}"
             print(f"[ERROR] _invoke_pipeline pipeline crash: {e}")
+
+        if clarification is not None:
+            if submission_id:
+                _finalize_pending_submission(submission_id)
+            return json.dumps({
+                "status": "clarification_pending", "conversation_id": panel_id,
+                "clarification": clarification,
+            })
 
         # A Framework refusal is a typed admission outcome, not assistant
         # prose. Do not route, save, or leave a pending submission behind.
@@ -20401,326 +20233,247 @@ def _refresh_clarification_dialogue_context(
         extra_context["contributor_bundle"] = contributor_bundle
     return history, extra_context or None
 
-@app.route("/api/clarification", methods=["POST"])
-def clarification_respond():
-    """Resume a paused pipeline with the user's clarification answers.
-
-    Expects JSON: {panel_id: str, answers: str}
-    Where answers is the user's free-text clarification response.
-    Returns an SSE stream continuing the pipeline from Step 2.
-    """
-    data = request.get_json(force=True)
-    panel_id = data.get("panel_id", "main")
-    answers = data.get("answers", "").strip()
-
-    pending = _pending_clarification.pop(panel_id, None)
-    if not pending:
-        return json.dumps({"error": "No pending clarification for this panel"}), 404
-    try:
-        paused_authority = _require_clarification_authority(pending)
-    except ValueError as exc:
-        return json.dumps({"error": str(exc)}), 409
-
-    def generate_unlocked(_resume_tag):
-        step1 = pending["step1"]
-        config = pending["config"]
-        user_input = pending["user_input"]
-
-        # Open a fresh per-resume trace, honouring stealth tag.
-        _resume_trace_dir = None
-        _resume_trace_ref = None
-        history, refreshed_extra_context = (
-            _refresh_clarification_dialogue_context(
-                panel_id, pending, _resume_tag,
-            )
+def _clarification_route(pending, answer, *, skip=False, context=None):
+    """Use the saved Phase-B question/selection, then recheck actual inputs."""
+    import copy
+    from boot import run_pre_routing_pipeline
+    step1 = copy.deepcopy(pending["step1"])
+    prior = step1.get("pre_routing") or {}
+    prompt = step1.get("operational_notation") or pending["user_input"]
+    enriched = f"{prompt}\n\n[User clarification]\n{answer}"
+    if skip:
+        # Skip authorizes a plain response using what is known, never an
+        # analytical claim that the missing material has become available.
+        route = {
+            "dispatched_mode_id": "simple", "dispatched_mode_ids": ["simple"],
+            "pending_clarification": None, "pending_clarification_stage": None,
+            "bypass_to_direct_response": False, "clarification_skipped": True,
+        }
+        enriched = f"{prompt}\n\n[Clarification skipped: respond using only the available information.]"
+    elif prior.get("pending_clarification_stage") == "stage3":
+        selected = prior.get("dispatched_mode_ids") or [step1["mode"]]
+        checks = {mode: stage3_input_completeness_check(mode, enriched, context or {})
+                  for mode in selected}
+        incomplete = next((item for item in checks.values() if not item["inputs_complete"]), None)
+        route = dict(prior)
+        route.update({"stage3_outputs": checks,
+                      "stage3_output": incomplete or checks[selected[0]],
+                      "pending_clarification": None,
+                      "pending_clarification_stage": None,
+                      "completeness_gaps": [],
+                      "manual_clarification_answered": bool(prior.get("manual_override_applied"))})
+        if incomplete:
+            question = incomplete["completeness_question"]
+            if incomplete.get("graceful_degradation_offer"):
+                question += "\n\n" + incomplete["graceful_degradation_offer"]
+            route.update({"pending_clarification": question,
+                          "pending_clarification_stage": "stage3",
+                          "completeness_gaps": incomplete.get("missing_fields", [])})
+    else:
+        route = run_pre_routing_pipeline(
+            prompt, context=context or {}, disambiguation_answer=answer,
+            prior_routing=prior,
         )
+    step1["pre_routing"] = route
+    step1["mode"] = route.get("dispatched_mode_id") or (
+        "simple" if route.get("bypass_to_direct_response") else step1.get("mode"))
+    step1["cleaned_prompt"] = enriched
+    step1["operational_notation"] = enriched
+    return step1
+
+
+def _continue_clarification(pending, answer, *, skip=False):
+    """Run under the lifecycle lock; checkpoint output before acknowledged save."""
+    from orchestrator.conversation_memory import load_conversation_json, update_pending_clarification
+    panel_id = pending["conversation_id"]
+    identity = pending["pending_id"]
+    authority = _require_clarification_authority(pending)
+    tag = authority["conversation_tag"]
+    history, extra_context = _refresh_clarification_dialogue_context(panel_id, pending, tag)
+    action = "skip" if skip else "answer"
+    if pending.get("action") and (pending["action"] != action or pending.get("answer") != answer):
+        raise ValueError("This clarification was already claimed with a different answer.")
+    if pending.get("state") == "running":
+        raise ValueError("The prior clarification execution was interrupted; its result is unavailable.")
+    if "result" not in pending:
+        if _clarification_snapshot(authority["config_name"]) != pending["runtime_snapshot"]:
+            raise ValueError("Configuration, model or routing changed; restore the paused settings before answering.")
+        step1 = _clarification_route(pending, answer, skip=skip, context=extra_context)
+        question = (step1.get("pre_routing") or {}).get("pending_clarification")
+        if question:
+            replacement = {**pending, "pending_id": uuid.uuid4().hex,
+                           "step1": step1, "question": question,
+                           "message_count": pending["message_count"] + 2,
+                           "state": "awaiting"}
+            _write_pending_clarification(replacement, expected_id=identity,
+                                         exchange=(answer, question))
+            yield _sse("clarification_needed", **_public_clarification(replacement))
+            return
+        pending.update({"action": action, "answer": answer, "state": "running"})
         try:
-            from boot import PIPELINE_TRACE_AVAILABLE as _pta_r
-            if _pta_r:
-                from orchestrator import pipeline_trace as _pt_r
-                _resume_trace_dir = _pt_r.start_trace(
-                    conversation_id=panel_id,
-                    raw_input=f"[clarification-resume] {user_input}",
-                    ambiguity_mode="assume",
-                    stealth=(_resume_tag == "stealth"),
-                    conversation_tag=_resume_tag,
-                )
-                _resume_trace_ref = _pt_r.trace_ref_for_dir(_resume_trace_dir)
-        except Exception as _trace_exc:
-            print(f"[server trace] clarification-resume start_trace skipped: {_trace_exc}", flush=True)
-
-        # Trace-manifest state for this resume turn. The paused turn stored
-        # its own trace ref when it returned; it becomes this turn's parent
-        # (design-gate condition 4).
-        turn_state = {"trace_dir": _resume_trace_dir,
-                      "kind": "clarification_resume", "status": None,
-                      "mode": step1.get("mode"), "gear": None,
-                      "parent_ref": pending.get("trace_ref")}
-
-        yield _sse("start", endpoint="resumed", pipeline=True)
-        yield _sse("pipeline_stage", stage="step2_context",
-                    label="Assembling context with clarification…")
-
-        final_response = [None]
-        active_mode = [step1.get("mode")]
-        active_gear = [None]
-
-        try:
-            for chunk in _run_pipeline_from_step2(step1, config, history, user_input, answers,
-                                                  images=pending.get("images"),
-                                                  extra_context=refreshed_extra_context,
-                                                  trace_dir=_resume_trace_dir,
-                                                  config_name=paused_authority["config_name"],
-                                                  conversation_tag=_resume_tag,
-                                                  turn_state=turn_state,
-                                                  raw_user_input=pending.get(
-                                                      "raw_user_input",
-                                                  )):
-                yield chunk
-                try:
-                    d = json.loads(chunk[6:])
-                    if d.get("type") == "response":
-                        final_response[0] = d.get("text", "")
-                    elif d.get("type") == "pipeline_stage":
-                        if d.get("gear"):
-                            active_gear[0] = d["gear"]
-                except Exception:
-                    pass
-        except GeneratorExit:
+            _write_pending_clarification(pending, expected_id=identity)
+        except Exception:
+            pending["state"] = "awaiting"
             raise
+        trace_dir = None
+        trace_ref = None
+        turn_state = {"kind": "clarification_resume", "status": None,
+                      "mode": step1.get("mode"), "gear": None,
+                      "parent_ref": pending.get("trace_ref"), "trace_dir": None}
+        try:
+            from boot import PIPELINE_TRACE_AVAILABLE
+            if PIPELINE_TRACE_AVAILABLE:
+                from orchestrator import pipeline_trace
+                trace_dir = pipeline_trace.start_trace(
+                    conversation_id=panel_id, raw_input=answer,
+                    ambiguity_mode="assume", stealth=(tag == "stealth"), conversation_tag=tag)
+                trace_ref = pipeline_trace.trace_ref_for_dir(trace_dir)
+                turn_state["trace_dir"] = trace_dir
+            final_response = None
+            with _conversation_turn_context(panel_id, tag, trace_dir=trace_dir, exact_tag=True):
+                for chunk in _run_pipeline_from_step2(
+                    step1, load_config(), history, pending["user_input"],
+                    images=pending.get("images"), extra_context=extra_context,
+                    config_name=authority["config_name"], conversation_tag=tag,
+                    trace_dir=trace_dir, turn_state=turn_state,
+                    raw_user_input=pending.get("raw_user_input"),
+                ):
+                    event = json.loads(chunk[6:])
+                    if event.get("type") == "response":
+                        final_response = event.get("text")
+                    elif event.get("type") == "error":
+                        raise RuntimeError(event.get("text") or "Clarification execution failed")
+            if final_response is None:
+                raise RuntimeError("Clarification execution produced no response")
+            try:
+                from pipeline_health import collect_and_clear, format_warnings_as_chat_note
+                final_response = format_warnings_as_chat_note(collect_and_clear()) + final_response
+            except Exception as exc:
+                print(f"[clarification] warning presentation failed: {exc}", flush=True)
+            pending.update({"state": "ready", "result": final_response,
+                            "step1": step1,
+                            "resume_trace_ref": trace_ref,
+                            "resumed_input": "[Clarification skipped]" if skip else answer,
+                            "extra_context": extra_context})
         except BaseException:
-            turn_state["status"] = "error"
+            # No successful terminal result: make the same request retryable.
+            pending["state"] = "awaiting"
+            _write_pending_clarification(pending, expected_id=identity)
             raise
         finally:
-            # Q2 (design-gate): the resume path previously never computed a
-            # cost summary — same best-effort behavior as _pipeline_stream.
-            if _resume_trace_dir:
+            if trace_dir:
                 try:
-                    from boot import compute_cost_summary as _ccs_r
-                    _ccs_r(_resume_trace_dir)
-                except Exception as _cs_exc:
-                    print(f"[cost-summary] clarification-resume computation "
-                          f"failed: {_cs_exc}", flush=True)
-            try:
-                from orchestrator import pipeline_trace as _pt_fin_r
-                _pt_fin_r.finalize_manifest(
-                    _resume_trace_dir, kind=turn_state["kind"],
-                    status_hint=turn_state["status"],
-                    mode=turn_state["mode"], gear=turn_state["gear"],
-                    parent_trace_ref=turn_state["parent_ref"])
-            except Exception as _fin_exc:
-                print(f"[server trace] clarification-resume manifest "
-                      f"finalize skipped: {_fin_exc}", flush=True)
+                    from boot import compute_cost_summary
+                    from orchestrator import pipeline_trace
+                    compute_cost_summary(trace_dir)
+                    pipeline_trace.finalize_manifest(
+                        trace_dir, kind=turn_state["kind"], status_hint=turn_state["status"],
+                        mode=turn_state["mode"], gear=turn_state["gear"],
+                        parent_trace_ref=turn_state["parent_ref"])
+                except Exception as exc:
+                    print(f"[clarification] trace finalization failed: {exc}", flush=True)
+    # A retry begins here when generation succeeded but a later save failed.
+    _write_pending_clarification(pending, expected_id=identity)
+    text = pending["result"]
+    user_input = pending["resumed_input"]
+    chunk_id = pending.get("chunk_id")
+    if not chunk_id:
+        chunk_id = _save_conversation(
+            user_input, text, panel_id, False, tag,
+            trace_ref=pending.get("resume_trace_ref"),
+            model_id=authority["model_id"], turn_privacy=authority["turn_privacy"],
+            save_id=identity)
+        if not chunk_id:
+            raise RuntimeError("Clarification chunk persistence failed; retry this item.")
+        pending["chunk_id"] = chunk_id
+        _write_pending_clarification(pending, expected_id=identity)
+    acknowledged = _turn_envelope_acknowledged(
+        panel_id, pending["message_count"], user_input, text, authority["turn_privacy"], chunk_id)
+    if not acknowledged:
+        acknowledged = bool(_persist_turn_spatial_state_unlocked(
+            panel_id, user_input, text, pending.get("extra_context"), tag,
+            trace_ref=pending.get("resume_trace_ref"), chunk_id=chunk_id,
+            turn_privacy=authority["turn_privacy"]))
+        if not acknowledged:
+            acknowledged = _turn_envelope_acknowledged(
+                panel_id, pending["message_count"], user_input, text, authority["turn_privacy"], chunk_id)
+    if not acknowledged:
+        raise RuntimeError("Clarification envelope persistence failed; retry this item.")
+    if _is_conversation_deleted(panel_id):
+        raise ValueError("Conversation was permanently deleted.")
+    if not update_pending_clarification(panel_id, None, expected_id=identity):
+        raise RuntimeError("Clarification completion persistence failed; retry this item.")
+    _pending_clarification.pop(panel_id, None)
+    _bridge_state[panel_id] = {
+        "current_topic": pending["user_input"],
+        "recent_messages": (history[-4:] + [
+            {"role": "user", "content": user_input, "turn_privacy": authority["turn_privacy"]},
+            {"role": "assistant", "content": text, "turn_privacy": authority["turn_privacy"]}])[-5:],
+        "active_mode": pending["step1"].get("mode"), "pipeline_stage": "complete",
+        "updated_at": time.time(),
+    }
+    yield _sse("response", text=text)
+    yield _sse("done", conversation_id=panel_id, chunk_id=chunk_id)
 
-        if final_response[0] is not None:
-            is_new_session = len(history) == 0
-            chunk_id = _save_conversation(
-                user_input, final_response[0], panel_id, is_new_session,
-                _resume_tag, trace_ref=_resume_trace_ref,
-                model_id=paused_authority["model_id"],
-                turn_privacy=paused_authority["turn_privacy"],
-            )
-            if chunk_id:
-                threading.Thread(
-                    target=_persist_turn_spatial_state,
-                    args=(panel_id, user_input, final_response[0],
-                          refreshed_extra_context, _resume_tag),
-                    kwargs={
-                        "trace_ref": _resume_trace_ref,
-                        "chunk_id": chunk_id,
-                        "turn_privacy": paused_authority["turn_privacy"],
-                    },
-                    daemon=True,
-                ).start()
 
-            _bridge_state[panel_id] = {
-                "current_topic": user_input,
-                "recent_messages": (list(history[-4:]) + [
-                    {
-                        "role": "user", "content": user_input,
-                        "turn_privacy": paused_authority["turn_privacy"],
-                        "chunk_id": chunk_id,
-                    },
-                    {
-                        "role": "assistant", "content": final_response[0],
-                        "turn_privacy": paused_authority["turn_privacy"],
-                        "chunk_id": chunk_id,
-                    },
-                ])[-5:],
-                "active_mode": active_mode[0],
-                "active_gear": active_gear[0],
-                "pipeline_stage": "complete",
-                "updated_at": time.time(),
-            }
-
-        _pipeline_state.update({"stage": None, "label": "", "active": False})
-        yield _sse("done")
+def _clarification_response(*, skip=False):
+    data = request.get_json(force=True)
+    if not isinstance(data, dict):
+        return _json_response({"error": "Expected a clarification object"}, status=400)
+    panel_id = data.get("conversation_id")
+    identity = data.get("pending_id")
+    answer = data.get("answers", "")
+    if (not isinstance(panel_id, str) or not _valid_live_conversation_id(panel_id)
+            or data.get("panel_id", panel_id) != panel_id
+            or not isinstance(identity, str) or not identity
+            or not isinstance(answer, str) or (not skip and not answer.strip())):
+        return _json_response({"error": "Exact Dialogue, pending identity and answer are required"}, status=400)
 
     def generate():
         with _conversation_lifecycle_lock(panel_id):
-            if _is_conversation_deleted(panel_id):
-                yield _sse("error", text="Conversation was permanently deleted.")
-                return
-            resolved_tag = paused_authority["conversation_tag"]
-            with _conversation_turn_context(
-                panel_id, resolved_tag, exact_tag=True,
-            ):
-                yield from generate_unlocked(resolved_tag)
-
-    return Response(stream_with_context(generate()),
-                    mimetype="text/event-stream",
+            try:
+                if _is_conversation_deleted(panel_id) or _is_conversation_closed(panel_id):
+                    raise ValueError("Conversation was closed or permanently deleted.")
+                pending = _load_pending_clarification(panel_id)
+                if not pending or pending.get("pending_id") != identity:
+                    raise ValueError("Clarification identity is stale; reload the Dialogue.")
+                from orchestrator.conversation_memory import load_conversation_json
+                envelope = load_conversation_json(panel_id)
+                count = len(envelope["messages"])
+                expected = pending["message_count"]
+                if count != expected and not (pending.get("result") is not None and count == expected + 2):
+                    raise ValueError("The paused Dialogue turn changed; reload the Dialogue.")
+                yield from _continue_clarification(pending, answer, skip=skip)
+            except Exception as exc:
+                yield _sse("error", text=str(exc), retryable=True)
+            finally:
+                _pipeline_state.update({"stage": None, "label": "", "active": False})
+    return Response(stream_with_context(generate()), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.route("/api/clarification", methods=["POST"])
+def clarification_respond():
+    """Answer the exact pending question; return success after durable save."""
+    return _clarification_response()
 
 
 @app.route("/api/clarification/skip", methods=["POST"])
 def clarification_skip():
-    """Skip clarification and proceed with Tier 1 behavior."""
-    data = request.get_json(force=True)
-    panel_id = data.get("panel_id", "main")
-
-    pending = _pending_clarification.pop(panel_id, None)
-    if not pending:
-        return json.dumps({"error": "No pending clarification for this panel"}), 404
-    try:
-        paused_authority = _require_clarification_authority(pending)
-    except ValueError as exc:
-        return json.dumps({"error": str(exc)}), 409
-
-    def generate_unlocked(_skip_tag):
-        step1 = pending["step1"]
-        config = pending["config"]
-        user_input = pending["user_input"]
-
-        # Open a fresh per-skip trace, honouring stealth tag.
-        _skip_trace_dir = None
-        _skip_trace_ref = None
-        history, refreshed_extra_context = (
-            _refresh_clarification_dialogue_context(
-                panel_id, pending, _skip_tag,
-            )
-        )
-        try:
-            from boot import PIPELINE_TRACE_AVAILABLE as _pta_s
-            if _pta_s:
-                from orchestrator import pipeline_trace as _pt_s
-                _skip_trace_dir = _pt_s.start_trace(
-                    conversation_id=panel_id,
-                    raw_input=f"[clarification-skip] {user_input}",
-                    ambiguity_mode="assume",
-                    stealth=(_skip_tag == "stealth"),
-                    conversation_tag=_skip_tag,
-                )
-                _skip_trace_ref = _pt_s.trace_ref_for_dir(_skip_trace_dir)
-        except Exception as _trace_exc:
-            print(f"[server trace] clarification-skip start_trace skipped: {_trace_exc}", flush=True)
-
-        # Trace-manifest state — same lineage semantics as the resume
-        # endpoint (a skip is a resume without answers).
-        turn_state = {"trace_dir": _skip_trace_dir,
-                      "kind": "clarification_resume", "status": None,
-                      "mode": step1.get("mode"), "gear": None,
-                      "parent_ref": pending.get("trace_ref")}
-
-        yield _sse("start", endpoint="resumed", pipeline=True)
-        yield _sse("pipeline_stage", stage="step2_context",
-                    label="Assembling context (clarification skipped)…")
-
-        final_response = [None]
-        try:
-            for chunk in _run_pipeline_from_step2(step1, config, history, user_input,
-                                                  images=pending.get("images"),
-                                                  extra_context=refreshed_extra_context,
-                                                  trace_dir=_skip_trace_dir,
-                                                  config_name=paused_authority["config_name"],
-                                                  conversation_tag=_skip_tag,
-                                                  turn_state=turn_state,
-                                                  raw_user_input=pending.get(
-                                                      "raw_user_input",
-                                                  )):
-                yield chunk
-                try:
-                    d = json.loads(chunk[6:])
-                    if d.get("type") == "response":
-                        final_response[0] = d.get("text", "")
-                except Exception:
-                    pass
-        except GeneratorExit:
-            raise
-        except BaseException:
-            turn_state["status"] = "error"
-            raise
-        finally:
-            # Q2 (design-gate): best-effort cost summary, as on the
-            # resume endpoint and _pipeline_stream.
-            if _skip_trace_dir:
-                try:
-                    from boot import compute_cost_summary as _ccs_s
-                    _ccs_s(_skip_trace_dir)
-                except Exception as _cs_exc:
-                    print(f"[cost-summary] clarification-skip computation "
-                          f"failed: {_cs_exc}", flush=True)
-            try:
-                from orchestrator import pipeline_trace as _pt_fin_s
-                _pt_fin_s.finalize_manifest(
-                    _skip_trace_dir, kind=turn_state["kind"],
-                    status_hint=turn_state["status"],
-                    mode=turn_state["mode"], gear=turn_state["gear"],
-                    parent_trace_ref=turn_state["parent_ref"])
-            except Exception as _fin_exc:
-                print(f"[server trace] clarification-skip manifest "
-                      f"finalize skipped: {_fin_exc}", flush=True)
-
-        if final_response[0] is not None:
-            chunk_id = _save_conversation(
-                user_input, final_response[0], panel_id, len(history) == 0,
-                _skip_tag, trace_ref=_skip_trace_ref,
-                model_id=paused_authority["model_id"],
-                turn_privacy=paused_authority["turn_privacy"],
-            )
-            if chunk_id:
-                threading.Thread(
-                    target=_persist_turn_spatial_state,
-                    args=(panel_id, user_input, final_response[0],
-                          refreshed_extra_context, _skip_tag),
-                    kwargs={
-                        "trace_ref": _skip_trace_ref,
-                        "chunk_id": chunk_id,
-                        "turn_privacy": paused_authority["turn_privacy"],
-                    },
-                    daemon=True,
-                ).start()
-
-        _pipeline_state.update({"stage": None, "label": "", "active": False})
-        yield _sse("done")
-
-    def generate():
-        with _conversation_lifecycle_lock(panel_id):
-            if _is_conversation_deleted(panel_id):
-                yield _sse("error", text="Conversation was permanently deleted.")
-                return
-            resolved_tag = paused_authority["conversation_tag"]
-            with _conversation_turn_context(
-                panel_id, resolved_tag, exact_tag=True,
-            ):
-                yield from generate_unlocked(resolved_tag)
-
-    return Response(stream_with_context(generate()),
-                    mimetype="text/event-stream",
-                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    """Skip the exact question and use the canonical plain-response mode."""
+    return _clarification_response(skip=True)
 
 
 @app.route("/api/clarification/pending")
 def clarification_pending():
-    """Check if a panel has pending clarification."""
-    panel_id = request.args.get("panel_id", "main")
-    pending = _pending_clarification.get(panel_id)
-    if pending:
-        return json.dumps({
-            "pending": True,
-            "mode": pending["step1"].get("mode"),
-            "tier": pending["step1"].get("triage_tier"),
-        })
-    return json.dumps({"pending": False})
+    panel_id = request.args.get("conversation_id") or request.args.get("panel_id", "main")
+    if not _valid_live_conversation_id(panel_id):
+        return _json_response({"error": "invalid conversation_id"}, status=400)
+    with _conversation_lifecycle_lock(panel_id):
+        if _is_conversation_deleted(panel_id):
+            return _json_response({"error": "Conversation was permanently deleted"}, status=410)
+        pending = _load_pending_clarification(panel_id)
+        return _json_response(_public_clarification(pending) if pending else {"pending": False})
 
 
 # ── capability slot dispatch ─────────────────────────────────────────────────

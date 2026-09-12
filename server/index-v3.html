@@ -968,6 +968,19 @@
 
     <div class="pane output-pane has-content">
 
+      <form class="clarification-form" id="clarificationForm" hidden
+            aria-label="Clarification" aria-describedby="clarificationStatus">
+        <strong>One clarification before continuing</strong>
+        <label id="clarificationQuestion" for="clarificationAnswer"></label>
+        <textarea id="clarificationAnswer" rows="3"
+                  placeholder="Your answer" aria-labelledby="clarificationQuestion"></textarea>
+        <div class="clarification-form__actions">
+          <button type="submit" id="clarificationAnswerButton">Answer</button>
+          <button type="button" id="clarificationSkipButton">Skip</button>
+        </div>
+        <p id="clarificationStatus" role="status" aria-live="polite"></p>
+      </form>
+
       <!-- V3 Input Handling Phase 4 — framework picker dropdown.
            Anchored to the top of this output pane, expanding downward.
            Hidden by default; opened by the framework toolbar button via
@@ -2268,6 +2281,211 @@
 
   const mainPipelineSubmissionsInFlight = [];
 
+  // Clarification is bound to the saved Dialogue and exact pending question.
+  // Keep drafts in memory only; the server owns recovery and acknowledgement.
+  const clarificationForm = document.getElementById('clarificationForm');
+  const clarificationQuestion = document.getElementById('clarificationQuestion');
+  const clarificationAnswer = document.getElementById('clarificationAnswer');
+  const clarificationAnswerButton = document.getElementById('clarificationAnswerButton');
+  const clarificationSkipButton = document.getElementById('clarificationSkipButton');
+  const clarificationStatus = document.getElementById('clarificationStatus');
+  const pendingClarifications = new Map();
+  let clarificationRefreshRevision = 0;
+  let renderedClarificationId = null;
+
+  const renderClarification = () => {
+    const pending = pendingClarifications.get(currentConversationId());
+    const blocked = !!inquiryMutationBlockMessage();
+    clarificationForm.hidden = !pending;
+    if (!pending) {
+      renderedClarificationId = null;
+      clarificationAnswer.value = '';
+      return;
+    }
+    clarificationQuestion.textContent = pending.question;
+    if (renderedClarificationId !== pending.pending_id) {
+      clarificationAnswer.value = pending.answer;
+      renderedClarificationId = pending.pending_id;
+    }
+    clarificationAnswer.disabled = pending.busy || blocked;
+    clarificationAnswerButton.disabled = pending.busy || blocked || !pending.answer.trim();
+    clarificationSkipButton.disabled = pending.busy || blocked;
+    clarificationForm.setAttribute('aria-busy', pending.busy ? 'true' : 'false');
+    clarificationStatus.textContent = pending.status || (blocked
+      ? inquiryMutationBlockMessage()
+      : 'Answer this question, or skip it and let Ora continue with the available information.');
+  };
+
+  const acceptClarification = (data) => {
+    if (!data || !data.pending_id || !data.conversation_id || !data.panel_id) return false;
+    const questions = Array.isArray(data.questions) ? data.questions : [];
+    const question = data.question || questions.map((item) => (
+      typeof item === 'string' ? item : (item && item.question) || ''
+    )).filter(Boolean).join('\n\n');
+    if (!question) return false;
+    const previous = pendingClarifications.get(data.conversation_id);
+    const sameQuestion = previous && previous.pending_id === data.pending_id;
+    pendingClarifications.set(data.conversation_id, {
+      panel_id: data.panel_id,
+      conversation_id: data.conversation_id,
+      pending_id: data.pending_id,
+      question,
+      answer: sameQuestion ? previous.answer : '',
+      busy: sameQuestion ? previous.busy : false,
+      status: sameQuestion ? previous.status : '',
+    });
+    clarificationRefreshRevision += 1;
+    renderClarification();
+    return true;
+  };
+
+  const refreshClarification = async () => {
+    const conversationId = currentConversationId();
+    const revision = ++clarificationRefreshRevision;
+    renderClarification();
+    if (!conversationId || inquiryMutationBlockMessage()) return;
+    try {
+      const query = new URLSearchParams({
+        panel_id: conversationId, conversation_id: conversationId,
+      });
+      const response = await fetch('/api/clarification/pending?' + query);
+      if (!response.ok) throw new Error('Could not check the pending clarification.');
+      const data = await response.json();
+      if (revision !== clarificationRefreshRevision
+          || conversationId !== currentConversationId()) return;
+      if (data.pending) {
+        if (!acceptClarification(data)) throw new Error('The pending question could not be loaded.');
+      } else {
+        pendingClarifications.delete(conversationId);
+        renderClarification();
+      }
+    } catch (error) {
+      if (revision !== clarificationRefreshRevision
+          || conversationId !== currentConversationId()) return;
+      console.warn('[clarification]', error);
+      const pending = pendingClarifications.get(conversationId);
+      if (pending) {
+        pending.status = error.message + ' Your answer is kept; use Answer or Skip to retry.';
+        renderClarification();
+      }
+    }
+  };
+
+  const submitClarification = async (skip) => {
+    const pending = pendingClarifications.get(currentConversationId());
+    if (!pending || pending.busy || inquiryMutationBlockMessage()
+        || (!skip && !pending.answer.trim())) return;
+    pending.busy = true;
+    pending.status = 'Continuing… Waiting for Ora to save the result.';
+    clarificationRefreshRevision += 1;
+    renderClarification();
+    let acknowledged = false;
+    let reader = null;
+    try {
+      const body = {
+        panel_id: pending.panel_id,
+        conversation_id: pending.conversation_id,
+        pending_id: pending.pending_id,
+      };
+      if (!skip) body.answers = pending.answer;
+      const response = await fetch(skip ? '/api/clarification/skip' : '/api/clarification', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        let message = 'Clarification could not continue (HTTP ' + response.status + ').';
+        try {
+          const failure = await response.json();
+          message = failure.error || failure.message || message;
+        } catch (_) {}
+        throw new Error(message);
+      }
+      if (!response.body) throw new Error('The clarification response was interrupted.');
+      reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      const consume = (frame) => {
+        const data = frame.split('\n').filter((line) => line.startsWith('data:'))
+          .map((line) => line.slice(5).trimStart()).join('\n');
+        if (!data) return;
+        const event = JSON.parse(data);
+        if (event.type === 'error') throw new Error(event.text || 'Clarification failed.');
+        if (event.type === 'clarification_needed') {
+          if (event.conversation_id !== pending.conversation_id
+              || event.panel_id !== pending.panel_id || !acceptClarification(event)) {
+            throw new Error('The next clarification did not match this Dialogue.');
+          }
+          acknowledged = true;
+        } else if (event.type === 'done') {
+          acknowledged = true;
+          const current = pendingClarifications.get(pending.conversation_id);
+          if (current && current.pending_id === pending.pending_id) {
+            pendingClarifications.delete(pending.conversation_id);
+          }
+        }
+        // Response text is read from the saved envelope after acknowledgement.
+      };
+      while (true) {
+        const chunk = await reader.read();
+        buffer += decoder.decode(chunk.value || new Uint8Array(), { stream: !chunk.done });
+        buffer = buffer.replace(/\r\n/g, '\n');
+        let boundary;
+        while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+          consume(buffer.slice(0, boundary));
+          buffer = buffer.slice(boundary + 2);
+        }
+        if (chunk.done || acknowledged) break;
+      }
+      if (!acknowledged && buffer.trim()) consume(buffer);
+      if (!acknowledged) throw new Error('The response ended before Ora confirmed the save.');
+      refreshSidebarAfterSubmit();
+      if (currentConversationId() === pending.conversation_id
+          && !inquiryMutationBlockMessage() && window.OraConversation) {
+        await window.OraConversation.load(pending.conversation_id);
+      }
+    } catch (error) {
+      const current = pendingClarifications.get(pending.conversation_id);
+      if (current && current.pending_id === pending.pending_id) {
+        current.status = (error.message || String(error))
+          + ' Your answer is kept; use Answer or Skip to retry.';
+      }
+      console.warn('[clarification]', error);
+      if (currentConversationId() === pending.conversation_id) await refreshClarification();
+    } finally {
+      if (reader) {
+        try { await reader.cancel(); } catch (_) {}
+        reader.releaseLock();
+      }
+      const current = pendingClarifications.get(pending.conversation_id);
+      if (current && current.pending_id === pending.pending_id) current.busy = false;
+      renderClarification();
+    }
+  };
+
+  clarificationAnswer.addEventListener('input', () => {
+    const pending = pendingClarifications.get(currentConversationId());
+    if (pending && pending.pending_id === renderedClarificationId) {
+      pending.answer = clarificationAnswer.value;
+      renderClarification();
+    }
+  });
+  clarificationForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitClarification(false);
+  });
+  clarificationSkipButton.addEventListener('click', () => submitClarification(true));
+  document.addEventListener('ora:conversation-tag-changed', refreshClarification);
+  document.addEventListener('ora:fresh-conversation-started', refreshClarification);
+  document.addEventListener('ora:conversation-loading-state', renderClarification);
+  document.addEventListener('ora:conversation-lifecycle-state', renderClarification);
+  document.addEventListener('ora:conversation-lifecycle-completed', (event) => {
+    const detail = event.detail || {};
+    pendingClarifications.delete(detail.conversation_id);
+    clarificationRefreshRevision += 1;
+    renderClarification();
+  });
+  refreshClarification();
+
   const _visualSnapshotIdentity = (snapshot) => {
     if (!snapshot) return 'none';
     try {
@@ -2338,6 +2556,11 @@
   // fresh controls without changing the turn already being prepared.
   const _reserveInquiryComposition = (text, displayText = text,
     carriedVisualSnapshot = null, visualPreference = null) => {
+    if (pendingClarifications.has(currentConversationId())) {
+      renderClarification();
+      clarificationAnswer.focus();
+      return null;
+    }
     const composition = {
       conversationId: currentConversationId(),
       tag: currentTag(),
@@ -2691,6 +2914,7 @@
       // by the validation 400 path. Either way, surface it locally so
       // the user knows the submit didn't go through.
       console.warn('[v3 submit] HTTP', resp.status);
+      if (currentConversationId() === submissionConversationId) await refreshClarification();
       refreshSidebarAfterSubmit();
       return;
     }
@@ -2717,6 +2941,9 @@
     if (payload && payload.status === 'errored') {
       console.warn('[v3 submit] pipeline errored:',
                    payload.failure_summary || '(no summary)');
+    }
+    if (payload && payload.status === 'clarification_pending') {
+      acceptClarification(payload.clarification);
     }
     refreshSidebarAfterSubmit();
     } finally {
