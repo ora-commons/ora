@@ -623,6 +623,7 @@ def _collect_elicitation_items() -> list:
         return items
 
     try:
+        from conversation_memory import read_conversation_history_envelope
         from framework_elicitation import is_continuation
     except ImportError:
         return items
@@ -632,10 +633,10 @@ def _collect_elicitation_items() -> list:
         env_path = os.path.join(conv_dir, "conversation.json")
         if not os.path.isfile(env_path):
             continue
-        try:
-            with open(env_path) as f:
-                env = json.load(f)
-        except (OSError, json.JSONDecodeError):
+        # Share the stat-keyed parsed envelope with Dialogue/Library reads.
+        # This reader does not normalize or rewrite the stored conversation.
+        env = read_conversation_history_envelope(entry, sessions_root=SESSIONS_ROOT)
+        if env is None:
             continue
         messages = env.get("messages") or []
         ctx = is_continuation(messages)

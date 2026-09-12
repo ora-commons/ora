@@ -18,6 +18,7 @@
  *  11. The form names the watch roots a file selector must sit inside.
  *  12. Cards and activation review show only server-provided routine facts.
  *  13. An Overview handoff opens Scheduled and focuses the exact Trigger.
+ *  14. Collapsed Oversight skips only Operating; expansion refreshes it once.
  */
 
 'use strict';
@@ -102,13 +103,13 @@ const PERSONAS = {
 
 function sidebarMarkup() {
   return `
-  <aside class="left-sidebar"><div class="sidebar-accordion">
-    <div class="sidebar-supergroup" data-super="conversations">
+  <aside class="left-sidebar"><div class="sidebar-accordion" data-active-super="conversations">
+    <div class="sidebar-supergroup" data-super="conversations" data-expanded="true">
       <button class="sidebar-supergroup-header" data-super-toggle="conversations">
         <span class="sidebar-supergroup-arrow">&#9656;</span></button>
       <div class="sidebar-supergroup-body"></div>
     </div>
-    <div class="sidebar-supergroup" data-super="processes">
+    <div class="sidebar-supergroup" data-super="processes" data-expanded="false">
       <button class="sidebar-supergroup-header" data-super-toggle="processes">
         <span class="sidebar-supergroup-arrow">&#9656;</span>
         <span class="sidebar-supergroup-count" id="sidebarProcessesCount">0</span>
@@ -143,6 +144,8 @@ module.exports = {
     const tick = () => new Promise((r) => setTimeout(r, 0));
 
     const posts = [];
+    const gets = [];
+    const countGets = (url) => gets.filter(value => value === url).length;
     const jsonResponse = (obj, ok) =>
       Promise.resolve({ ok: ok !== false, json: () => Promise.resolve(obj) });
 
@@ -157,10 +160,11 @@ module.exports = {
     const savedAlert  = win.alert;
     const savedOraSidebar = win.OraSidebar;
     let sidebarExpanded = false;
+    let pollTick;
 
     // The module installs a 12s poll on load. Neutralise the scheduler for
     // the duration of the suite so it cannot outlive this case.
-    win.setInterval = () => 0;
+    win.setInterval = (callback) => { pollTick = callback; return 1; };
     win.alert = () => {};
     win.OraSidebar = {
       setExpanded: (expanded) => { sidebarExpanded = expanded; },
@@ -171,6 +175,7 @@ module.exports = {
         posts.push({ url, body: JSON.parse(opts.body || '{}') });
         return jsonResponse({ ok: true });
       }
+      gets.push(url);
       if (url === '/api/oversight/paused')    return jsonResponse({ entries: [] });
       if (url === '/api/oversight/operating') return jsonResponse({ entries: [] });
       if (url === '/api/triggers') {
@@ -204,6 +209,33 @@ module.exports = {
                                 'sidebar-oversight.js');
       win.eval(fs.readFileSync(modPath, 'utf-8'));
       await tick(); await tick(); await tick();
+
+      const operatingUrl = '/api/oversight/operating';
+      const pausedUrl = '/api/oversight/paused';
+      const scheduledUrl = '/api/triggers';
+      const openOversight = doc.querySelector('[data-super-toggle="processes"]');
+      const openDialogues = doc.querySelector('[data-super-toggle="conversations"]');
+      record('polling: collapsed boot skips Operating and loads Paused/Scheduled',
+             countGets(operatingUrl) === 0 && countGets(pausedUrl) === 1
+             && countGets(scheduledUrl) === 1, JSON.stringify(gets));
+      await pollTick();
+      record('polling: collapsed interval refreshes only Paused/Scheduled',
+             countGets(operatingUrl) === 0 && countGets(pausedUrl) === 2
+             && countGets(scheduledUrl) === 2, JSON.stringify(gets));
+      openOversight.click();
+      await tick(); await tick();
+      record('polling: expanding Oversight refreshes Operating exactly once',
+             countGets(operatingUrl) === 1 && countGets(pausedUrl) === 3
+             && countGets(scheduledUrl) === 3, JSON.stringify(gets));
+      await pollTick();
+      record('polling: expanded interval refreshes all three lists',
+             countGets(operatingUrl) === 2 && countGets(pausedUrl) === 4
+             && countGets(scheduledUrl) === 4, JSON.stringify(gets));
+      openDialogues.click();
+      await pollTick();
+      record('polling: collapsing again stops only Operating requests',
+             countGets(operatingUrl) === 2 && countGets(pausedUrl) === 5
+             && countGets(scheduledUrl) === 5, JSON.stringify(gets));
 
       const list = doc.querySelector('#triggerList');
 

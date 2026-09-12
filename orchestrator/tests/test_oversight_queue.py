@@ -394,8 +394,11 @@ class TestListOperating(unittest.TestCase):
         self.assertIn("alpha", items[0].name)
 
     def test_operating_includes_active_elicitations(self):
-        # Seed a fake conversation with an elicitation marker on the last
-        # assistant turn
+        import conversation_memory as cm
+        from framework_elicitation import elicitation_marker
+        from oversight_queue import list_operating
+
+        # Use the same authenticated marker as a real in-flight framework.
         conv_dir = os.path.join(self.paths["sessions"], "conv-elicit-1")
         os.makedirs(conv_dir, exist_ok=True)
         env = {
@@ -409,22 +412,78 @@ class TestListOperating(unittest.TestCase):
                     "role": "assistant",
                     "content": (
                         "What workflow is this for?\n\n"
-                        "<!-- ora-framework: cff/C-Design/eliciting -->"
+                        + elicitation_marker(
+                            "cff", "C-Design", conversation_id="conv-elicit-1",
+                        )
                     ),
                     "timestamp": "2026-05-04T11:01:00+00:00",
                 },
             ],
         }
-        with open(os.path.join(conv_dir, "conversation.json"), "w") as f:
+        envelope_path = os.path.join(conv_dir, "conversation.json")
+        with open(envelope_path, "w") as f:
             json.dump(env, f)
-        from oversight_queue import list_operating
-        items = list_operating()
-        kinds = [i.kind for i in items]
-        self.assertIn("elicitation", kinds)
-        elicit = next(i for i in items if i.kind == "elicitation")
-        self.assertEqual(elicit.framework_id, "cff")
-        self.assertEqual(elicit.mode, "C-Design")
-        self.assertEqual(elicit.conversation_id, "conv-elicit-1")
+        # Ordinary and completed Dialogues still participate in inventory,
+        # but neither is an Operating item.
+        for conversation_id in ("conv-ordinary", "conv-completed"):
+            other = json.loads(json.dumps(env))
+            other["conversation_id"] = conversation_id
+            other["messages"][-1]["content"] = "Here is the completed answer."
+            other_dir = os.path.join(self.paths["sessions"], conversation_id)
+            os.makedirs(other_dir)
+            with open(os.path.join(other_dir, "conversation.json"), "w") as f:
+                json.dump(other, f)
+
+        parsed_ids = []
+        real_loads = cm.json.loads
+
+        def count_envelope_parse(*args, **kwargs):
+            value = real_loads(*args, **kwargs)
+            # Marker authentication also decodes its small context JSON;
+            # this count concerns the canonical conversation envelopes.
+            if isinstance(value, dict) and "messages" in value:
+                parsed_ids.append(value["conversation_id"])
+            return value
+
+        with (
+            mock.patch.dict(cm._parsed_envelope_cache, {}, clear=True),
+            mock.patch.object(cm.json, "loads", side_effect=count_envelope_parse),
+        ):
+            items = list_operating()
+            kinds = [i.kind for i in items]
+            self.assertIn("elicitation", kinds)
+            self.assertEqual(len(items), 1)
+            elicit = next(i for i in items if i.kind == "elicitation")
+            self.assertEqual(elicit.framework_id, "cff")
+            self.assertEqual(elicit.mode, "C-Design")
+            self.assertEqual(elicit.conversation_id, "conv-elicit-1")
+            self.assertEqual(elicit.detail["display_name"], "C-Design session")
+            self.assertCountEqual(
+                parsed_ids, ["conv-elicit-1", "conv-ordinary", "conv-completed"],
+            )
+
+            inventory = cm.iter_conversations(
+                sessions_root=self.paths["sessions"], persist_heal=False,
+            )
+            self.assertEqual(len(inventory), 3)
+            self.assertEqual(list_operating(), items)
+            self.assertEqual(len(parsed_ids), 3)
+
+            env["display_name"] = "Revised C-Design session"
+            with open(envelope_path, "w") as f:
+                json.dump(env, f)
+            changed_items = list_operating()
+            self.assertEqual(len(changed_items), 1)
+            self.assertEqual(
+                changed_items[0].detail["display_name"], "Revised C-Design session",
+            )
+            self.assertEqual(parsed_ids[3:], ["conv-elicit-1"])
+
+            cm.iter_conversations(
+                sessions_root=self.paths["sessions"], persist_heal=False,
+            )
+            self.assertEqual(list_operating(), changed_items)
+            self.assertEqual(len(parsed_ids), 4)
 
     def test_operating_is_empty_when_no_sources(self):
         from oversight_queue import list_operating
